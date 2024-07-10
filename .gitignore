@@ -1,0 +1,12 @@
+xcelium*
+xrun*
+.simvision
+waves*
+*.log
+*.diag
+jgproject
+.symbol*
+ignore.txt
+ignore/
+simvision/
+join.py
