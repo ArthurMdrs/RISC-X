@@ -19,12 +19,16 @@ module controller import core_pkg::*; (
     // Data Hazards (stalling)
     output logic stall_if_o,
     output logic stall_id_o,
+    output logic stall_ex_o,
+    output logic stall_mem_o,
     
     input  logic reg_mem_wen_ex_i,
     
     // Control Hazards (flushing)
     output logic flush_id_o,
     output logic flush_ex_o,
+    output logic flush_mem_o,
+    output logic flush_wb_o,
     
     input  pc_source_t pc_source_id_i,
     input  logic       branch_decision_ex_i
@@ -95,6 +99,8 @@ always_comb begin
             stall_id_o = 1'b1;
     
     stall_if_o = stall_id_o;
+    stall_ex_o = 1'b0;
+    stall_mem_o = 1'b0;
 end
 
 logic id_is_jump;
@@ -105,6 +111,8 @@ assign id_is_jump = pc_source_id_i == PC_JAL || pc_source_id_i == PC_JALR;
 always_comb begin
     flush_id_o = branch_decision_ex_i || id_is_jump;
     flush_ex_o = branch_decision_ex_i;
+    flush_mem_o = 1'b0;
+    flush_wb_o = 1'b0;
 end
 
 endmodule

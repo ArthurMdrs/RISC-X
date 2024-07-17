@@ -7,7 +7,7 @@ TB = ./*.sv
 TOP = -top core_tb
 
 SEED = -svseed 2
-INPUT = -input simvision/restore.tcl
+INPUT = -input restore.tcl
 
 run: sim
 

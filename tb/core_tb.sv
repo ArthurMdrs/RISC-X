@@ -61,6 +61,7 @@ rom_mem #(
     .AWIDTH(IMEM_AWIDTH),
     .DWIDTH(32)
 ) instr_mem (
+    .rst_n,
     .rdata(imem_rdata),
     .addr(imem_addr[IMEM_AWIDTH-1:0])
 );
@@ -71,17 +72,16 @@ rom_mem #(
 
 int n_mismatches;
 int cnt_x_instr;
-bit verbose = 1;
-bit check_regs = 1;
+bit verbose = 0;
 logic [31:0] expected;
 
 logic [31:0] regs_clone [32];
-assign regs_clone = core_inst.register_file_inst.mem;
+assign regs_clone = core_inst.id_stage_inst.register_file_inst.mem;
 logic [31:0] dmem_clone [DATA_MEM_SIZE/4];
 always_comb foreach(dmem_clone[i]) dmem_clone[i] = data_mem_inst.mem[i*4+:4];
 // instr_t instr_clone;
 logic [31:0] instr_clone;
-assign instr_clone = core_inst.instr_id;
+assign instr_clone = core_inst.id_stage_inst.instr_id;
 
 logic [31:0] xptd_dmem [DATA_MEM_SIZE/4];
 logic [31:0] xptd_regs [32];
@@ -93,18 +93,15 @@ string progs_with_regs [] = '{"1_basic",
                               "2_hazard_control_0", "2_hazard_data_0", "2_hazard_data_1", 
                               "3_bubble_sort", "3_fib", "3_qsort"};
 
-// string prog_name = progs[0];
 string prog_name = "3_qsort";
-string prog_file = {"programs/", prog_name, "_prog.txt"};
-string dmem_file = {"programs/", prog_name, "_data.txt"};
-string regs_file = {"programs/", prog_name, "_regs.txt"};
+bit check_regs = 1;
 
 localparam int PERIOD = 2;
-localparam int MAX_CYCLES = 100000;
+localparam int MAX_CYCLES = 1000000;
 initial begin
     clk = 0; 
     repeat(MAX_CYCLES) #(PERIOD/2) clk = ~clk;
-    $display ("\nSimulation reached the time limit. Terminating simulation.\n");
+    $display ("\n%t: Simulation reached the time limit. Terminating simulation.\n", $time);
     $finish;
 end
 
@@ -114,40 +111,12 @@ initial begin
 
     $display("#==========================================================#");
 
-    $display("%t: Running program %s.", $time, prog_name);
+    // $display("%t: Running program %s.", $time, prog_name);
     
     reset ();
-
-    // Load instructions into instruction memory
-    load_instr_mem();
     
-    // Wait for instructions to end
-    do begin
-        @(negedge clk);
-        if (instr_clone === 'x) // After the end of instr mem code, there's only unknowns
-            cnt_x_instr++;
-        else
-            cnt_x_instr = 0;
-    end while (cnt_x_instr != 4); // Proceed when 4 consecutive 'x instrs happen in ID stage
-
-    // Get expected data memory values (got from RARS simulator)
-    load_xptd_dmem();
-    if (check_regs)
-        load_xptd_regs();
-    if (verbose) begin
-        foreach (xptd_dmem[i]) begin
-            if(i == 32) break;
-            $display("xptd_dmem[%2d] = %h. dmem[%2d] = %h.", i, xptd_dmem[i], i, dmem_clone[i]);
-        end
-    end
-    checkit("dmem", xptd_dmem, dmem_clone);
+    drive_prog(prog_name, check_regs);
     
-    if (check_regs) begin
-        foreach (xptd_regs[i])
-            $display("xptd_regs[%2d] = %h. reg[%2d] = %h.", i, xptd_regs[i], i, regs_clone[i]);
-        checkit("regs", xptd_regs, regs_clone);
-    end
-
     $display("%t: Simulation end. Number of mismatches: %0d.", $time, n_mismatches);
 
     $display("#==========================================================#");
@@ -159,12 +128,14 @@ end
 //==============   Tasks and functions - BEGIN   ==============//
 
 task reset ();
+    @(negedge clk);
     rst_n = 0;
-    @(negedge clk) rst_n = 1;
+    @(negedge clk);
+    rst_n = 1;
     $display("%t: Reset done.", $time);
 endtask
 
-task load_instr_mem;
+task load_instr_mem (string prog_name, string prog_file);
     logic [31:0] mem [INSTR_MEM_SIZE];
     $readmemh(prog_file, mem);
     foreach(mem[i]) instr_mem.mem[i*4+:4] = mem[i];
@@ -182,10 +153,13 @@ task print_regs;
     end
 endtask
 
-task load_xptd_dmem;
+task load_xptd_dmem (string dmem_file);
+    // logic [31:0] mem [INSTR_MEM_SIZE];
+    // $readmemh(dmem_file, mem);
+    // foreach(mem[i]) xptd_dmem[i] = mem[i];
     $readmemh(dmem_file, xptd_dmem);
 endtask
-task load_xptd_regs;
+task load_xptd_regs (string regs_file);
     $readmemh(regs_file, xptd_regs);
 endtask
 
@@ -198,6 +172,66 @@ task checkit (string what_mem, logic [31:0] expected [], logic [31:0] actual [])
         end
     end
     $display("%t: Done checking.", $time);
+endtask
+
+task drive_prog (string prog_name, bit check_regs);
+    string prog_file;
+    string dmem_file;
+    string regs_file;
+    
+    if (prog_name != "all") begin
+        prog_file = {"programs/", prog_name, "_prog.txt"};
+        dmem_file = {"programs/", prog_name, "_data.txt"};
+        regs_file = {"programs/", prog_name, "_regs.txt"};
+        
+        $display("#==========================================================#");
+        $display("%t: Executing program %s.", $time, prog_name);
+        reset ();
+        
+        // Load instructions into instruction memory
+        load_instr_mem(prog_name, prog_file);
+        
+        // Wait for instructions to end
+        do begin
+            @(negedge clk);
+            if (instr_clone === 'x) // After the end of instr mem code, there's only unknowns
+                cnt_x_instr++;
+            else
+                cnt_x_instr = 0;
+        end while (cnt_x_instr != 4); // Proceed when 4 consecutive 'x instrs happen in ID stage
+
+        // Get expected data memory values (got from RARS simulator)
+        load_xptd_dmem(dmem_file);
+        if (check_regs)
+            load_xptd_regs(regs_file);
+        
+        if (verbose) begin
+            foreach (xptd_dmem[i]) begin
+                if(i == 32) break;
+                $display("xptd_dmem[%2d] = %h. dmem[%2d] = %h.", i, xptd_dmem[i], i, dmem_clone[i]);
+            end
+        end
+        checkit("dmem", xptd_dmem, dmem_clone);
+        
+        if (check_regs) begin
+            if (verbose)
+                foreach (xptd_regs[i])
+                    $display("xptd_regs[%2d] = %h. reg[%2d] = %h.", i, xptd_regs[i], i, regs_clone[i]);
+            checkit("regs", xptd_regs, regs_clone);
+        end
+
+        $display("%t: Finished executing program %s.", $time, prog_name);
+        $display("%t: Simulation end. Number of mismatches: %0d.", $time, n_mismatches);
+        $display("#==========================================================#");
+    end // if (prog_name != "all")
+    else begin
+        foreach(progs[i]) begin
+            string single_prog;
+            single_prog = progs[i];
+        
+            drive_prog (single_prog, 0);
+        end
+    end
 endtask
 
 //==============   Tasks and functions - END   ==============//

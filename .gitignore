@@ -10,3 +10,5 @@ ignore.txt
 ignore/
 simvision/
 join.py
+restore.tcl
+restore.tcl.svcf
