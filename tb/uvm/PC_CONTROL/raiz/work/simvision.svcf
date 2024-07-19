@@ -1,0 +1,47 @@
+# SimVision Command Script (Tue Mar 07 09:00:44 PM BRT 2017)
+#
+# Version 15.20.s013
+#
+# You can restore this configuration with:
+#
+#     simvision -input simvision.svcf
+#
+
+#
+# Databases
+#
+database require waves -search {
+      ./waves.shm/waves.trn
+}
+
+#
+# Waveform windows
+#
+
+window new WaveWindow -name "Waveform 1"
+window target "Waveform 1" on
+waveform using {Waveform 1}
+
+set id [waveform add -signals  {
+      waves::$uvm:{uvm_test_top.env_h.agent_in_h.sequencer_h}.seq
+      waves::$uvm:{uvm_test_top.env_h.agent_in_h.monitor_h}.tr
+      } ]
+waveform hierarchy set -expandtype Attr:begin_time $id
+waveform add -signals  { waves::top.in.clock
+                         waves::top.in.reset
+                         waves::top.in.valid }
+set id [waveform add -signals  {
+        {waves::top.in.a[7:0]}
+        } ]
+waveform format $id -radix %d
+waveform add -signals  { waves::top.out.valid }
+set id [waveform add -signals  {
+        {waves::top.out.a[7:0]}
+        } ]
+waveform format $id -radix %d
+set id [waveform add -signals  {
+      waves::$uvm:{uvm_test_top.env_h.agent_out_h.monitor_h}.tr
+      waves::$uvm:{uvm_test_top.env_h.refmod_h}.tr_out
+	} ]
+waveform hierarchy set -expandtype Attr:begin_time $id
+
