@@ -6,7 +6,11 @@
     Execution, Memory Access, Write Back).
 */
 
-module core (
+module core #(
+    parameter bit ISA_M = 0,
+    parameter bit ISA_C = 0,
+    parameter bit ISA_F = 0
+) (
     input  logic clk_i,
     input  logic rst_n_i,
 
@@ -20,11 +24,6 @@ module core (
     // Interface with instruction memory
     input  logic [31:0] imem_rdata_i,
     output logic [31:0] imem_addr_o
-
-`ifdef RISCV_FORMAL
-    ,
-    `RVFI_OUTPUTS
-`endif
 );
 
 import core_pkg::*;
@@ -52,7 +51,7 @@ forward_t          fwd_op1_id, fwd_op2_id;
 logic        mem_wen_id, mem_wen_ex, mem_wen_mem;
 data_type_t  mem_data_type_id, mem_data_type_ex, mem_data_type_mem;
 logic        mem_sign_extend_id, mem_sign_extend_ex, mem_sign_extend_mem;
-logic [31:0] mem_wdata_id, mem_wdata_ex, mem_wdata_mem;
+logic [31:0] mem_wdata_id, mem_wdata_ex;//, mem_wdata_mem;
 logic [31:0] mem_rdata_mem, mem_rdata_wb;
 
 // Register file write enables and write data (distinguish between writes from ALU or from loads)
@@ -96,6 +95,7 @@ if_stage if_stage_inst (
     
     // Signals for the PC controller
     .valid_id_i           ( valid_id ),
+    .valid_ex_i           ( valid_ex ),
     .jump_target_id_i     ( jump_target_id ), 
     .branch_target_ex_i   ( branch_target_ex ), 
     .branch_decision_ex_i ( branch_decision_ex ),
@@ -109,7 +109,11 @@ if_stage if_stage_inst (
 //////////////////////        INSTRUCTION DECODE        ///////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-id_stage id_stage_inst (
+id_stage #(
+    .ISA_M ( ISA_M ),
+    .ISA_C ( ISA_C ),
+    .ISA_F ( ISA_F )
+) id_stage_inst (
     .clk_i   ( clk_i ),
     .rst_n_i ( rst_n_i ),
     
@@ -166,7 +170,11 @@ id_stage id_stage_inst (
 /////////////////////////           EXECUTE           /////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-ex_stage ex_stage_inst (
+ex_stage #(
+    .ISA_M ( ISA_M ),
+    .ISA_C ( ISA_C ),
+    .ISA_F ( ISA_F )
+) ex_stage_inst (
     .clk_i   ( clk_i ),
     .rst_n_i ( rst_n_i ),
     

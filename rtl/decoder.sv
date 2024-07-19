@@ -1,5 +1,7 @@
 module decoder import core_pkg::*; #(
-    parameter bit ISA_M = 0
+    parameter bit ISA_M = 0,
+    parameter bit ISA_C = 0,
+    parameter bit ISA_F = 0
 ) (
     // ALU related signals
 	output alu_operation_t    alu_operation_o,
@@ -210,6 +212,7 @@ always_comb begin
         OPCODE_JALR: begin // jalr
             // ALU calculates PC+4 or PC+2
             // The jump target has a dedicated adder in ID stage
+            alu_source_1_o   = ALU_SCR1_PC; 
             alu_source_2_o   = ALU_SCR2_4_OR_2;
             immediate_type_o = IMM_I;
             

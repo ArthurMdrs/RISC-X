@@ -1,4 +1,8 @@
-module id_stage import core_pkg::*; (
+module id_stage import core_pkg::*; #(
+    parameter bit ISA_M = 0,
+    parameter bit ISA_C = 0,
+    parameter bit ISA_F = 0
+) (
     input  logic clk_i,
     input  logic rst_n_i,
     
@@ -65,6 +69,8 @@ immediate_source_t immediate_type_id;
 logic [31:0]       immediate_id;
 
 logic illegal_instr_id;
+logic instr_addr_misaligned_id;
+logic trap_id;
 
 // Pipeline registers IF->ID
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -87,7 +93,9 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
 end
 
 decoder #(
-    .ISA_M ( 0 )
+    .ISA_M ( ISA_M ),
+    .ISA_C ( ISA_C ),
+    .ISA_F ( ISA_F )
 ) decoder_inst (
     // ALU related signals
 	.alu_operation_o  ( alu_operation_id_o ),
@@ -191,10 +199,23 @@ always_comb begin
         PC_JALR: jump_target_id_o = rs1_or_fwd_id + immediate_id;
         default: jump_target_id_o = pc_id + immediate_id;
     endcase
+    jump_target_id_o[0] = 1'b0; // Clear LSB
 end
 
+// Jump target misaligned exception
+always_comb begin
+    if (ISA_C) // No such exceptions if compressed instructions are allowed
+        instr_addr_misaligned_id = 1'b0;
+    else // If no compressed instructions, target must be 4-byte aligned
+        instr_addr_misaligned_id = jump_target_id_o[1] && (pc_source_id_o inside {PC_JAL, PC_JALR});
+end
+
+// Traps: illegal instruction decoded, jump target misaligned
+assign trap_id = illegal_instr_id || instr_addr_misaligned_id;
+
 // Resolve validness. Not valid implies inserting bubble
-assign valid_id_o = !stall_id_i && !flush_ex_i && !illegal_instr_id;
+// assign valid_id_o = !stall_id_i && !flush_ex_i && !illegal_instr_id;
+assign valid_id_o = !stall_id_i && !flush_ex_i && !trap_id;
 
 
 endmodule

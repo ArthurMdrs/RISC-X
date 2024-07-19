@@ -1,4 +1,8 @@
-module ex_stage import core_pkg::*; (
+module ex_stage import core_pkg::*; #(
+    parameter bit ISA_M = 0,
+    parameter bit ISA_C = 0,
+    parameter bit ISA_F = 0
+) (
     input  logic clk_i,
     input  logic rst_n_i,
     
@@ -47,6 +51,8 @@ alu_operation_t alu_operation_ex;
 logic [31:0]    alu_operand_1_ex, alu_operand_2_ex;
 
 logic is_branch_ex;
+
+logic instr_addr_misaligned_ex;
 
 // Pipeline registers ID->EX
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -104,7 +110,16 @@ alu #(
 // Control signal for branches (this will invalidate IF and ID)
 assign branch_decision_ex_o = is_branch_ex && alu_result_ex_o[0];
 
+// Taken branch target misaligned exception
+always_comb begin
+    if (ISA_C) // No such exceptions if compressed instructions are allowed
+        instr_addr_misaligned_ex = 1'b0;
+    else // If no compressed instructions, target must be 4-byte aligned
+        instr_addr_misaligned_ex = branch_target_ex_o[1] && branch_decision_ex_o;
+end
+
 // Resolve validness. Not valid implies inserting bubble
-assign valid_ex_o = !stall_ex_i && !flush_mem_i;
+// assign valid_ex_o = !stall_ex_i && !flush_mem_i;
+assign valid_ex_o = !stall_ex_i && !flush_mem_i && !instr_addr_misaligned_ex;
 
 endmodule
