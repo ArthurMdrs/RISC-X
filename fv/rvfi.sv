@@ -3,35 +3,35 @@ module rvfi import core_pkg::*; (
     input  logic rst_n_i,
     
     // Input from IF stage
-    input  logic           valid_if,
+    input  logic        valid_if,
     input  logic [31:0] pc_if,
     
     // Input from ID stage
-    input  logic           valid_id,
-    input  logic           stall_id,
-    input  logic [31:0] instr_id,
-    input  logic           illegal_instr_id,
+    input  logic          valid_id,
+    input  logic          stall_id,
+    input  logic [31:0]   instr_id,
+    input  logic          illegal_instr_id,
     input  alu_source_1_t alu_source_1_id,
     input  alu_source_2_t alu_source_2_id,
-    input  logic [ 4:0] rs1_addr_id,
-    input  logic [ 4:0] rs2_addr_id,
-    input  logic [31:0] rs1_or_fwd_id,
-    input  logic [31:0] rs2_or_fwd_id,
-    input  logic [31:0] pc_id,
-    input  pc_source_t pc_source_id,
-    input  logic [31:0] jump_target_id,
-    input  logic           mem_wen_id,
+    input  logic [ 4:0]   rs1_addr_id,
+    input  logic [ 4:0]   rs2_addr_id,
+    input  logic [31:0]   rs1_or_fwd_id,
+    input  logic [31:0]   rs2_or_fwd_id,
+    input  logic [31:0]   pc_id,
+    input  pc_source_t    pc_source_id,
+    input  logic [31:0]   jump_target_id,
+    input  logic          mem_wen_id,
     
     // Input from EX stage
     input  logic        valid_ex,
-    input  logic stall_ex,
+    input  logic        stall_ex,
     input  logic        flush_ex,
     input  logic [31:0] branch_target_ex,
-    input  logic branch_decision_ex,
+    input  logic        branch_decision_ex,
     
     // Input from MEM stage
     input  logic        valid_mem,
-    input  logic stall_mem,
+    input  logic        stall_mem,
     input  logic [31:0] dmem_wdata_o,
     input  logic [31:0] dmem_addr_o,
     input  logic        dmem_wen_o,
@@ -55,11 +55,11 @@ logic        rvfi_valid_id;
 // Pipeline registers IF->ID
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
-        rvfi_valid_id    <= '0;
+        rvfi_valid_id <= '0;
     end else begin
         if (!stall_id) begin
             if (valid_if) begin
-                rvfi_valid_id    <= 1'b1;
+                rvfi_valid_id <= 1'b1;
             end
             // Insert bubble if previous stage wasn't valid
             else begin
@@ -83,24 +83,24 @@ logic [31:0] pc_ex, pc_n_ex;
 // Pipeline registers ID->EX
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
-        rvfi_valid_ex    <= '0;
-        instr_ex         <= '0;
-        trap_ex         <= '0;
+        rvfi_valid_ex <= '0;
+        instr_ex      <= '0;
+        trap_ex       <= '0;
         rs1_addr_ex   <= '0;
         rs2_addr_ex   <= '0;
-        rs1_rdata_ex   <= '0;
-        rs2_rdata_ex   <= '0;
+        rs1_rdata_ex  <= '0;
+        rs2_rdata_ex  <= '0;
         pc_ex         <= '0;
-        pc_n_ex         <= '0;
+        pc_n_ex       <= '0;
     end else begin
         if (!stall_ex) begin
-            trap_ex         <= (flush_ex) ? ('0) : (illegal_instr_id);
-            pc_ex         <= pc_id;
-            pc_n_ex         <= (pc_source_id inside {PC_JAL, PC_JALR}) ? (jump_target_id) : (pc_if);
+            trap_ex <= (flush_ex) ? ('0) : (illegal_instr_id);
+            pc_ex   <= pc_id;
+            pc_n_ex <= (pc_source_id inside {PC_JAL, PC_JALR}) ? (jump_target_id) : (pc_if);
             if (valid_id) begin
-                rvfi_valid_ex    <= rvfi_valid_id;
-                instr_ex         <= instr_id;
-                // trap_ex         <= illegal_instr_id;
+                rvfi_valid_ex <= rvfi_valid_id;
+                instr_ex      <= instr_id;
+                // trap_ex       <= illegal_instr_id;
                 if ((alu_source_1_id == ALU_SCR1_RS1) || (pc_source_id == PC_JALR)) begin
                     rs1_addr_ex <= rs1_addr_id;
                     rs1_rdata_ex   <= rs1_or_fwd_id;
@@ -115,20 +115,20 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                     rs2_addr_ex <= '0;
                     rs2_rdata_ex   <= '0;
                 end
-                // pc_ex         <= pc_id;
-                // pc_n_ex         <= (pc_source_id inside {PC_JAL, PC_JALR}) ? (jump_target_id) : (pc_if);
+                // pc_ex   <= pc_id;
+                // pc_n_ex <= (pc_source_id inside {PC_JAL, PC_JALR}) ? (jump_target_id) : (pc_if);
             end
             // Insert bubble if previous stage wasn't valid
             else begin
-                rvfi_valid_ex    <= '0;
-                instr_ex         <= '0;
-                // trap_ex         <= '0;
+                rvfi_valid_ex <= '0;
+                instr_ex      <= '0;
+                // trap_ex      <= '0;
                 rs1_addr_ex   <= '0;
                 rs2_addr_ex   <= '0;
-                rs1_rdata_ex   <= '0;
-                rs2_rdata_ex   <= '0;
-                // pc_ex         <= '0;
-                // pc_n_ex         <= '0;
+                rs1_rdata_ex  <= '0;
+                rs2_rdata_ex  <= '0;
+                // pc_ex        <= '0;
+                // pc_n_ex      <= '0;
             end
         end
     end
@@ -148,42 +148,42 @@ logic [31:0] pc_mem, pc_n_mem;
 // Pipeline registers EX->MEM
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
-        rvfi_valid_mem    <= '0;
-        instr_mem         <= '0;
-        trap_mem         <= '0;
+        rvfi_valid_mem <= '0;
+        instr_mem      <= '0;
+        trap_mem       <= '0;
         rs1_addr_mem   <= '0;
         rs2_addr_mem   <= '0;
-        rs1_rdata_mem   <= '0;
-        rs2_rdata_mem   <= '0;
+        rs1_rdata_mem  <= '0;
+        rs2_rdata_mem  <= '0;
         pc_mem         <= '0;
-        pc_n_mem         <= '0;
+        pc_n_mem       <= '0;
     end else begin
         if (!stall_mem) begin
-            trap_mem         <= trap_ex;
-            pc_mem         <= pc_ex;
-            pc_n_mem         <= (branch_decision_ex) ? (branch_target_ex) : (pc_n_ex);
+            trap_mem <= trap_ex;
+            pc_mem   <= pc_ex;
+            pc_n_mem <= (branch_decision_ex) ? (branch_target_ex) : (pc_n_ex);
             if (valid_ex) begin
-                rvfi_valid_mem    <= rvfi_valid_ex;
-                instr_mem         <= instr_ex;
-                // trap_mem         <= trap_ex;
+                rvfi_valid_mem <= rvfi_valid_ex;
+                instr_mem      <= instr_ex;
+                // trap_mem      <= trap_ex;
                 rs1_addr_mem   <= rs1_addr_ex;
                 rs2_addr_mem   <= rs2_addr_ex;
-                rs1_rdata_mem   <= rs1_rdata_ex;
-                rs2_rdata_mem   <= rs2_rdata_ex;
-                // pc_mem         <= pc_ex;
-                // pc_n_mem         <= (branch_decision_ex) ? (branch_target_ex) : (pc_n_ex);
+                rs1_rdata_mem  <= rs1_rdata_ex;
+                rs2_rdata_mem  <= rs2_rdata_ex;
+                // pc_mem        <= pc_ex;
+                // pc_n_mem      <= (branch_decision_ex) ? (branch_target_ex) : (pc_n_ex);
             end
             // Insert bubble if previous stage wasn't valid
             else begin
-                rvfi_valid_mem    <= '0;
-                instr_mem         <= '0;
-                // trap_mem         <= '0;
+                rvfi_valid_mem <= '0;
+                instr_mem      <= '0;
+                // trap_mem      <= '0;
                 rs1_addr_mem   <= '0;
                 rs2_addr_mem   <= '0;
-                rs1_rdata_mem   <= '0;
-                rs2_rdata_mem   <= '0;
-                // pc_mem         <= '0;
-                // pc_n_mem         <= '0;
+                rs1_rdata_mem  <= '0;
+                rs2_rdata_mem  <= '0;
+                // pc_mem        <= '0;
+                // pc_n_mem      <= '0;
             end
         end
     end
@@ -207,58 +207,58 @@ logic [31:0] mem_wdata_wb;//, mem_rdata_wb;
 // Pipeline registers EX->MEM
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
-        rvfi_valid_wb    <= '0;
-        order_wb    <= '0;
-        instr_wb         <= '0;
-        trap_wb         <= '0;
+        rvfi_valid_wb <= '0;
+        order_wb      <= '0;
+        instr_wb      <= '0;
+        trap_wb       <= '0;
         rs1_addr_wb   <= '0;
         rs2_addr_wb   <= '0;
-        rs1_rdata_wb   <= '0;
-        rs2_rdata_wb   <= '0;
+        rs1_rdata_wb  <= '0;
+        rs2_rdata_wb  <= '0;
         pc_wb         <= '0;
-        pc_n_wb         <= '0;
-        mem_addr_wb         <= '0;
-        mem_rmask_wb         <= '0;
-        mem_wmask_wb         <= '0;
-        // mem_rdata_wb         <= '0;
-        mem_wdata_wb         <= '0;
+        pc_n_wb       <= '0;
+        mem_addr_wb   <= '0;
+        mem_rmask_wb  <= '0;
+        mem_wmask_wb  <= '0;
+        // mem_rdata_wb <= '0;
+        mem_wdata_wb  <= '0;
     end else begin
-        order_wb    <= order_wb + {63'b0, rvfi_valid_wb};
-        trap_wb         <= trap_mem;
-        pc_wb         <= pc_mem;
-        pc_n_wb         <= pc_n_mem;
+        order_wb <= order_wb + {63'b0, rvfi_valid_wb};
+        trap_wb  <= trap_mem;
+        pc_wb    <= pc_mem;
+        pc_n_wb  <= pc_n_mem;
         if (valid_mem) begin
-            rvfi_valid_wb    <= rvfi_valid_mem;
-            instr_wb         <= instr_mem;
-            // trap_wb         <= trap_mem;
+            rvfi_valid_wb <= rvfi_valid_mem;
+            instr_wb      <= instr_mem;
+            // trap_wb      <= trap_mem;
             rs1_addr_wb   <= rs1_addr_mem;
             rs2_addr_wb   <= rs2_addr_mem;
-            rs1_rdata_wb   <= rs1_rdata_mem;
-            rs2_rdata_wb   <= rs2_rdata_mem;
-            // pc_wb         <= pc_mem;
-            // pc_n_wb         <= pc_n_mem;
-            mem_addr_wb         <= dmem_addr_o;
-            mem_rmask_wb         <= dmem_ben_o;
-            mem_wmask_wb         <= (dmem_wen_o) ? (dmem_ben_o) : ('0);
-            // mem_rdata_wb         <= '0;
-            mem_wdata_wb         <= dmem_wdata_o;
+            rs1_rdata_wb  <= rs1_rdata_mem;
+            rs2_rdata_wb  <= rs2_rdata_mem;
+            // pc_wb        <= pc_mem;
+            // pc_n_wb      <= pc_n_mem;
+            mem_addr_wb   <= dmem_addr_o;
+            mem_rmask_wb  <= dmem_ben_o;
+            mem_wmask_wb  <= (dmem_wen_o) ? (dmem_ben_o) : ('0);
+            // mem_rdata_wb <= '0;
+            mem_wdata_wb  <= dmem_wdata_o;
         end
         // Insert bubble if previous stage wasn't valid
         else begin
-            rvfi_valid_wb    <= '0;
-            instr_wb         <= '0;
-            // trap_wb         <= '0;
+            rvfi_valid_wb <= '0;
+            instr_wb      <= '0;
+            // trap_wb      <= '0;
             rs1_addr_wb   <= '0;
             rs2_addr_wb   <= '0;
-            rs1_rdata_wb   <= '0;
-            rs2_rdata_wb   <= '0;
-            // pc_wb         <= '0;
-            // pc_n_wb         <= '0;
-            mem_addr_wb         <= '0;
-            mem_rmask_wb         <= '0;
-            mem_wmask_wb         <= '0;
-            // mem_rdata_wb         <= '0;
-            mem_wdata_wb         <= '0;
+            rs1_rdata_wb  <= '0;
+            rs2_rdata_wb  <= '0;
+            // pc_wb        <= '0;
+            // pc_n_wb      <= '0;
+            mem_addr_wb   <= '0;
+            mem_rmask_wb  <= '0;
+            mem_wmask_wb  <= '0;
+            // mem_rdata_wb <= '0;
+            mem_wdata_wb  <= '0;
         end
     end
 end

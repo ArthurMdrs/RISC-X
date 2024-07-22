@@ -1,6 +1,7 @@
 # SVA = +define+SVA_ON=1
 
-RTL = ../rtl/pkg/*.sv ../rtl/*.sv
+RTL_HOME = ../../rtl
+RTL = $(RTL_HOME)/pkg/*.sv $(RTL_HOME)/*.sv
 # FV = ../fv/*.sv
 # TB = ./core_tb.sv
 TB = ./*.sv

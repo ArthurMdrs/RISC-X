@@ -14,3 +14,13 @@ ${RTL_HOME}/mem_stage.sv
 ${RTL_HOME}/wb_stage.sv
 
 ${RTL_HOME}/core.sv
+
+${TB_HOME}/rvfi_defines.sv
+${TB_HOME}/rvfi_macros.vh
+${RVFI_HOME}/rvfi.sv
+
+${TB_HOME}/mem.sv
+${TB_HOME}/rvviTrace.sv
+${TB_HOME}/rvvi_tracer.sv
+${TB_HOME}/rvvi_wrapper.sv
+${TB_HOME}/rvvi_tb.sv
