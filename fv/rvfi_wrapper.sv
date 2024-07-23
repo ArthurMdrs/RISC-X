@@ -25,12 +25,16 @@ module rvfi_wrapper (
 // Instruction memory interface
 (* keep *) `rvformal_rand_reg [31:0] imem_rdata;
 (* keep *)               wire [31:0] imem_addr;
+
+(* keep *)               wire [31:0] hart_id;
     
 ////////////////////    PORT LIST - END    ////////////////////
     
 // Tie-offs
 assign clk_i   = clock;
 assign rst_n_i = !reset;
+
+assign hart_id = 32'h0000_0000;
 
 `default_nettype none
 core core_inst (
@@ -44,7 +48,9 @@ core core_inst (
     .dmem_ben_o   ( dmem_ben ),
     
     .imem_rdata_i ( imem_rdata ),
-    .imem_addr_o  ( imem_addr )
+    .imem_addr_o  ( imem_addr ),
+    
+    .hart_id_i  ( hart_id )
 );
 
 rvfi rvfi_inst (
@@ -80,6 +86,8 @@ rvfi rvfi_inst (
     .flush_ex ( core_inst.flush_ex ),
     .branch_target_ex ( core_inst.branch_target_ex ),
     .branch_decision_ex ( core_inst.branch_decision_ex ),
+    .csr_wdata_ex ( core_inst.csr_inst.csr_wdata_actual ),
+    .csr_rdata_ex ( core_inst.csr_rdata_ex ),
     
     // Input from MEM stage
     .valid_mem ( core_inst.valid_mem ),
@@ -94,6 +102,8 @@ rvfi rvfi_inst (
     .reg_wen_wb ( core_inst.reg_wen_wb ),
     .reg_wdata_wb ( core_inst.reg_wdata_wb ),
     .mem_rdata_wb ( core_inst.mem_rdata_wb ),
+  
+    .misa ( core_inst.csr_inst.misa ),
   
     `RVFI_CONN
 );

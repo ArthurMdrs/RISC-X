@@ -26,6 +26,8 @@ module ex_stage import core_pkg::*; #(
     input  logic [31:0]    mem_wdata_id_i,
     input  logic [31:0]    branch_target_id_i,
     input  logic           valid_id_i,
+    input  logic           csr_access_id_i,
+    input  csr_operation_t csr_op_id_i,
     
     // Output to MEM stage
     output logic [ 4:0] rd_addr_ex_o,
@@ -38,6 +40,16 @@ module ex_stage import core_pkg::*; #(
     output logic        reg_mem_wen_ex_o,
     output logic        valid_ex_o,
     
+    // Output to CSRs
+    output csr_addr_t      csr_addr_ex_o,
+    output logic [31:0]    csr_wdata_ex_o,
+    output csr_operation_t csr_op_ex_o,
+    output logic           csr_access_ex_o,
+    
+    // Input from CSRs
+    input  logic        csr_access_ex_i,
+    input  logic [31:0] csr_rdata_ex_i,
+    
     // Control inputs
     input  logic stall_ex_i,
     input  logic flush_mem_i
@@ -49,6 +61,7 @@ module ex_stage import core_pkg::*; #(
 
 alu_operation_t alu_operation_ex;
 logic [31:0]    alu_operand_1_ex, alu_operand_2_ex;
+logic [31:0]    alu_result_ex;
 
 logic is_branch_ex;
 
@@ -70,6 +83,10 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         pc_source_ex_o       <= PC_P_4;
         is_branch_ex         <= '0;
         branch_target_ex_o   <= '0;
+        csr_access_ex_o      <= '0;
+        csr_op_ex_o          <= CSR_READ;
+        csr_wdata_ex_o       <= '0;
+        csr_addr_ex_o        <= CSR_USTATUS;
     end else begin
         if (!stall_ex_i) begin
             if (valid_id_i) begin
@@ -86,6 +103,12 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 pc_source_ex_o       <= pc_source_id_i;
                 is_branch_ex         <= is_branch_id_i;
                 branch_target_ex_o   <= branch_target_id_i;
+                csr_access_ex_o      <= csr_access_id_i;
+                if (csr_access_id_i) begin
+                    csr_op_ex_o    <= csr_op_id_i;
+                    csr_wdata_ex_o <= alu_operand_1_id_i; // wdata is passed through operand 1
+                    csr_addr_ex_o  <= csr_addr_t'(alu_operand_2_id_i[11:0]); // addr is passed through operand 2
+                end
             end
             // Insert bubble if previous stage wasn't valid
             else begin
@@ -93,6 +116,8 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 reg_alu_wen_ex_o <= '0;
                 reg_mem_wen_ex_o <= '0;
                 is_branch_ex     <= '0;
+                csr_op_ex_o      <= CSR_READ;
+                csr_access_ex_o  <= '0;
             end
         end
     end
@@ -101,11 +126,14 @@ end
 alu #(
     .DWIDTH ( 32 )
 ) alu_inst (
-	.res_o       ( alu_result_ex_o ), 
+	.res_o       ( alu_result_ex ), 
 	.op1_i       ( alu_operand_1_ex ),
 	.op2_i       ( alu_operand_2_ex ),
 	.operation_i ( alu_operation_ex )
 );
+
+// Pass CSR rdata through ALU result in case of CSR reads
+assign alu_result_ex_o = (csr_access_ex_i) ? (csr_rdata_ex_i) : (alu_result_ex);
 
 // Control signal for branches (this will invalidate IF and ID)
 assign branch_decision_ex_o = is_branch_ex && alu_result_ex_o[0];

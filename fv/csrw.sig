@@ -1,10 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wavelist version="3">
-  <insertion-point-position>46</insertion-point-position>
+  <insertion-point-position>5</insertion-point-position>
   <wave>
     <expr>clock</expr>
     <label/>
     <radix/>
+  </wave>
+  <wave>
+    <expr>checker_inst.csr_illacc</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave collapsed="true">
+    <expr>checker_inst.rvfi.mode</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave collapsed="true">
+    <expr>checker_inst.csr_insn_rmask</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave collapsed="true">
+    <expr>checker_inst.csr_insn_rdata</expr>
+    <label/>
+    <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
   </wave>
   <group collapsed="false">
     <expr/>

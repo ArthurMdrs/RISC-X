@@ -39,6 +39,10 @@ module id_stage import core_pkg::*; #(
     output logic [ 4:0] rs1_addr_id_o,
     output logic [ 4:0] rs2_addr_id_o,
     
+    // Output to CSRs
+    output logic           csr_access_id_o,
+    output csr_operation_t csr_op_id_o,
+    
     // Control inputs
     input  logic stall_id_i,
     input  logic flush_ex_i,
@@ -50,7 +54,8 @@ module id_stage import core_pkg::*; #(
     input  logic [31:0] alu_result_mem_i,
     input  logic [31:0] mem_rdata_mem_i,
     input  logic [31:0] alu_result_wb_i,
-    input  logic [31:0] mem_rdata_wb_i
+    input  logic [31:0] mem_rdata_wb_i,
+    input  logic [31:0] csr_rdata_ex_i
 );
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -121,6 +126,10 @@ decoder #(
     .pc_source_o ( pc_source_id_o ), 
     .is_branch_o ( is_branch_id_o ),
     
+    // CSR related signals
+    .csr_access_o ( csr_access_id_o ),
+    .csr_op_o     ( csr_op_id_o ),
+    
     // Decoded an illegal instruction
     .illegal_instr_o ( illegal_instr_id ),
     
@@ -152,7 +161,7 @@ register_file register_file_inst (
 always_comb begin
     unique case (fwd_op1_id_i)
         NO_FORWARD           : rs1_or_fwd_id = rs1_rdata_id;
-        FWD_EX_TO_ID         : rs1_or_fwd_id = alu_result_ex_i;
+        FWD_EX_ALU_RES_TO_ID : rs1_or_fwd_id = alu_result_ex_i;
         FWD_MEM_ALU_RES_TO_ID: rs1_or_fwd_id = alu_result_mem_i;
         FWD_MEM_RDATA_TO_ID  : rs1_or_fwd_id = mem_rdata_mem_i;
         FWD_WB_ALU_RES_TO_ID : rs1_or_fwd_id = alu_result_wb_i;
@@ -161,7 +170,7 @@ always_comb begin
     endcase
     unique case (fwd_op2_id_i)
         NO_FORWARD           : rs2_or_fwd_id = rs2_rdata_id;
-        FWD_EX_TO_ID         : rs2_or_fwd_id = alu_result_ex_i;
+        FWD_EX_ALU_RES_TO_ID : rs2_or_fwd_id = alu_result_ex_i;
         FWD_MEM_ALU_RES_TO_ID: rs2_or_fwd_id = alu_result_mem_i;
         FWD_MEM_RDATA_TO_ID  : rs2_or_fwd_id = mem_rdata_mem_i;
         FWD_WB_ALU_RES_TO_ID : rs2_or_fwd_id = alu_result_wb_i;
@@ -173,9 +182,10 @@ end
 // ALU operands
 always_comb begin
     unique case (alu_source_1_id)
-        ALU_SCR1_RS1 : alu_operand_1_id_o = rs1_or_fwd_id;
-        ALU_SCR1_PC  : alu_operand_1_id_o = pc_id;
-        ALU_SCR1_ZERO: alu_operand_1_id_o = 32'b0;
+        ALU_SCR1_RS1    : alu_operand_1_id_o = rs1_or_fwd_id;
+        ALU_SCR1_PC     : alu_operand_1_id_o = pc_id;
+        ALU_SCR1_ZERO   : alu_operand_1_id_o = 32'b0;
+        ALU_SCR1_IMM_CSR: alu_operand_1_id_o = {27'b0, instr_id[19:15]}; // Pass CSR wdata as ALU operand
         default: alu_operand_1_id_o = 32'b0;
     endcase
     unique case (alu_source_2_id)

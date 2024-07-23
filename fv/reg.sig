@@ -1,8 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wavelist version="3">
-  <insertion-point-position>46</insertion-point-position>
+  <insertion-point-position>4</insertion-point-position>
   <wave>
     <expr>clock</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave collapsed="true">
+    <expr>checker_inst.register_index</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave collapsed="true">
+    <expr>checker_inst.register_shadow</expr>
+    <label/>
+    <radix>checker_inst.register_shadow</radix>
+  </wave>
+  <wave>
+    <expr>checker_inst.register_written</expr>
     <label/>
     <radix/>
   </wave>

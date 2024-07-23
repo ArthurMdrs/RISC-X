@@ -28,6 +28,8 @@ module rvfi import core_pkg::*; (
     input  logic        flush_ex,
     input  logic [31:0] branch_target_ex,
     input  logic        branch_decision_ex,
+    input  logic [31:0] csr_wdata_ex,
+    input  logic [31:0] csr_rdata_ex,
     
     // Input from MEM stage
     input  logic        valid_mem,
@@ -42,6 +44,8 @@ module rvfi import core_pkg::*; (
     input  logic        reg_wen_wb,
     input  logic [31:0] reg_wdata_wb,
     input  logic [31:0] mem_rdata_wb,
+    
+    input  logic [31:0] misa,
     
     `RVFI_OUTPUTS
 );
@@ -144,6 +148,7 @@ logic        trap_mem;
 logic [ 4:0] rs1_addr_mem, rs2_addr_mem;
 logic [31:0] rs1_rdata_mem, rs2_rdata_mem;
 logic [31:0] pc_mem, pc_n_mem;
+logic [31:0] csr_wdata_mem, csr_rdata_mem;
 
 // Pipeline registers EX->MEM
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -157,6 +162,8 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         rs2_rdata_mem  <= '0;
         pc_mem         <= '0;
         pc_n_mem       <= '0;
+        csr_wdata_mem  <= '0;
+        csr_rdata_mem  <= '0;
     end else begin
         if (!stall_mem) begin
             trap_mem <= trap_ex;
@@ -172,6 +179,8 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 rs2_rdata_mem  <= rs2_rdata_ex;
                 // pc_mem        <= pc_ex;
                 // pc_n_mem      <= (branch_decision_ex) ? (branch_target_ex) : (pc_n_ex);
+                csr_wdata_mem  <= csr_wdata_ex;
+                csr_rdata_mem  <= csr_wdata_ex;
             end
             // Insert bubble if previous stage wasn't valid
             else begin
@@ -184,6 +193,8 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 rs2_rdata_mem  <= '0;
                 // pc_mem        <= '0;
                 // pc_n_mem      <= '0;
+                csr_wdata_mem  <= '0;
+                csr_rdata_mem  <= '0;
             end
         end
     end
@@ -203,6 +214,7 @@ logic [31:0] pc_wb, pc_n_wb;
 logic [31:0] mem_addr_wb;
 logic [ 3:0] mem_wmask_wb, mem_rmask_wb;
 logic [31:0] mem_wdata_wb;//, mem_rdata_wb;
+logic [31:0] csr_wdata_wb, csr_rdata_wb;
 
 // Pipeline registers EX->MEM
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -222,8 +234,10 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         mem_wmask_wb  <= '0;
         // mem_rdata_wb <= '0;
         mem_wdata_wb  <= '0;
+        csr_wdata_wb  <= '0;
+        csr_rdata_wb  <= '0;
     end else begin
-        order_wb <= order_wb + {63'b0, rvfi_valid_wb};
+        order_wb <= order_wb + {63'b0, rvfi_valid};
         trap_wb  <= trap_mem;
         pc_wb    <= pc_mem;
         pc_n_wb  <= pc_n_mem;
@@ -242,6 +256,8 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
             mem_wmask_wb  <= (dmem_wen_o) ? (dmem_ben_o) : ('0);
             // mem_rdata_wb <= '0;
             mem_wdata_wb  <= dmem_wdata_o;
+            csr_wdata_wb  <= csr_wdata_mem;
+            csr_rdata_wb  <= csr_wdata_mem;
         end
         // Insert bubble if previous stage wasn't valid
         else begin
@@ -259,6 +275,8 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
             mem_wmask_wb  <= '0;
             // mem_rdata_wb <= '0;
             mem_wdata_wb  <= '0;
+            csr_wdata_wb  <= '0;
+            csr_rdata_wb  <= '0;
         end
     end
 end
@@ -274,7 +292,7 @@ assign rvfi_insn = instr_wb;
 assign rvfi_trap = trap_wb;
 assign rvfi_halt = 1'b0;
 assign rvfi_intr = 1'b0;
-assign rvfi_mode = 2'b00;
+assign rvfi_mode = 2'b11;
 assign rvfi_ixl  = 2'b01;
 
 // Integer Register Read/Write
@@ -295,6 +313,24 @@ assign rvfi_mem_rmask = mem_rmask_wb;
 assign rvfi_mem_rdata = mem_rdata_wb;
 assign rvfi_mem_wmask = mem_wmask_wb;
 assign rvfi_mem_wdata = mem_wdata_wb;
+
+// misa CSR
+wire [31:0] csr_mask_wb = {32{rvfi_valid_wb}};
+assign rvfi_csr_misa_rmask = '1;
+assign rvfi_csr_misa_rdata = misa;
+assign rvfi_csr_misa_wmask = csr_mask_wb;
+assign rvfi_csr_misa_wdata = csr_wdata_wb;
+
+`define assign_rvfi_csr(name) \
+assign rvfi_csr_``name``_rmask = csr_mask_wb; \
+assign rvfi_csr_``name``_rdata = csr_rdata_wb; \
+assign rvfi_csr_``name``_wmask = csr_mask_wb; \
+assign rvfi_csr_``name``_wdata = csr_wdata_wb;
+
+`assign_rvfi_csr(mhartid)
+`assign_rvfi_csr(mvendorid)
+`assign_rvfi_csr(marchid)
+`assign_rvfi_csr(mimpid)
 
 endmodule
 

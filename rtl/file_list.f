@@ -6,6 +6,7 @@ ${RTL_HOME}/decoder.sv
 ${RTL_HOME}/imm_extender.sv
 ${RTL_HOME}/pc_controller.sv
 ${RTL_HOME}/register_file.sv
+${RTL_HOME}/csr.sv
 
 ${RTL_HOME}/if_stage.sv
 ${RTL_HOME}/id_stage.sv

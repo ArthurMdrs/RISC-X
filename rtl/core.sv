@@ -23,7 +23,10 @@ module core #(
 
     // Interface with instruction memory
     input  logic [31:0] imem_rdata_i,
-    output logic [31:0] imem_addr_o
+    output logic [31:0] imem_addr_o,
+    
+    // Hart ID defined by system
+    input  logic [31:0] hart_id_i
 );
 
 import core_pkg::*;
@@ -55,8 +58,8 @@ logic [31:0] mem_wdata_id, mem_wdata_ex;//, mem_wdata_mem;
 logic [31:0] mem_rdata_mem, mem_rdata_wb;
 
 // Register file write enables and write data (distinguish between writes from ALU or from loads)
-logic        reg_alu_wen_id, reg_alu_wen_ex, reg_alu_wen_mem;
-logic        reg_mem_wen_id, reg_mem_wen_ex, reg_mem_wen_mem;
+logic        reg_alu_wen_id, reg_alu_wen_ex, reg_alu_wen_mem, reg_alu_wen_wb;
+logic        reg_mem_wen_id, reg_mem_wen_ex, reg_mem_wen_mem, reg_mem_wen_wb;
 logic        reg_wen_wb;
 logic [31:0] reg_wdata_wb;
 
@@ -69,6 +72,13 @@ logic        branch_decision_ex;
 
 // Indicator of illegal instruction
 // logic illegal_instr_id;
+
+// CSR signals
+logic           csr_access_id, csr_access_ex;
+csr_operation_t csr_op_id, csr_op_ex;
+logic [31:0]    csr_wdata_ex;
+logic [31:0]    csr_rdata_ex;
+csr_addr_t      csr_addr_ex;
 
 
 
@@ -150,6 +160,10 @@ id_stage #(
     .rs1_addr_id_o ( rs1_addr_id ),
     .rs2_addr_id_o ( rs2_addr_id ),
     
+    // Output to CSRs
+    .csr_access_id_o ( csr_access_id ),
+    .csr_op_id_o     ( csr_op_id ),
+    
     // Control inputs
     .stall_id_i ( stall_id ),
     .flush_ex_i ( flush_ex ),
@@ -161,7 +175,8 @@ id_stage #(
     .alu_result_mem_i   ( alu_result_mem ),
     .mem_rdata_mem_i    ( mem_rdata_mem ),
     .alu_result_wb_i    ( alu_result_wb ),
-    .mem_rdata_wb_i     ( mem_rdata_wb )
+    .mem_rdata_wb_i     ( mem_rdata_wb ),
+    .csr_rdata_ex_i     ( csr_rdata_ex )
 );
 
 
@@ -198,6 +213,8 @@ ex_stage #(
     .mem_wdata_id_i         ( mem_wdata_id ),
     .branch_target_id_i     ( branch_target_id ),
     .valid_id_i             ( valid_id ),
+    .csr_access_id_i        ( csr_access_id ),
+    .csr_op_id_i            ( csr_op_id ),
     
     // Output to MEM stage
     .rd_addr_ex_o         ( rd_addr_ex ),
@@ -209,6 +226,16 @@ ex_stage #(
     .reg_alu_wen_ex_o     ( reg_alu_wen_ex ),
     .reg_mem_wen_ex_o     ( reg_mem_wen_ex ),
     .valid_ex_o           ( valid_ex ),
+    
+    // Output to CSRs
+    .csr_addr_ex_o   ( csr_addr_ex ),
+    .csr_wdata_ex_o  ( csr_wdata_ex ),
+    .csr_op_ex_o     ( csr_op_ex ),
+    .csr_access_ex_o ( csr_access_ex ),
+    
+    // Input from CSRs
+    .csr_access_ex_i      ( csr_access_ex ),
+    .csr_rdata_ex_i       ( csr_rdata_ex ),
     
     // Control inputs
     .stall_ex_i  ( stall_ex ),
@@ -290,6 +317,24 @@ wb_stage wb_stage_inst (
 
 
 ///////////////////////////////////////////////////////////////////////////////
+////////////////////       CONTROL/STATUS REGISTERS       /////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+csr csr_inst (
+    .clk_i   ( clk_i ),
+    .rst_n_i ( rst_n_i ),
+    
+    .csr_addr_i  ( csr_addr_ex ),
+    .csr_wdata_i ( csr_wdata_ex ),
+    .csr_op_i    ( csr_op_ex ),
+    .csr_rdata_o ( csr_rdata_ex ),
+    
+    .hart_id_i ( hart_id_i )
+);
+
+
+
+///////////////////////////////////////////////////////////////////////////////
 ////////////////////////          CONTROLLER          /////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -297,7 +342,6 @@ controller controller_inst (
     // Data Hazards (forwarding)
     .fwd_op1_o ( fwd_op1_id ),
     .fwd_op2_o ( fwd_op2_id ),
-    
     // Source/destiny general purpose registers
     .rs1_addr_id_i     ( rs1_addr_id ),
     .rs2_addr_id_i     ( rs2_addr_id ),
@@ -316,7 +360,6 @@ controller controller_inst (
     .stall_id_o  ( stall_id ),
     .stall_ex_o  ( stall_ex ),
     .stall_mem_o ( stall_mem ),
-    
     .reg_mem_wen_ex_i ( reg_mem_wen_ex ),
     
     // Control Hazards (flushing)
@@ -324,7 +367,6 @@ controller controller_inst (
     .flush_ex_o  ( flush_ex ),
     .flush_mem_o ( flush_mem ),
     .flush_wb_o  ( flush_wb ),
-    
     .pc_source_id_i       ( pc_source_id ),
     .branch_decision_ex_i ( branch_decision_ex )
 );
