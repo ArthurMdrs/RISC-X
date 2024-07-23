@@ -14,9 +14,9 @@ always_comb begin
     unique case (immediate_type_i)
         IMM_I: immediate = {{(DWIDTH-12){instr_i[31]}}, instr_i[31:20]};
         IMM_S: immediate = {{(DWIDTH-12){instr_i[31]}}, instr_i[31:25], instr_i[11:7]};
-        IMM_B: immediate = {{(DWIDTH-11){instr_i[31]}}, instr_i[31], instr_i[7], instr_i[30:25], instr_i[11:8], 1'b0};
+        IMM_B: immediate = {{(DWIDTH-13){instr_i[31]}}, instr_i[31], instr_i[7], instr_i[30:25], instr_i[11:8], 1'b0};
         IMM_U: immediate = {{(DWIDTH-32){instr_i[31]}}, instr_i[31:12], 12'b0};
-        IMM_J: immediate = {{(DWIDTH-11){instr_i[31]}}, instr_i[31], instr_i[19:12], instr_i[20], instr_i[30:21], 1'b0};
+        IMM_J: immediate = {{(DWIDTH-21){instr_i[31]}}, instr_i[31], instr_i[19:12], instr_i[20], instr_i[30:21], 1'b0};
         default: immediate = {{(DWIDTH-12){instr_i[31]}}, instr_i[31:20]};
     endcase
 end

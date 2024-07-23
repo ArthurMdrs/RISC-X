@@ -1,5 +1,7 @@
 module decoder import core_pkg::*; #(
-    parameter bit ISA_M = 0
+    parameter bit ISA_M = 0,
+    parameter bit ISA_C = 0,
+    parameter bit ISA_F = 0
 ) (
     // ALU related signals
 	output alu_operation_t    alu_operation_o,
@@ -25,6 +27,10 @@ module decoder import core_pkg::*; #(
     // Control transfer related signals
     output pc_source_t   pc_source_o, 
     output logic         is_branch_o,
+    
+    // CSR related signals
+    output logic           csr_access_o,
+    output csr_operation_t csr_op_o,
     
     // Decoded an illegal instruction
     output logic illegal_instr_o,
@@ -58,8 +64,11 @@ always_comb begin
     reg_alu_wen_o = 1'b0;
     reg_mem_wen_o = 1'b0;
     
-    pc_source_o    = PC_P_4;
+    pc_source_o = PC_P_4;
     is_branch_o = 1'b0;
+    
+    csr_access_o = 1'b0;
+    csr_op_o     = CSR_READ;
     
     illegal_instr_o = 1'b0;
     
@@ -125,6 +134,7 @@ always_comb begin
         end
         
         OPCODE_LUI: begin // lui
+            alu_operation_o  = ALU_ADD;
             alu_source_1_o   = ALU_SCR1_ZERO;
             alu_source_2_o   = ALU_SCR2_IMM;
             immediate_type_o = IMM_U;
@@ -133,6 +143,7 @@ always_comb begin
         end
         
         OPCODE_AUIPC: begin // auipc
+            alu_operation_o  = ALU_ADD;
             alu_source_1_o   = ALU_SCR1_PC;
             alu_source_2_o   = ALU_SCR2_IMM;
             immediate_type_o = IMM_U;
@@ -144,6 +155,7 @@ always_comb begin
         ///////////    Loads / Stores    ////////////
         /////////////////////////////////////////////
         OPCODE_LOAD: begin
+            alu_operation_o  = ALU_ADD;
             alu_source_2_o   = ALU_SCR2_IMM;
             immediate_type_o = IMM_I;
             
@@ -160,6 +172,7 @@ always_comb begin
         end
             
         OPCODE_STORE: begin
+            alu_operation_o  = ALU_ADD;
             alu_source_2_o   = ALU_SCR2_IMM;
             immediate_type_o = IMM_S;
             
@@ -181,7 +194,7 @@ always_comb begin
             // The branch target has a dedicated adder in ID stage
             immediate_type_o = IMM_B;
             
-            pc_source_o    = PC_BRANCH;
+            pc_source_o = PC_BRANCH;
             is_branch_o = 1'b1;
             
             unique case (funct3)
@@ -198,6 +211,7 @@ always_comb begin
         OPCODE_JAL: begin // jal
             // ALU calculates PC+4 or PC+2
             // The jump target has a dedicated adder in ID stage
+            alu_operation_o  = ALU_ADD;
             alu_source_1_o   = ALU_SCR1_PC;
             alu_source_2_o   = ALU_SCR2_4_OR_2;
             immediate_type_o = IMM_J;
@@ -210,6 +224,8 @@ always_comb begin
         OPCODE_JALR: begin // jalr
             // ALU calculates PC+4 or PC+2
             // The jump target has a dedicated adder in ID stage
+            alu_operation_o  = ALU_ADD;
+            alu_source_1_o   = ALU_SCR1_PC;
             alu_source_2_o   = ALU_SCR2_4_OR_2;
             immediate_type_o = IMM_I;
             
@@ -219,6 +235,66 @@ always_comb begin
             
             if (funct3 != 3'b000)
                 illegal_instr_o = 1'b1;
+        end
+        
+        /////////////////////////////////////////////
+        /////////////      System       /////////////
+        /////////////////////////////////////////////
+        OPCODE_SYSTEM: begin
+            // Non CSR related SYSTEM instructions
+            if ({instr_i[19:15], instr_i[11:7]} == '0)
+            begin
+                illegal_instr_o = 1'b1;
+            end
+            else begin // Instructions that read/modify CSRs
+                csr_access_o  = 1'b1;
+                reg_alu_wen_o = 1'b1;
+                alu_source_2_o = ALU_SCR2_IMM;
+                unique case (funct3)
+                    3'b001: begin // csrrw
+                        csr_op_o = CSR_WRITE;
+                        
+                    end
+                    3'b010: begin // csrrs
+                        csr_op_o = (instr_i[19:15] == 5'b0) ? (CSR_READ) : (CSR_SET);
+                        
+                    end
+                    3'b011: begin // csrrc
+                        csr_op_o = (instr_i[19:15] == 5'b0) ? (CSR_READ) : (CSR_CLEAR);
+                        
+                    end
+                    3'b101: begin // csrrwi
+                        csr_op_o       = CSR_WRITE;
+                        alu_source_1_o = ALU_SCR1_IMM_CSR;
+                    end
+                    3'b110: begin // csrrsi
+                        csr_op_o = (instr_i[19:15] == 5'b0) ? (CSR_READ) : (CSR_SET);
+                        alu_source_1_o = ALU_SCR1_IMM_CSR;
+                    end
+                    3'b111: begin // csrrci
+                        csr_op_o = (instr_i[19:15] == 5'b0) ? (CSR_READ) : (CSR_CLEAR);
+                        alu_source_1_o = ALU_SCR1_IMM_CSR;
+                    end
+                    default: illegal_instr_o = 1'b1;
+                endcase
+                
+                // Check privilege level
+                // if (instr_rdata_i[29:28] > current_priv_lvl_i) begin
+                //     illegal_instr_o = 1'b1;
+                // end
+                
+                // Determine if CSR access is illegal
+                case (instr_i[31:20])
+                    CSR_MISA:;
+        
+                    CSR_MVENDORID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
+                    CSR_MARCHID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
+                    CSR_MIMPID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
+                    CSR_MHARTID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
+                    
+                    default: illegal_instr_o = 1'b1;
+                endcase
+            end
         end
         
         default: illegal_instr_o = 1'b1;
