@@ -17,6 +17,7 @@ module if_stage import core_pkg::*; (
     
     // Signals for the PC controller
     input  logic        valid_id_i,
+    input  logic        valid_ex_i,
     input  logic [31:0] jump_target_id_i, 
     input  logic [31:0] branch_target_ex_i, 
     input  logic        branch_decision_ex_i,
@@ -50,6 +51,7 @@ pc_controller pc_constroller_inst (
     .next_pc_o            ( pc_if_n ),
     .curr_pc_i            ( pc_if_o ), 
     .valid_id_i           ( valid_id_i ),
+    .valid_ex_i           ( valid_ex_i ),
     .jump_target_id_i     ( jump_target_id_i ), 
     .branch_target_ex_i   ( branch_target_ex_i ), 
     .branch_decision_ex_i ( branch_decision_ex_i ),

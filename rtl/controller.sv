@@ -2,7 +2,6 @@ module controller import core_pkg::*; (
     // Data Hazards (forwarding)
     output forward_t fwd_op1_o,
     output forward_t fwd_op2_o,
-    
     // Source/destiny general purpose registers
     input  logic [4:0] rs1_addr_id_i,
     input  logic [4:0] rs2_addr_id_i,
@@ -21,7 +20,6 @@ module controller import core_pkg::*; (
     output logic stall_id_o,
     output logic stall_ex_o,
     output logic stall_mem_o,
-    
     input  logic reg_mem_wen_ex_i,
     
     // Control Hazards (flushing)
@@ -29,7 +27,6 @@ module controller import core_pkg::*; (
     output logic flush_ex_o,
     output logic flush_mem_o,
     output logic flush_wb_o,
-    
     input  pc_source_t pc_source_id_i,
     input  logic       branch_decision_ex_i
     
@@ -55,7 +52,7 @@ assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rs2_addr_id_i != 
 always_comb begin
     fwd_op1_o = NO_FORWARD;
     if (rd_ex_is_rs1_id && reg_alu_wen_ex_i) begin
-        fwd_op1_o = FWD_EX_TO_ID;
+        wd_op1_o = FWD_EX_ALU_RES_TO_ID;
     end
     else if (rd_mem_is_rs1_id && (reg_alu_wen_mem_i || reg_mem_wen_mem_i)) begin
         if (reg_alu_wen_mem_i)
@@ -75,7 +72,7 @@ end
 always_comb begin
     fwd_op2_o = NO_FORWARD;
     if (rd_ex_is_rs2_id && reg_alu_wen_ex_i) begin
-        fwd_op2_o = FWD_EX_TO_ID;
+        fwd_op2_o = FWD_EX_ALU_RES_TO_ID;
     end
     else if (rd_mem_is_rs2_id && (reg_alu_wen_mem_i || reg_mem_wen_mem_i)) begin
         if (reg_alu_wen_mem_i)
