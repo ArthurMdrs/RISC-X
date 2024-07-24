@@ -20,6 +20,7 @@
 ## Desenvolvedores
 
     Tulio Tavares   (tulio.tavares@ee.ufcg.edu.br)
+    Victor Hugo     ()
 
 
 
