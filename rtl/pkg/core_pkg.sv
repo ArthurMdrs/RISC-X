@@ -37,12 +37,19 @@ typedef enum logic [1:0] {
 
 
 
-typedef enum logic [2:0] {
+typedef enum logic [3:0] {
     IMM_I,
     IMM_S,
     IMM_B,
     IMM_U,
-    IMM_J
+    IMM_J,
+    IMM_CJ,
+    IMM_CI,
+    IMM_CLUI,
+    IMM_CSSL,
+    IMM_CSSS,
+    IMM_CLS,
+    IMM_CB
 } immediate_source_t;
 
 // PC-related types

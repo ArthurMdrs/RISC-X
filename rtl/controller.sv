@@ -52,7 +52,7 @@ assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rs2_addr_id_i != 
 always_comb begin
     fwd_op1_o = NO_FORWARD;
     if (rd_ex_is_rs1_id && reg_alu_wen_ex_i) begin
-        wd_op1_o = FWD_EX_ALU_RES_TO_ID;
+        fwd_op1_o = FWD_EX_ALU_RES_TO_ID;
     end
     else if (rd_mem_is_rs1_id && (reg_alu_wen_mem_i || reg_mem_wen_mem_i)) begin
         if (reg_alu_wen_mem_i)

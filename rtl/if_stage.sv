@@ -30,7 +30,11 @@ module if_stage import core_pkg::*; (
 ///////////////////////////////////////////////////////////////////////////////
 
 logic [31:0] pc_if_n;
+logic pc_if_p2_or_p4;
 
+// Next instruction pointer decision maker
+assign is_compressed_if_o = ~(imem_rdata_i[1] & imem_rdata_i[0]);
+    
 // Instruction Memory Interface
 assign instr_if_o = imem_rdata_i; // Instruction read from memory
 assign imem_addr_o = pc_if_o;     // Address from which the instruction is fetched
@@ -51,10 +55,10 @@ pc_controller pc_constroller_inst (
     .next_pc_o            ( pc_if_n ),
     .curr_pc_i            ( pc_if_o ), 
     .valid_id_i           ( valid_id_i ),
-    .valid_ex_i           ( valid_ex_i ),
     .jump_target_id_i     ( jump_target_id_i ), 
     .branch_target_ex_i   ( branch_target_ex_i ), 
     .branch_decision_ex_i ( branch_decision_ex_i ),
+    .is_compressed_if_o   ( is_compressed_if_o),
     .pc_source_id_i       ( pc_source_id_i ),
     .pc_source_ex_i       ( pc_source_ex_i )
 );

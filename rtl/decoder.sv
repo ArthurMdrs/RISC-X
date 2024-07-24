@@ -43,13 +43,23 @@ logic [6:0] funct7;
 logic [2:0] funct3;
 logic [6:0] opcode;
 
+logic [5:0] funct6_C;
+logic [3:0] funct4_C;
+logic [2:0] funct3_C;
+logic [1:0] funct2_C;
+logic [4:0] rs1_addr_C, rs2_addr_C, rd_addr_C;
+
 assign funct7 = instr_i[31:25];
 assign funct3 = instr_i[14:12];
 assign opcode = instr_i[ 6: 0];
+assign funct6_C = instr_i[15:10];
+assign funct4_C = instr_i[15:12];
+assign funct3_C = instr_i[15:13];
+assign funct2_C = instr_i[ 6: 5];
 
-assign rs1_addr_o = instr_i[19:15];
-assign rs2_addr_o = instr_i[24:20];
-assign rd_addr_o  = instr_i[11: 7];
+assign rs1_addr_o = (opcode[1] && opcode[0]) ? instr_i[19:15] : rs1_addr_C;
+assign rs2_addr_o = (opcode[1] && opcode[0]) ? instr_i[24:20] : rs2_addr_C;
+assign rd_addr_o  = (opcode[1] && opcode[0]) ? instr_i[11: 7] : rd_addr_C;
 
 always_comb begin
     alu_operation_o  = ALU_ADD;
@@ -72,6 +82,11 @@ always_comb begin
     
     illegal_instr_o = 1'b0;
     
+    rs1_addr_C = 5'd0;
+    rs2_addr_C = 5'd0;
+    rd_addr_C = 5'd0;
+
+
     unique case (opcode)
         /////////////////////////////////////////////
         /////////////        ALU        /////////////
@@ -154,6 +169,26 @@ always_comb begin
         /////////////////////////////////////////////
         ///////////    Loads / Stores    ////////////
         /////////////////////////////////////////////
+        7'bxxxxx00: begin  // CL
+            alu_operation_o  = ALU_ADD;
+            alu_source_2_o   = ALU_SCR2_IMM;
+            immediate_type_o = IMM_CSSL;
+            
+            mem_sign_extend_o = !funct3[2]; // irrelevante
+            
+            reg_mem_wen_o = 1'b1;
+
+            rs1_addr_C = {2'b01, instr_i[9:7]};
+            //rs2_addr_C = 5'bxxxxx;
+            
+            
+            unique case (funct3_C)
+                3'b010: rd_addr_C = {2'b01, instr_i[4:2]};      // C.LW
+                3'b011: rd_addr_C = {2'b01, instr_i[4:2]};      // C.FLW (salvar no registrador fsx)
+                default: illegal_instr_o = 1'b1;
+            endcase
+        end
+
         OPCODE_LOAD: begin
             alu_operation_o  = ALU_ADD;
             alu_source_2_o   = ALU_SCR2_IMM;
