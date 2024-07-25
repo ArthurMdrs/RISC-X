@@ -22,9 +22,10 @@ loop_read:
     bne x1, x2, error
     addi x31, x31, 4
     bne x31, x30, loop_read
-    j finnish
+    j finish
 
 error:
     sw x30, 0(x0)
 
-finnish:
+finish:
+    slli gp, sp, 10

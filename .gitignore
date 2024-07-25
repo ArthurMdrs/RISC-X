@@ -15,3 +15,4 @@ restore.tcl.svcf
 *.svwf
 rvfi_macros.vh
 rvviTrace.sv
+jg.tcl

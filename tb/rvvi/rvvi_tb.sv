@@ -100,7 +100,7 @@ mem #(
 
 //=================   Simulation - BEGIN   =================//
 
-int n_mismatches;
+int n_mismatches, cycle_cnt;
 int cnt_x_instr;
 bit verbose = 0;
 
@@ -121,15 +121,15 @@ assign instr_clone = `CORE.id_stage_inst.instr_id;
 logic [31:0] xptd_dmem [MEM_SIZE/4];
 logic [31:0] xptd_regs [32];
 
-string progs [] = '{"OP", "OP-IMM", "ST_LD",// "LUI_AUIPC",
+string progs [] = '{"OP", "OP-IMM", "LUI_AUIPC", "ST_LD",//
                     "BRANCH", "JAL", "WR_ALL_MEM"};
 // The tests below were copied from https://github.com/shrubbroom/Simple-RISC-V-testbench/tree/main
 string progs_with_regs [] = '{"1_basic", 
                               "2_hazard_control_0", "2_hazard_data_0", "2_hazard_data_1", 
                               "3_bubble_sort", "3_fib", "3_qsort"};
 
-string prog_name = "2_hazard_control_0";
-string progs_path = "../basic_tb/programs/";
+string prog_name = "LUI_AUIPC";
+string progs_path = "../basic_tb/programs";
 bit check_regs = 1;
 
 localparam int PERIOD = 2;
@@ -141,22 +141,28 @@ initial begin
     $finish;
 end
 
+always @(posedge clk) cycle_cnt++;
+
 initial begin
     // Specifying time format (%t)
     $timeformat(-9, 0, "ns", 12); // e.g.: "900ns"
 
     $display("#==========================================================#");
     
-    $display("%t: text region size: %0d.", $time, TEXT_SIZE);
+    // $display("%t: text region size: %0d.", $time, TEXT_SIZE);
     reset ();
     
     if ($value$plusargs("prog=%s", prog_name)) begin
-        $display("Got prog %s from plusargs.", prog_name);
+        $display("Got prog from plusargs:\n  %s.", prog_name);
+    end
+    if ($value$plusargs("progs_path=%s", progs_path)) begin
+        $display("Got progs_path from plusargs:\n  %s", progs_path);
     end
         
     drive_prog(prog_name, check_regs);
     
     $display("%t: Simulation end. Number of mismatches: %0d.", $time, n_mismatches);
+    $display("%t: Clock cycles: %0d.", $time, cycle_cnt);
 
     $display("#==========================================================#");
     $finish;
@@ -236,9 +242,9 @@ task drive_prog (string prog_name, bit check_regs);
     string regs_file;
     
     if (prog_name != "all") begin
-        prog_file = {progs_path, prog_name, "_prog.txt"};
-        dmem_file = {progs_path, prog_name, "_data.txt"};
-        regs_file = {progs_path, prog_name, "_regs.txt"};
+        prog_file = {progs_path, "/", prog_name, "_prog.txt"};
+        dmem_file = {progs_path, "/", prog_name, "_data.txt"};
+        regs_file = {progs_path, "/", prog_name, "_regs.txt"};
         
         $display("#==========================================================#");
         $display("%t: Executing program %s.", $time, prog_name);
@@ -255,7 +261,6 @@ task drive_prog (string prog_name, bit check_regs);
                 cnt_x_instr++;
             else
                 cnt_x_instr = 0;
-            // $display("%t: Instr in ID stage is = %h. %g", $time, instr_clone, rvvi.valid[0][0]);
             // $display("%t: Instr in WB stage is = %h. %g", $time, wrapper_inst.rvfi_insn, rvvi.valid[0][0]);
         end while (cnt_x_instr != 6); // Proceed when IF stage has 6 consecutive blank instr
 
@@ -288,14 +293,22 @@ task drive_prog (string prog_name, bit check_regs);
             string single_prog;
             single_prog = progs[i];
         
-            drive_prog (single_prog, 0);
+            drive_prog (single_prog, 1);
         end
-        // foreach(progs_with_regs[i]) begin
-        //     string single_prog;
-        //     single_prog = progs_with_regs[i];
+        // drive_prog ("1_basic", 1);
+        // drive_prog ("2_hazard_control_0", 1);
+        // drive_prog ("2_hazard_data_0", 1);
+        // drive_prog ("2_hazard_data_1", 1);
+        // drive_prog ("3_bubble_sort", 1);
+        // drive_prog ("3_fib", 1);
+        // drive_prog ("3_qsort", 1);
         
-        //     drive_prog (single_prog, 1);
-        // end
+        foreach(progs_with_regs[i]) begin
+            string single_prog;
+            single_prog = progs_with_regs[i];
+        
+            drive_prog (single_prog, 1);
+        end
     end
 endtask
 

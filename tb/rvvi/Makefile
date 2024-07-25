@@ -5,20 +5,19 @@ export RVFI_HOME := $(shell pwd)/../../fv
 export TB_HOME := $(shell pwd)
 FILES := -f file_list.f
 TOP := -top rvvi_tb
+PROGS_PATH := $(shell pwd)/../basic_tb/programs
 PROG := 
+PLUS_ARG := +progs_path=$(PROGS_PATH)
 ifeq ($(strip $(PROG)),)
-  PLUS_ARG :=
+	PLUS_ARG +=
 else
-  PLUS_ARG := +prog=$(PROG)
+	PLUS_ARG += +prog=$(PROG)
 endif
 
 # SEED = -svseed 2
 INPUT = -input restore.tcl
 
 run: rvfi_macros.vh rvviTrace.sv sim
-
-test:
-	echo $(AUX)
 
 sim:
 	xrun -64bit -sv +define+SIM $(SVA) $(TOP) $(FILES) $(PLUS_ARG) \
@@ -39,3 +38,6 @@ rvviTrace.sv:
 
 clean:
 	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log
+	
+rars:
+	python3 run_rars.py $(PROGS_PATH) $(PROG)
