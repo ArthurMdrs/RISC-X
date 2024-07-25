@@ -12,5 +12,6 @@ simvision/
 join.py
 restore.tcl
 restore.tcl.svcf
+*.svwf
 rvfi_macros.vh
 rvviTrace.sv

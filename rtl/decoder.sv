@@ -64,7 +64,7 @@ always_comb begin
     reg_alu_wen_o = 1'b0;
     reg_mem_wen_o = 1'b0;
     
-    pc_source_o = PC_P_4;
+    pc_source_o = PC_NEXT;
     is_branch_o = 1'b0;
     
     csr_access_o = 1'b0;
@@ -279,18 +279,21 @@ always_comb begin
                 endcase
                 
                 // Check privilege level
-                // if (instr_rdata_i[29:28] > current_priv_lvl_i) begin
+                // if (instr_i[29:28] > current_priv_lvl_i) begin
                 //     illegal_instr_o = 1'b1;
                 // end
                 
                 // Determine if CSR access is illegal
                 case (instr_i[31:20])
-                    CSR_MISA:;
+                    CSR_MISA: ;
         
-                    CSR_MVENDORID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
-                    CSR_MARCHID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
-                    CSR_MIMPID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
+                    CSR_MVENDORID,
+                    CSR_MARCHID,
+                    CSR_MIMPID,
                     CSR_MHARTID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
+                    
+                    CSR_MSTATUS,
+                    CSR_MTVEC: ;
                     
                     default: illegal_instr_o = 1'b1;
                 endcase

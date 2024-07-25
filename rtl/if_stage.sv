@@ -1,6 +1,7 @@
 module if_stage import core_pkg::*; (
     input  logic clk_i,
     input  logic rst_n_i,
+    input  logic [29:0] boot_addr_i,
     
     // Interface with instruction memory
     input  logic [31:0] imem_rdata_i,
@@ -13,7 +14,12 @@ module if_stage import core_pkg::*; (
     
     // Control inputs
     input  logic stall_if_i,
-    input  logic flush_id_i,
+    // input  logic flush_id_i,
+    
+    // Trap handling
+    input               trap_id_i,
+    input               trap_ex_i,
+    input  logic [31:0] mtvec_i,
     
     // Signals for the PC controller
     input  logic        valid_id_i,
@@ -38,7 +44,8 @@ assign imem_addr_o = pc_if_o;     // Address from which the instruction is fetch
 // Pipeline registers ->IF
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
-        pc_if_o <= 0;
+        // pc_if_o <= '0;
+        pc_if_o <= {boot_addr_i, 2'b0};
     end else begin
         if (!stall_if_i) begin
             pc_if_o <= pc_if_n;
@@ -56,10 +63,14 @@ pc_controller pc_constroller_inst (
     .branch_target_ex_i   ( branch_target_ex_i ), 
     .branch_decision_ex_i ( branch_decision_ex_i ),
     .pc_source_id_i       ( pc_source_id_i ),
-    .pc_source_ex_i       ( pc_source_ex_i )
+    .pc_source_ex_i       ( pc_source_ex_i ),
+    .trap_id_i            ( trap_id_i ),
+    .trap_ex_i            ( trap_ex_i ),
+    .mtvec_i              ( mtvec_i )
 );
 
 // Resolve validness. Not valid implies inserting bubble
-assign valid_if_o = !stall_if_i && !flush_id_i;
+// assign valid_if_o = !stall_if_i && !flush_id_i;
+assign valid_if_o = 1'b1;
 
 endmodule

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wavelist version="3">
-  <insertion-point-position>46</insertion-point-position>
+  <insertion-point-position>12</insertion-point-position>
   <wave>
     <expr>clock</expr>
     <label/>
@@ -9,6 +9,26 @@
   <group collapsed="false">
     <expr/>
     <label>rvfi_valid</label>
+    <wave>
+      <expr>wrapper.core_inst.valid_if</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.valid_id</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.valid_ex</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.valid_mem</expr>
+      <label/>
+      <radix/>
+    </wave>
     <wave>
       <expr>wrapper.rvfi_inst.rvfi_valid_id</expr>
       <label/>
@@ -33,6 +53,11 @@
   <group collapsed="false">
     <expr/>
     <label>Instr</label>
+    <wave collapsed="true">
+      <expr>wrapper.core_inst.instr_if</expr>
+      <label/>
+      <radix/>
+    </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.instr_id</expr>
       <label/>

@@ -1,22 +1,31 @@
 # SVA = +define+SVA_ON=1
 
-export RTL_HOME = $(shell pwd)/../../rtl
-export RVFI_HOME = $(shell pwd)/../../fv
-export TB_HOME = $(shell pwd)
-FILES = -f file_list.f
-TOP = -top rvvi_tb
+export RTL_HOME := $(shell pwd)/../../rtl
+export RVFI_HOME := $(shell pwd)/../../fv
+export TB_HOME := $(shell pwd)
+FILES := -f file_list.f
+TOP := -top rvvi_tb
+PROG := 
+ifeq ($(strip $(PROG)),)
+  PLUS_ARG :=
+else
+  PLUS_ARG := +prog=$(PROG)
+endif
 
 # SEED = -svseed 2
-# INPUT = -input restore.tcl
+INPUT = -input restore.tcl
 
 run: rvfi_macros.vh rvviTrace.sv sim
 
+test:
+	echo $(AUX)
+
 sim:
-	xrun -64bit -sv +define+SIM $(RTL) $(FV) $(TB) $(SVA) $(TOP) $(FILES) \
+	xrun -64bit -sv +define+SIM $(SVA) $(TOP) $(FILES) $(PLUS_ARG) \
 		 -timescale 1ns/1ps -access +rwc $(SEED)
 
 gui:
-	xrun -64bit -sv +define+SIM $(RTL) $(FV) $(TB) $(SVA) $(TOP) \
+	xrun -64bit -sv +define+SIM $(SVA) $(TOP) $(FILES) $(PLUS_ARG) \
 		 -timescale 1ns/1ps -access +rwc $(SEED) -gui $(INPUT)
 
 jasper:

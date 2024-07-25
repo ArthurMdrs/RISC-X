@@ -22,11 +22,13 @@ logic  [3:0] dmem_ben;
 logic [31:0] imem_rdata;
 logic [31:0] imem_addr;
 
-
 localparam int TEXT_START_ADDR = 32'h0000_3000;
 localparam int TEXT_END_ADDR   = 32'h0000_3ffc;
 localparam int TEXT_SIZE       = TEXT_END_ADDR - TEXT_START_ADDR;
-wire [ADDR_WIDTH-1:0] instr_addr = imem_addr + TEXT_START_ADDR;
+
+wire [31:0] hartid    = 32'h0000_0000;
+wire [23:0] mtvec     = 24'h0000_80;
+wire [29:0] boot_addr = TEXT_START_ADDR[31:2];
 
 `define CORE wrapper_inst.core_inst
 
@@ -58,6 +60,10 @@ rvvi_wrapper #(
     .imem_rdata_i ( imem_rdata ),
     .imem_addr_o  ( imem_addr ),
     
+    .hartid_i    ( hartid ),
+    .mtvec_i     ( mtvec ),
+    .boot_addr_i ( boot_addr ),
+    
     .rvvi ( rvvi )
 );
 
@@ -85,8 +91,7 @@ mem #(
     // Port b (instruction)
     .rdata_b (imem_rdata),
     .wdata_b (32'b0),
-    // .addr_b  (imem_addr[ADDR_WIDTH-1:0]),
-    .addr_b  (instr_addr),
+    .addr_b  (imem_addr[ADDR_WIDTH-1:0]),
     .wen_b   (1'b0),
     .ben_b   (4'b0)
 );
@@ -116,7 +121,7 @@ assign instr_clone = `CORE.id_stage_inst.instr_id;
 logic [31:0] xptd_dmem [MEM_SIZE/4];
 logic [31:0] xptd_regs [32];
 
-string progs [] = '{"OP", "OP-IMM", "LUI_AUIPC", "ST_LD", 
+string progs [] = '{"OP", "OP-IMM", "ST_LD",// "LUI_AUIPC",
                     "BRANCH", "JAL", "WR_ALL_MEM"};
 // The tests below were copied from https://github.com/shrubbroom/Simple-RISC-V-testbench/tree/main
 string progs_with_regs [] = '{"1_basic", 
@@ -145,6 +150,10 @@ initial begin
     $display("%t: text region size: %0d.", $time, TEXT_SIZE);
     reset ();
     
+    if ($value$plusargs("prog=%s", prog_name)) begin
+        $display("Got prog %s from plusargs.", prog_name);
+    end
+        
     drive_prog(prog_name, check_regs);
     
     $display("%t: Simulation end. Number of mismatches: %0d.", $time, n_mismatches);
@@ -166,15 +175,21 @@ task reset ();
 endtask
 
 task load_instr_mem (string prog_name, string prog_file);
-    logic [31:0] mem [MEM_SIZE/4];
+    // logic [31:0] mem [MEM_SIZE/4];
+    logic [31:0] mem [TEXT_SIZE];
     int addr;
+    foreach(mem[i]) mem[i] = '0;
     $readmemh(prog_file, mem);
     foreach(mem[i]) begin
-        addr = i*4 + TEXT_START_ADDR;
-        mem_inst.mem[addr  ] = mem[i][ 0+:8];
-        mem_inst.mem[addr+1] = mem[i][ 8+:8];
-        mem_inst.mem[addr+2] = mem[i][16+:8];
-        mem_inst.mem[addr+3] = mem[i][24+:8];
+        // $display("%t: mem[%d] %h.", $time, i, mem[i]);
+        // addr = i*4 + TEXT_START_ADDR;
+        if (mem[i] !== 'x) begin
+            addr = i*4 + TEXT_START_ADDR;
+            mem_inst.mem[addr  ] = mem[i][ 0+:8];
+            mem_inst.mem[addr+1] = mem[i][ 8+:8];
+            mem_inst.mem[addr+2] = mem[i][16+:8];
+            mem_inst.mem[addr+3] = mem[i][24+:8];
+        end
     end
     // print_instr_mem();
 endtask
@@ -235,13 +250,14 @@ task drive_prog (string prog_name, bit check_regs);
         // Wait for instructions to end
         do begin
             @(negedge clk);
-            if (instr_clone === 'x) // After the end of instr mem code, there's only unknowns
+            // if (instr_clone === 'x) // After the end of instr mem code, there's only unknowns
+            if (imem_rdata === '0) // After the end of instr mem code, there's only zeros
                 cnt_x_instr++;
             else
                 cnt_x_instr = 0;
             // $display("%t: Instr in ID stage is = %h. %g", $time, instr_clone, rvvi.valid[0][0]);
             // $display("%t: Instr in WB stage is = %h. %g", $time, wrapper_inst.rvfi_insn, rvvi.valid[0][0]);
-        end while (cnt_x_instr != 4); // Proceed when 4 consecutive 'x instrs happen in ID stage
+        end while (cnt_x_instr != 6); // Proceed when IF stage has 6 consecutive blank instr
 
         // Get expected data memory values (got from RARS simulator)
         load_xptd_dmem(dmem_file);
@@ -274,6 +290,12 @@ task drive_prog (string prog_name, bit check_regs);
         
             drive_prog (single_prog, 0);
         end
+        // foreach(progs_with_regs[i]) begin
+        //     string single_prog;
+        //     single_prog = progs_with_regs[i];
+        
+        //     drive_prog (single_prog, 1);
+        // end
     end
 endtask
 

@@ -25,8 +25,12 @@ module core #(
     input  logic [31:0] imem_rdata_i,
     output logic [31:0] imem_addr_o,
     
-    // Hart ID defined by system
-    input  logic [31:0] hart_id_i
+    // Hart ID, defined by system
+    input  logic [31:0] hartid_i,
+    // mtvec initial address, defined by system
+    input  logic [23:0] mtvec_i, // 24 upper bits, 256-byte aligned
+    // Boot addr (first fetch)
+    input  logic [29:0] boot_addr_i // 30 upper bits, word aligned
 );
 
 import core_pkg::*;
@@ -70,8 +74,8 @@ logic [31:0] branch_target_id, branch_target_ex;
 logic [31:0] jump_target_id;
 logic        branch_decision_ex;
 
-// Indicator of illegal instruction
-// logic illegal_instr_id;
+// Indicator of traps
+logic trap_id, trap_ex;
 
 // CSR signals
 logic           csr_access_id, csr_access_ex;
@@ -79,6 +83,7 @@ csr_operation_t csr_op_id, csr_op_ex;
 logic [31:0]    csr_wdata_ex;
 logic [31:0]    csr_rdata_ex;
 csr_addr_t      csr_addr_ex;
+logic [31:0]    mtvec;
 
 
 
@@ -89,6 +94,7 @@ csr_addr_t      csr_addr_ex;
 if_stage if_stage_inst (
     .clk_i   ( clk_i ),
     .rst_n_i ( rst_n_i ),
+    .boot_addr_i ( boot_addr_i ),
     
     // Interface with instruction memory
     .imem_rdata_i ( imem_rdata_i ),
@@ -101,7 +107,7 @@ if_stage if_stage_inst (
     
     // Control inputs
     .stall_if_i (stall_if),
-    .flush_id_i (flush_id),
+    // .flush_id_i (flush_id),
     
     // Signals for the PC controller
     .valid_id_i           ( valid_id ),
@@ -110,7 +116,12 @@ if_stage if_stage_inst (
     .branch_target_ex_i   ( branch_target_ex ), 
     .branch_decision_ex_i ( branch_decision_ex ),
     .pc_source_id_i       ( pc_source_id ),
-    .pc_source_ex_i       ( pc_source_ex )
+    .pc_source_ex_i       ( pc_source_ex ),
+    
+    // Trap handling
+    .trap_id_i ( trap_id ),
+    .trap_ex_i ( trap_ex ),
+    .mtvec_i   ( mtvec )
 );
 
 
@@ -134,6 +145,7 @@ id_stage #(
     
     // Output to IF stage
     .jump_target_id_o ( jump_target_id ),
+    .trap_id_o        ( trap_id ),
     
     // Output to EX stage
     .alu_operation_id_o     ( alu_operation_id ),
@@ -166,7 +178,8 @@ id_stage #(
     
     // Control inputs
     .stall_id_i ( stall_id ),
-    .flush_ex_i ( flush_ex ),
+    // .flush_ex_i ( flush_ex ),
+    .flush_id_i (flush_id),
     
     // Inputs for forwarding
     .fwd_op1_id_i       ( fwd_op1_id ),
@@ -197,6 +210,7 @@ ex_stage #(
     .pc_source_ex_o       ( pc_source_ex ),
     .branch_target_ex_o   ( branch_target_ex ),
     .branch_decision_ex_o ( branch_decision_ex ),
+    .trap_ex_o            ( trap_ex ),
     
     // Input from ID stage
     .alu_operation_id_i     ( alu_operation_id ),
@@ -239,7 +253,8 @@ ex_stage #(
     
     // Control inputs
     .stall_ex_i  ( stall_ex ),
-    .flush_mem_i ( flush_mem )
+    // .flush_mem_i ( flush_mem )
+    .flush_ex_i ( flush_ex )
 );
 
 
@@ -280,7 +295,8 @@ mem_stage mem_stage_inst (
     
     // Control inputs
     .stall_mem_i ( stall_mem ),
-    .flush_wb_i  ( flush_wb )
+    // .flush_wb_i  ( flush_wb )
+    .flush_mem_i  ( flush_mem )
 );
 
 
@@ -310,8 +326,10 @@ wb_stage wb_stage_inst (
     .alu_result_wb_o  ( alu_result_wb ),
     .mem_rdata_wb_o   ( mem_rdata_wb ),
     .reg_alu_wen_wb_o ( reg_alu_wen_wb ),
-    .reg_mem_wen_wb_o ( reg_mem_wen_wb )
+    .reg_mem_wen_wb_o ( reg_mem_wen_wb ),
     
+    // Control inputs
+    .flush_wb_i  ( flush_wb )
 );
 
 
@@ -329,7 +347,10 @@ csr csr_inst (
     .csr_op_i    ( csr_op_ex ),
     .csr_rdata_o ( csr_rdata_ex ),
     
-    .hart_id_i ( hart_id_i )
+    .hartid_i ( hartid_i ),
+    .mtvec_i  ( mtvec_i ),
+    
+    .mtvec_o  ( mtvec )
 );
 
 
@@ -368,7 +389,9 @@ controller controller_inst (
     .flush_mem_o ( flush_mem ),
     .flush_wb_o  ( flush_wb ),
     .pc_source_id_i       ( pc_source_id ),
-    .branch_decision_ex_i ( branch_decision_ex )
+    .branch_decision_ex_i ( branch_decision_ex ),
+    .trap_id_i ( trap_id ),
+    .trap_ex_i ( trap_ex )
 );
 
 endmodule

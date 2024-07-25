@@ -29,9 +29,12 @@ localparam MEMSIZE = 2**ADDR_WIDTH;
 logic [7:0] mem [MEMSIZE];
 
 // Define write operation
-always_ff @(posedge clk or negedge rst_n) begin
+always_ff @(posedge clk, negedge rst_n) begin
     if (!rst_n) begin
-        mem <= '{MEMSIZE{'0}};
+        // mem <= '{MEMSIZE{'0}};
+        // mem <= '{default:'0};
+        foreach (mem[i])
+            mem[i] <= '0;
     end else begin
         if (wen_a) begin
             if (ben_a[0]) mem[addr_a  ] <= wdata_a[ 0+:8];

@@ -48,11 +48,21 @@ typedef enum logic [2:0] {
 // PC-related types
 
 typedef enum logic [1:0] {
-    PC_P_4,
+    PC_NEXT,
     PC_JAL,
     PC_JALR,
     PC_BRANCH
 } pc_source_t;
+
+typedef enum logic [2:0] {
+    NPC_P_4,
+    NPC_P_2,
+    NPC_JUMP,
+    NPC_BRANCH,
+    NPC_EXCEPTION
+} next_pc_mux_t;
+
+
 
 // Memory-access-related types
 
@@ -352,18 +362,33 @@ typedef enum logic [11:0] {
 // Typedef for mstatus CSR
 
 typedef struct packed {
-    logic uie;
-    logic sie;
-    logic hie;
-    logic mie;
-    logic upie;
-    logic spie;
-    logic hpie;
-    logic mpie;
-    logic spp;
-    logic [1:0] hpp;
-    logic [1:0] mpp;
-    logic mprv;
-} Status_t;
+    logic uie;  // User mode interrupt enable
+    logic sie;  // Supervisor mode interrupt enable
+    logic hie;  // Hypervisor mode interrupt enable
+    logic mie;  // Machine mode interrupt enable
+    logic upie; // User mode previous interrupt enable;
+    logic spie; // Supervisor mode previous interrupt enable;
+    // logic hpie; // Hypervisor mode previous interrupt enable;
+    logic ube;  // User mode endianess control
+    logic mpie; // Machine mode previous interrupt enable;
+    logic spp;  // Supervisor mode previous privilege mode
+    // logic [1:0] hpp; // Hypervisor mode previous privilege mode;
+    logic [1:0] vs;  // V extension status
+    logic [1:0] mpp; // Machine mode previous privilege mode;
+    logic [1:0] fs;  // F extension status
+    logic [1:0] xs;  // X extension status
+    logic mprv; // Modify memory PRiVilege
+    logic sum;  // Permit Supervisor User Memory access
+    logic mxr;  // Make eXecutable Readable
+    logic tvm;  // Trap Virtual Memory
+    logic tw;   // Timeout Wait
+    logic tsr;  // Trap SRET
+    logic sd;   // ?
+} mstatus_t;
+
+typedef struct packed {
+    logic sbe;  // Supervisor mode endianess control
+    logic mbe;  // Machine mode endianess control
+} mstatush_t;
 
 endpackage 

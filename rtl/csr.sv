@@ -11,11 +11,15 @@ module csr import core_pkg::*; #(
     input  csr_operation_t csr_op_i,
     output logic    [31:0] csr_rdata_o,
     
-    input  logic    [31:0] hart_id_i
+    input  logic    [31:0] hartid_i,
+    input  logic    [23:0] mtvec_i,
+    
+    output logic [31:0] mtvec_o
 );
 
 logic [31:0] csr_wdata_actual;
 logic        csr_wen;
+logic        set_initial_mtvec;
 
 // Machine ISA Register
 logic [31:0] misa;
@@ -31,10 +35,33 @@ logic [31:0] mhartid;   // Hart ID Register
 assign mvendorid = '0;
 assign marchid   = '0;
 assign mimpid    = '0;
-assign mhartid   = hart_id_i;
+assign mhartid   = hartid_i;
 
 // Machine Status Registers
-// Status_t mstatus;
+mstatus_t mstatus;
+assign mstatus.uie  = 1'b0; // User mode interrupt enable
+assign mstatus.sie  = 1'b0; // Supervisor mode interrupt enable
+assign mstatus.hie  = 1'b0; // Hypervisor mode interrupt enable
+assign mstatus.mie  = 1'b0; // Machine mode interrupt enable
+assign mstatus.upie = 1'b0; // User mode previous interrupt enable
+assign mstatus.spie = 1'b0; // Supervisor mode previous interrupt enable
+assign mstatus.ube  = 1'b0; // User mode endianess control
+assign mstatus.mpie = 1'b0; // Machine mode previous interrupt enable
+assign mstatus.spp  = 1'b0; // Supervisor mode previous privilege mode
+assign mstatus.vs   = 2'b0; // V extension status
+assign mstatus.mpp  = 2'b0; // Machine mode previous privilege mode
+assign mstatus.fs   = 2'b0; // F extension status
+assign mstatus.xs   = 2'b0; // X extension status
+assign mstatus.mprv = 1'b0; // Modify memory PRiVilege
+assign mstatus.sum  = 1'b0; // Permit Supervisor User Memory access
+assign mstatus.mxr  = 1'b0; // Make eXecutable Readable
+assign mstatus.tvm  = 1'b0; // Trap Virtual Memory
+assign mstatus.tw   = 1'b0; // Timeout Wait
+assign mstatus.tsr  = 1'b0; // Trap SRET
+assign mstatus.sd   = 1'b0; // ?
+
+// Machine Trap-Vector Base-Address Register
+logic [31:0] mtvec, mtvec_n;
 
 // Define read operation
 always_comb begin
@@ -46,21 +73,29 @@ always_comb begin
         CSR_MIMPID: csr_rdata_o = mimpid;
         CSR_MHARTID: csr_rdata_o = mhartid;
         
+        CSR_MSTATUS: csr_rdata_o = {mstatus.sd, 8'b0, mstatus.tsr, mstatus.tw, mstatus.tvm,
+                                    mstatus.mxr, mstatus.sum, mstatus.mprv, mstatus.xs, mstatus.fs,
+                                    mstatus.mpp, mstatus.vs, mstatus.spp, mstatus.mpie, mstatus.ube,
+                                    mstatus.spie, 1'b0, mstatus.mie, 1'b0, mstatus.sie, 1'b0};
+        CSR_MTVEC:csr_rdata_o = mtvec;
+        
         default: csr_rdata_o = '0;
     endcase
 end
 
-// Define write logic
+// Define next values of CSRs
 always_comb begin
-    // Only RO CSRs so far
+    mtvec_n = (set_initial_mtvec) ? ({mtvec_i, 8'b0}) : (mtvec);
 end
 
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
-        // Only RO CSRs so far
+        set_initial_mtvec <= '1;
+        mtvec <= '0;
     end
     else begin
-        // Only RO CSRs so far
+        set_initial_mtvec <= '0;
+        mtvec <= mtvec_n;
     end
 end
 
@@ -79,5 +114,8 @@ always_comb begin
         end
     endcase
 end
+
+// Output some CSRs
+assign mtvec_o = mtvec;
 
 endmodule

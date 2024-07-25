@@ -28,8 +28,9 @@ module controller import core_pkg::*; (
     output logic flush_mem_o,
     output logic flush_wb_o,
     input  pc_source_t pc_source_id_i,
-    input  logic       branch_decision_ex_i
-    
+    input  logic       branch_decision_ex_i,
+    input  logic trap_id_i,
+    input  logic trap_ex_i
 );
 
 logic rd_ex_is_rs1_id;
@@ -52,7 +53,7 @@ assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rs2_addr_id_i != 
 always_comb begin
     fwd_op1_o = NO_FORWARD;
     if (rd_ex_is_rs1_id && reg_alu_wen_ex_i) begin
-        wd_op1_o = FWD_EX_ALU_RES_TO_ID;
+        fwd_op1_o = FWD_EX_ALU_RES_TO_ID;
     end
     else if (rd_mem_is_rs1_id && (reg_alu_wen_mem_i || reg_mem_wen_mem_i)) begin
         if (reg_alu_wen_mem_i)
@@ -91,7 +92,7 @@ end
 // Resolve stalls
 always_comb begin
     stall_id_o = 1'b0;
-    if (reg_mem_wen_ex_i)
+    if (reg_mem_wen_ex_i) // Load operation in EX
         if(rd_ex_is_rs1_id || rd_ex_is_rs2_id)
             stall_id_o = 1'b1;
     
@@ -106,10 +107,14 @@ assign id_is_jump = pc_source_id_i == PC_JAL || pc_source_id_i == PC_JALR;
 
 // Resolve flushing
 always_comb begin
-    flush_id_o = branch_decision_ex_i || id_is_jump;
-    flush_ex_o = branch_decision_ex_i;
-    flush_mem_o = 1'b0;
-    flush_wb_o = 1'b0;
+    // flush_id_o = branch_decision_ex_i || id_is_jump;
+    // flush_ex_o = branch_decision_ex_i;
+    
+    flush_wb_o  = 1'b0;
+    flush_mem_o = flush_wb_o || trap_ex_i;
+    flush_ex_o  = flush_mem_o || branch_decision_ex_i || stall_id_o || trap_id_i;// trap_ex_i;
+    // flush_id_o  = branch_decision_ex_i || id_is_jump || stall_if_o || ;
+    flush_id_o  = flush_ex_o || id_is_jump;// || trap_id_i; //  || stall_if_o is implied
 end
 
 endmodule

@@ -17,6 +17,13 @@ module rvvi_wrapper #(
     input  logic [31:0] imem_rdata_i,
     output logic [31:0] imem_addr_o,
     
+    // Hart ID, defined by system
+    input  logic [31:0] hartid_i,
+    // mtvec initial address, defined by system
+    input  logic [23:0] mtvec_i, // 24 upper bits, 256-byte aligned
+    // Boot addr (first fetch)
+    input  logic [29:0] boot_addr_i, // 30 upper bits, word aligned
+    
     // RVVI interface
     rvviTrace rvvi
 );
@@ -39,7 +46,11 @@ core #(
     .dmem_ben_o   ( dmem_ben_o ),
     
     .imem_rdata_i ( imem_rdata_i ),
-    .imem_addr_o  ( imem_addr_o )
+    .imem_addr_o  ( imem_addr_o ),
+    
+    .hartid_i    ( hartid_i ),
+    .mtvec_i     ( mtvec_i ),
+    .boot_addr_i ( boot_addr_i )
 );
 
 rvfi rvfi_inst (
@@ -48,20 +59,21 @@ rvfi rvfi_inst (
     
     // Input from IF stage
     .valid_if ( core_inst.valid_if ),
+    .stall_if ( core_inst.stall_if ),
     .pc_if ( core_inst.pc_if ),
+    .next_pc_mux ( core_inst.if_stage_inst.pc_constroller_inst.next_pc_mux ),
     
     // Input from ID stage
     .valid_id ( core_inst.valid_id ),
     .stall_id ( core_inst.stall_id ),
-    
+    .flush_id ( core_inst.flush_id ),
+    .trap_id ( core_inst.trap_id ),
     .instr_id ( core_inst.id_stage_inst.instr_id ),
     .illegal_instr_id ( core_inst.id_stage_inst.illegal_instr_id ),
     .alu_source_1_id ( core_inst.id_stage_inst.alu_source_1_id ),
     .alu_source_2_id ( core_inst.id_stage_inst.alu_source_2_id ),
-    
     .rs1_addr_id ( core_inst.rs1_addr_id ),
     .rs2_addr_id ( core_inst.rs2_addr_id ),
-    
     .rs1_or_fwd_id ( core_inst.id_stage_inst.rs1_or_fwd_id ),
     .rs2_or_fwd_id ( core_inst.id_stage_inst.rs2_or_fwd_id ),
     .pc_id ( core_inst.id_stage_inst.pc_id ),
@@ -73,22 +85,29 @@ rvfi rvfi_inst (
     .valid_ex ( core_inst.valid_ex ),
     .stall_ex ( core_inst.stall_ex ),
     .flush_ex ( core_inst.flush_ex ),
+    .trap_ex ( core_inst.trap_ex ),
     .branch_target_ex ( core_inst.branch_target_ex ),
     .branch_decision_ex ( core_inst.branch_decision_ex ),
+    .csr_wdata_ex ( core_inst.csr_inst.csr_wdata_actual ),
+    .csr_rdata_ex ( core_inst.csr_rdata_ex ),
     
     // Input from MEM stage
     .valid_mem ( core_inst.valid_mem ),
     .stall_mem ( core_inst.stall_mem ),
+    .flush_mem ( core_inst.flush_mem ),
     .dmem_wdata_o ( core_inst.dmem_wdata_o ),
     .dmem_addr_o ( core_inst.dmem_addr_o ),
     .dmem_wen_o ( core_inst.dmem_wen_o ),
     .dmem_ben_o ( core_inst.dmem_ben_o ),
     
     // Input from WB stage
+    .flush_wb ( core_inst.flush_wb ),
     .rd_addr_wb ( core_inst.rd_addr_wb ),
     .reg_wen_wb ( core_inst.reg_wen_wb ),
     .reg_wdata_wb ( core_inst.reg_wdata_wb ),
     .mem_rdata_wb ( core_inst.mem_rdata_wb ),
+  
+    .misa ( core_inst.csr_inst.misa ),
   
     `RVFI_CONN
 );

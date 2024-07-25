@@ -9,17 +9,37 @@ module pc_controller import core_pkg::*; #(
     input  logic [WIDTH-1:0] branch_target_ex_i, 
     input  logic             branch_decision_ex_i,
     input  pc_source_t       pc_source_id_i,
-    input  pc_source_t       pc_source_ex_i
+    input  pc_source_t       pc_source_ex_i,
+    input                    trap_id_i,
+    input                    trap_ex_i,
+    input  logic [WIDTH-1:0] mtvec_i
 );
+
+next_pc_mux_t next_pc_mux;
 
 // Determine next instruction address (PC)
 always_comb begin
-    if (valid_id_i && (pc_source_id_i == PC_JAL || pc_source_id_i == PC_JALR))
-        next_pc_o = jump_target_id_i;
-    else if (valid_ex_i && (pc_source_ex_i == PC_BRANCH) && branch_decision_ex_i)
-        next_pc_o = branch_target_ex_i;
+    if (trap_ex_i)
+        next_pc_mux = NPC_EXCEPTION;
+    else if ((pc_source_ex_i == PC_BRANCH) && branch_decision_ex_i)
+        next_pc_mux = NPC_BRANCH;
+    else if (trap_id_i)
+        next_pc_mux = NPC_EXCEPTION;
+    else if (pc_source_id_i == PC_JAL || pc_source_id_i == PC_JALR)
+        next_pc_mux = NPC_JUMP;
     else
-        next_pc_o = curr_pc_i + 32'd4;
+        next_pc_mux = NPC_P_4;
+end
+
+always_comb begin
+    case (next_pc_mux)
+        NPC_P_4      : next_pc_o = curr_pc_i + 32'd4;
+        NPC_P_2      : next_pc_o = curr_pc_i + 32'd2;
+        NPC_JUMP     : next_pc_o = jump_target_id_i;
+        NPC_BRANCH   : next_pc_o = branch_target_ex_i;
+        NPC_EXCEPTION: next_pc_o = mtvec_i;
+        default: next_pc_o = curr_pc_i + 32'd4;
+    endcase
 end
 
 endmodule
