@@ -36,7 +36,7 @@ module core #(
 import core_pkg::*;
 
 // Program Counter, Instruction and pipeline control signals
-logic [31:0] pc_if;
+logic [31:0] pc_if, pc_id, pc_ex;
 logic [31:0] instr_if;
 logic        valid_if, valid_id, valid_ex, valid_mem;
 // logic        ready_if, ready_id, ready_ex, ready_mem, ready_wb;
@@ -76,6 +76,9 @@ logic        branch_decision_ex;
 
 // Indicator of traps
 logic trap_id, trap_ex;
+logic illegal_instr_id;
+logic instr_addr_misaligned_id;
+// logic instr_addr_misaligned_ex;
 
 // CSR signals
 logic           csr_access_id, csr_access_ex;
@@ -83,7 +86,9 @@ csr_operation_t csr_op_id, csr_op_ex;
 logic [31:0]    csr_wdata_ex;
 logic [31:0]    csr_rdata_ex;
 csr_addr_t      csr_addr_ex;
-logic [31:0]    mtvec;
+logic [31:0]    mtvec, mepc;
+logic           save_pc_id, save_pc_ex;
+logic [ 4:0]    exception_cause;
 
 
 
@@ -156,6 +161,7 @@ id_stage #(
     .reg_alu_wen_id_o       ( reg_alu_wen_id ),
     .reg_mem_wen_id_o       ( reg_mem_wen_id ),
     .pc_source_id_o         ( pc_source_id ),
+    .pc_id_o                ( pc_id ),
     .is_branch_id_o         ( is_branch_id ),
     .alu_operand_1_id_o     ( alu_operand_1_id ),
     .alu_operand_2_id_o     ( alu_operand_2_id ),
@@ -171,6 +177,8 @@ id_stage #(
     // Output to controller
     .rs1_addr_id_o ( rs1_addr_id ),
     .rs2_addr_id_o ( rs2_addr_id ),
+    .illegal_instr_id_o ( illegal_instr_id ),
+    .instr_addr_misaligned_id_o ( instr_addr_misaligned_id ),
     
     // Output to CSRs
     .csr_access_id_o ( csr_access_id ),
@@ -220,6 +228,7 @@ ex_stage #(
     .mem_sign_extend_id_i   ( mem_sign_extend_id ),
     .reg_alu_wen_id_i       ( reg_alu_wen_id ),
     .reg_mem_wen_id_i       ( reg_mem_wen_id ),
+    .pc_id_i                ( pc_id ),
     .pc_source_id_i         ( pc_source_id ),
     .is_branch_id_i         ( is_branch_id ),
     .alu_operand_1_id_i     ( alu_operand_1_id ),
@@ -241,7 +250,11 @@ ex_stage #(
     .reg_mem_wen_ex_o     ( reg_mem_wen_ex ),
     .valid_ex_o           ( valid_ex ),
     
+    // Output to controller
+    // .instr_addr_misaligned_ex_o ( instr_addr_misaligned_ex ),
+    
     // Output to CSRs
+    .pc_ex_o         ( pc_ex ),
     .csr_addr_ex_o   ( csr_addr_ex ),
     .csr_wdata_ex_o  ( csr_wdata_ex ),
     .csr_op_ex_o     ( csr_op_ex ),
@@ -350,7 +363,14 @@ csr csr_inst (
     .hartid_i ( hartid_i ),
     .mtvec_i  ( mtvec_i ),
     
-    .mtvec_o  ( mtvec )
+    .mtvec_o ( mtvec ),
+    .mepc_o  ( mepc ),
+    
+    .save_pc_id_i ( save_pc_id ),
+    .save_pc_ex_i ( save_pc_ex ),
+    .pc_id_i      ( pc_id ),
+    .pc_ex_i      ( pc_ex ),
+    .exception_cause_i ( exception_cause )
 );
 
 
@@ -391,7 +411,15 @@ controller controller_inst (
     .pc_source_id_i       ( pc_source_id ),
     .branch_decision_ex_i ( branch_decision_ex ),
     .trap_id_i ( trap_id ),
-    .trap_ex_i ( trap_ex )
+    .trap_ex_i ( trap_ex ),
+    
+    // Trap handling
+    .save_pc_id_o      ( save_pc_id ),
+    .save_pc_ex_o      ( save_pc_ex ),
+    .illegal_instr_id_i ( illegal_instr_id ),
+    .instr_addr_misaligned_id_i ( instr_addr_misaligned_id ),
+    // .instr_addr_misaligned_ex_i ( instr_addr_misaligned_ex ),
+    .exception_cause_o ( exception_cause )
 );
 
 endmodule

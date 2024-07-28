@@ -391,4 +391,19 @@ typedef struct packed {
     logic mbe;  // Machine mode endianess control
 } mstatush_t;
 
+// Define possible causes for CSR mcause
+localparam EXC_CAUSE_INSTR_ADDR_MISAL = 5'h00;
+localparam EXC_CAUSE_INSTR_FAULT      = 5'h01;
+localparam EXC_CAUSE_ILLEGAL_INSN     = 5'h02;
+localparam EXC_CAUSE_BREAKPOINT       = 5'h03;
+localparam EXC_CAUSE_LOAD_ADDR_MISAL  = 5'h04;
+localparam EXC_CAUSE_LOAD_FAULT       = 5'h05;
+localparam EXC_CAUSE_STORE_ADDR_MISAL = 5'h06;
+localparam EXC_CAUSE_STORE_FAULT      = 5'h07;
+localparam EXC_CAUSE_ECALL_UMODE      = 5'h08;
+localparam EXC_CAUSE_ECALL_MMODE      = 5'h0B;
+localparam EXC_CAUSE_INSTR_PAGE_FAULT = 5'h0C;
+localparam EXC_CAUSE_LOAD_PAGE_FAULT  = 5'h0D;
+localparam EXC_CAUSE_STORE_PAGE_FAULT = 5'h0F;
+
 endpackage 

@@ -375,6 +375,8 @@ assign rvfi_csr_``name``_wdata = csr_wdata_wb;
 
 `assign_rvfi_csr(mstatus)
 `assign_rvfi_csr(mtvec)
+`assign_rvfi_csr(mepc)
+`assign_rvfi_csr(mcause)
 
 endmodule
 

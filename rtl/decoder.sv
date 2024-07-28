@@ -293,7 +293,9 @@ always_comb begin
                     CSR_MHARTID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
                     
                     CSR_MSTATUS,
-                    CSR_MTVEC: ;
+                    CSR_MTVEC,
+                    CSR_MEPC,
+                    CSR_MCAUSE: ;
                     
                     default: illegal_instr_o = 1'b1;
                 endcase

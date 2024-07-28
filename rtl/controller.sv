@@ -9,11 +9,11 @@ module controller import core_pkg::*; (
     input  logic [4:0] rd_addr_mem_i,
     input  logic [4:0] rd_addr_wb_i,
     // Write enables
-    input  logic       reg_alu_wen_ex_i,
-    input  logic       reg_alu_wen_mem_i,
-    input  logic       reg_alu_wen_wb_i,
-    input  logic       reg_mem_wen_mem_i,
-    input  logic       reg_mem_wen_wb_i,
+    input  logic reg_alu_wen_ex_i,
+    input  logic reg_alu_wen_mem_i,
+    input  logic reg_alu_wen_wb_i,
+    input  logic reg_mem_wen_mem_i,
+    input  logic reg_mem_wen_wb_i,
     
     // Data Hazards (stalling)
     output logic stall_if_o,
@@ -30,7 +30,15 @@ module controller import core_pkg::*; (
     input  pc_source_t pc_source_id_i,
     input  logic       branch_decision_ex_i,
     input  logic trap_id_i,
-    input  logic trap_ex_i
+    input  logic trap_ex_i,
+    
+    // Trap handling
+    output logic       save_pc_id_o, // Save ID PC to mepc
+    output logic       save_pc_ex_o, // Save EX PC to mepc
+    input  logic       illegal_instr_id_i,
+    input  logic       instr_addr_misaligned_id_i,
+    // input  logic       instr_addr_misaligned_ex_i,
+    output logic [4:0] exception_cause_o // Exception cause code for mcause
 );
 
 logic rd_ex_is_rs1_id;
@@ -115,6 +123,26 @@ always_comb begin
     flush_ex_o  = flush_mem_o || branch_decision_ex_i || stall_id_o || trap_id_i;// trap_ex_i;
     // flush_id_o  = branch_decision_ex_i || id_is_jump || stall_if_o || ;
     flush_id_o  = flush_ex_o || id_is_jump;// || trap_id_i; //  || stall_if_o is implied
+end
+
+// Determine which PC should be saved to mepc in case of traps
+// Also determine exception cause
+always_comb begin
+    save_pc_ex_o = 1'b0;
+    save_pc_id_o = 1'b0;
+    exception_cause_o = 5'b0;
+    
+    if (trap_ex_i) begin
+        save_pc_ex_o = 1'b1;
+        exception_cause_o = EXC_CAUSE_INSTR_ADDR_MISAL;
+    end
+    else if (trap_id_i && !branch_decision_ex_i) begin
+        save_pc_id_o = 1'b1;
+        if (illegal_instr_id_i)
+            exception_cause_o = EXC_CAUSE_ILLEGAL_INSN;
+        else if (instr_addr_misaligned_id_i)
+            exception_cause_o = EXC_CAUSE_INSTR_ADDR_MISAL;
+    end
 end
 
 endmodule

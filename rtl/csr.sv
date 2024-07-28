@@ -6,6 +6,7 @@ module csr import core_pkg::*; #(
     input  logic clk_i,
     input  logic rst_n_i,
     
+    // Porsts for CSR read/modify instructions
     input  csr_addr_t      csr_addr_i,
     input  logic    [31:0] csr_wdata_i,
     input  csr_operation_t csr_op_i,
@@ -14,7 +15,16 @@ module csr import core_pkg::*; #(
     input  logic    [31:0] hartid_i,
     input  logic    [23:0] mtvec_i,
     
-    output logic [31:0] mtvec_o
+    // Output some CSRs
+    output logic [31:0] mtvec_o,
+    output logic [31:0] mepc_o,
+    
+    // Trap handling
+    input  logic        save_pc_id_i, // Save ID PC to mepc
+    input  logic        save_pc_ex_i, // Save EX PC to mepc
+    input  logic [31:0] pc_id_i,
+    input  logic [31:0] pc_ex_i,
+    input  logic [ 4:0] exception_cause_i
 );
 
 logic [31:0] csr_wdata_actual;
@@ -62,6 +72,14 @@ assign mstatus.sd   = 1'b0; // ?
 
 // Machine Trap-Vector Base-Address Register
 logic [31:0] mtvec, mtvec_n;
+// Machine Exception Program Counter
+logic [31:0] mepc, mepc_n;
+// Machine Cause Register
+logic [31:0] mcause;
+logic        mcause_intr_n;
+logic [ 4:0] mcause_code_n;
+assign mcause[31]   = 1'b0; // TODO Change this when interrupts are implemented
+assign mcause[30:5] = 26'b0;
 
 // Define read operation
 always_comb begin
@@ -77,7 +95,10 @@ always_comb begin
                                     mstatus.mxr, mstatus.sum, mstatus.mprv, mstatus.xs, mstatus.fs,
                                     mstatus.mpp, mstatus.vs, mstatus.spp, mstatus.mpie, mstatus.ube,
                                     mstatus.spie, 1'b0, mstatus.mie, 1'b0, mstatus.sie, 1'b0};
-        CSR_MTVEC:csr_rdata_o = mtvec;
+        
+        CSR_MTVEC: csr_rdata_o = mtvec;
+        CSR_MEPC: csr_rdata_o = mepc;
+        CSR_MCAUSE: csr_rdata_o = mcause;
         
         default: csr_rdata_o = '0;
     endcase
@@ -86,16 +107,49 @@ end
 // Define next values of CSRs
 always_comb begin
     mtvec_n = (set_initial_mtvec) ? ({mtvec_i, 8'b0}) : (mtvec);
+    mepc_n = mepc;
+    mcause_intr_n = mcause[31];
+    mcause_code_n = mcause[4:0];
+    
+    if (csr_wen) begin
+        case (csr_addr_i)
+            CSR_MEPC: begin
+                if (ISA_C) mepc_n = {csr_wdata_actual[31:1], 1'b0};
+                else       mepc_n = {csr_wdata_actual[31:2], 2'b0};
+            end
+            CSR_MCAUSE: begin
+                // mcause_intr_n = csr_wdata_actual[31]; // TODO Change this when interrupts are implemented
+                mcause_code_n = csr_wdata_actual[4:0];
+            end
+        endcase
+    end
+    
+    // Save PC to mepc when traps occur
+    unique case (1'b1)
+        save_pc_ex_i: mepc_n = pc_ex_i;
+        save_pc_id_i: mepc_n = pc_id_i;
+        default: ;
+    endcase
+    // Save cause of exception
+    if (save_pc_ex_i || save_pc_id_i) begin
+        mcause_code_n = exception_cause_i;
+    end
 end
 
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
         set_initial_mtvec <= '1;
         mtvec <= '0;
+        mepc  <= '0;
+        // mcause[31] <= '0;
+        mcause[4:0] <= '0;
     end
     else begin
         set_initial_mtvec <= '0;
         mtvec <= mtvec_n;
+        mepc  <= mepc_n;
+        // mcause[31] <= mcause_intr_n;
+        mcause[4:0] <= mcause_code_n;
     end
 end
 
@@ -117,5 +171,6 @@ end
 
 // Output some CSRs
 assign mtvec_o = mtvec;
+assign mepc_o = mepc;
 
 endmodule

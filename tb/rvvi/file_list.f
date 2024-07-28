@@ -16,6 +16,7 @@ ${RTL_HOME}/wb_stage.sv
 
 ${RTL_HOME}/core.sv
 
++incdir+${RVFI_HOME}
 ${TB_HOME}/rvfi_defines.sv
 ${TB_HOME}/rvfi_macros.vh
 ${RVFI_HOME}/rvfi.sv

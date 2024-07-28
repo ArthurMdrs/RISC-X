@@ -295,13 +295,6 @@ task drive_prog (string prog_name, bit check_regs);
         
             drive_prog (single_prog, 1);
         end
-        // drive_prog ("1_basic", 1);
-        // drive_prog ("2_hazard_control_0", 1);
-        // drive_prog ("2_hazard_data_0", 1);
-        // drive_prog ("2_hazard_data_1", 1);
-        // drive_prog ("3_bubble_sort", 1);
-        // drive_prog ("3_fib", 1);
-        // drive_prog ("3_qsort", 1);
         
         foreach(progs_with_regs[i]) begin
             string single_prog;
