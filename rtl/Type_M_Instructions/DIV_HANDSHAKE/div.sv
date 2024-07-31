@@ -51,5 +51,4 @@ module div(
 			next = IDLE;
 		end
   endcase
-	
 endmodule
