@@ -113,7 +113,6 @@ if_stage if_stage_inst (
     
     // Control inputs
     .stall_if_i (stall_if),
-    // .flush_id_i (flush_id),
     
     // Trap handling
     .trap_id_i ( trap_id ),
@@ -190,7 +189,6 @@ id_stage #(
     
     // Control inputs
     .stall_id_i ( stall_id ),
-    // .flush_ex_i ( flush_ex ),
     .flush_id_i (flush_id),
     
     // Inputs for forwarding
@@ -269,8 +267,7 @@ ex_stage #(
     .csr_rdata_ex_i       ( csr_rdata_ex ),
     
     // Control inputs
-    .stall_ex_i  ( stall_ex ),
-    // .flush_mem_i ( flush_mem )
+    .stall_ex_i ( stall_ex ),
     .flush_ex_i ( flush_ex )
 );
 
@@ -312,8 +309,7 @@ mem_stage mem_stage_inst (
     
     // Control inputs
     .stall_mem_i ( stall_mem ),
-    // .flush_wb_i  ( flush_wb )
-    .flush_mem_i  ( flush_mem )
+    .flush_mem_i ( flush_mem )
 );
 
 

@@ -207,9 +207,7 @@ class riscv_decoder;
         end
         else begin
             csr_addr = csr_addr_t'(instruction[31:20]);
-            
             csr_name = translate_csr(csr_addr);
-            // csr_name = translate_csr (instruction[31:20]);
             
             case (instruction[14:12])
                 3'b001: begin // csrrw
@@ -285,38 +283,9 @@ class riscv_decoder;
     // Function to translate CSR address to mnemonic
     function string translate_csr(csr_addr_t csr_addr);
         string str;
-        str = csr_addr.name();
-        str = str.tolower();
-        str = str.substr(4,str.len()-1);
-        return str;
-    endfunction
-    // function string translate_csr(logic [11:0] csr_addr);
-        // case (csr_addr)
-        //     CSR_MISA: return "misa";
-
-        //     CSR_MVENDORID: return "mvendorid";
-        //     CSR_MARCHID: return "marchid";
-        //     CSR_MIMPID: return "mimpid";
-        //     CSR_MHARTID: return "mhartid";
-            
-        //     CSR_MSTATUS: return "mstatus";
-        //     CSR_MIE: return "mie";
-        //     CSR_MTVEC: return "mtvec";
-            
-        //     CSR_MEPC: return "mepc";
-        //     CSR_MCAUSE: return "mcause";
-            
-        //     default: return "UNKNOWN_CSR";
-        // endcase
-    // endfunction
-    
-    // Convert a string to lowercase
-    function string tolower(input string str);
-        foreach (str[i]) begin
-            if (str[i] >= "A" && str[i] <= "Z") begin
-                str[i] = str[i] + 32;
-            end
-        end
+        str = csr_addr.name(); // CSR name is defined in the typedef as CSR_NAME
+        str = str.tolower();   // Make everything lowercase
+        str = str.substr(4,str.len()-1); // Drop the "csr_" part
         return str;
     endfunction
     

@@ -82,7 +82,6 @@ always_comb begin
         /////////////        ALU        /////////////
         /////////////////////////////////////////////
         OPCODE_OP: begin
-            // if ({instr_i[31], instr_i[29:25]} != 6'b0) // funct7 must be 7'h00 or 7'h20
             if (!(funct7 inside {7'h00, 7'h20}))
                 illegal_instr_o = 1'b1;
             

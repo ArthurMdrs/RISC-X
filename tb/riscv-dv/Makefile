@@ -40,7 +40,7 @@ $(RVVI_HOME)/rvviTrace.sv:
 	@curl -L -o $(RVVI_HOME)/rvviTrace.sv https://raw.githubusercontent.com/riscv-verification/RVVI/main/source/host/rvvi/rvviTrace.sv
 
 clean:
-	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log
+	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log trace*
 	
 rars:
 	python3 run_rars.py $(PROGS_PATH) $(PROG)

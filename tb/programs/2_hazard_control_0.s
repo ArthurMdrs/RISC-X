@@ -8,4 +8,6 @@ loop:
         add x0, x0, x0
         lw x1, 0(x0)
         blt x1, x2, loop
+    
+    ecall
 

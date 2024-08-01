@@ -30,17 +30,12 @@ def run_rars(progs_roots, prog):
 
 def get_asm_progs(files_path):
     asm_progs = []
-    # for root, _, files in os.walk(files_path):
     for _, _, files in os.walk(files_path):
         for file_name in files:
             if file_name.endswith('.s'):
-                # file_name = file_name[:-2]
                 asm_progs.append(file_name)
-                # asm_progs.append(os.path.join(root, file_name))
             elif file_name.endswith('.asm'):
-                # file_name = file_name[:-4]
                 asm_progs.append(file_name)
-                # asm_progs.append(os.path.join(root, file_name))
     return asm_progs
 
 def process_rars_output(file):
@@ -59,12 +54,12 @@ def process_rars_output(file):
 
 def main():
     progs_roots = "../basic_tb/programs"
-    prog = "OP"
+    prog = "all"
     if len(argv) > 1:
         assert (len(argv) < 4), "Too many arguments. Use python3 run_rars.py prog_dir prog_name"
-        prog = argv[2]
+        progs_roots = argv[1]
         if len(argv) == 3:
-            progs_roots = argv[1]
+            prog = argv[2]
     
     if prog == "all":
         asm_progs = get_asm_progs(progs_roots)

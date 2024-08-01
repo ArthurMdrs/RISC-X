@@ -60,7 +60,6 @@ always_comb begin
         NPC_P_2      : next_pc_o = curr_pc_i + 32'd2;
         NPC_JUMP     : next_pc_o = jump_target_id_i;
         NPC_BRANCH   : next_pc_o = branch_target_ex_i;
-        // NPC_EXCEPTION: next_pc_o = mtvec_i;
         NPC_EXCEPTION: next_pc_o = exc_pc;
         default: next_pc_o = curr_pc_i + 32'd4;
     endcase

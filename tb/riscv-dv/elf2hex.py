@@ -5,7 +5,6 @@ riscv_prefix = "riscv32-unknown-linux-gnu-"
 
 def elf2hex(elf_path, hex_path):
     print(f"Converting {elf_path} to {hex_path}.")
-    # result = subprocess.run([f'{riscv_prefix}objdump', '-d', f'{elf_path}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     result = subprocess.run([f'{riscv_prefix}objdump', '-d', elf_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output = result.stdout.decode('utf-8')
     hex_output = ""

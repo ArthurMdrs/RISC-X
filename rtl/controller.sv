@@ -116,14 +116,10 @@ assign id_is_jump = pc_source_id_i == PC_JAL || pc_source_id_i == PC_JALR;
 
 // Resolve flushing
 always_comb begin
-    // flush_id_o = branch_decision_ex_i || id_is_jump;
-    // flush_ex_o = branch_decision_ex_i;
-    
     flush_wb_o  = 1'b0;
-    flush_mem_o = flush_wb_o || trap_ex_i;
-    flush_ex_o  = flush_mem_o || branch_decision_ex_i || stall_id_o || trap_id_i;// trap_ex_i;
-    // flush_id_o  = branch_decision_ex_i || id_is_jump || stall_if_o || ;
-    flush_id_o  = flush_ex_o || id_is_jump;// || trap_id_i; //  || stall_if_o is implied
+    flush_mem_o = flush_wb_o  || trap_ex_i;
+    flush_ex_o  = flush_mem_o || branch_decision_ex_i || stall_id_o || trap_id_i;
+    flush_id_o  = flush_ex_o  || id_is_jump;
 end
 
 // Determine which PC should be saved to mepc in case of traps

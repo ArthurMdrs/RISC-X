@@ -15,7 +15,6 @@ wire [31:0] pc = rvvi.pc_rdata[0][0];
 wire [31:0] instr = rvvi.insn[0][0];
 wire        trap = rvvi.trap[0][0];
 
-logic [ 4:0] rd_addr;
 logic [31:0] rd_wdata;
 string       rd_str, rd_mnemonic;
 
@@ -23,7 +22,6 @@ csr_addr_t   csr_addr;
 logic [31:0] csr_wdata;
 string       csr_name, csr_str;
 
-// csr_addr_t csr;
 riscv_decoder dec = new();
 string mnemonic;
 string trace_str;
@@ -35,7 +33,6 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
 end
 
 initial begin
-    // wait(rst_n_i == 1'b1);
     if ($value$plusargs("print_trace=%b", print_trace)) begin
         $display("Got print_trace from plusargs:\n  %b", print_trace);
     end
@@ -50,45 +47,19 @@ initial begin
     $fdisplay(trace_fd, get_header());
 end
 
-// final begin
-//     $fclose(trace_file);
-// end
-
-// always @ (rvvi.valid) begin
 always @ (negedge clk_i) begin 
     if (rvvi.valid[0][0]) begin
         mnemonic = dec.decode_instruction (instr);
         
-        rd_addr  = '0;
         rd_wdata = '0;
         rd_str = " ";
         foreach(rvvi.x_wb[0][0][i]) begin
             if (rvvi.x_wb[0][0][i]) begin
-                // rd_addr  = i;
-                // rd_mnemonic = dec.translate_register(rd_addr);
                 rd_mnemonic = dec.translate_register(i);
                 rd_wdata = rvvi.x_wdata[0][0][i];
                 rd_str = $sformatf("%4s: %h", rd_mnemonic, rd_wdata);
             end;
         end
-        // if (rd_addr == '0)
-        //     rd_str = " ";
-        // else
-        //     rd_str = $sformatf("%4s: %h", rd_mnemonic, rd_wdata);
-        
-        // csr_addr  = csr_addr_t'(12'b0);
-        // csr_wdata = '0;
-        // foreach(rvvi.csr_wb[0][0][i]) begin
-        //     if (rvvi.csr_wb[0][0][i]) begin
-        //         csr_addr  = csr_addr_t'(i);
-        //         csr_wdata = rvvi.csr[0][0][i];
-        //         csr_name  = dec.translate_csr (csr_addr);
-        //     end;
-        // end
-        // if (csr_addr != csr_addr_t'(12'b0))
-        //     csr_str = $sformatf("%s: %h", csr_name, csr_wdata);
-        // else
-        //     csr_str = " ";
         
         csr_addr = csr_addr.first();
         csr_str = " ";
@@ -110,7 +81,6 @@ always @ (negedge clk_i) begin
         $fwrite(trace_fd, trace_str);
         if (print_trace) begin
             if (!dlyd_rst) begin
-                // print_header();
                 $display(get_header());
                 dlyd_rst = 1;
             end

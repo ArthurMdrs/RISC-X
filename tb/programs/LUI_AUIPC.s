@@ -21,3 +21,5 @@ main:
     sw s0, 20(x0)
     sw gp, 28(x0)
     sw sp, 100(x0)
+    
+    ecall

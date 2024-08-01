@@ -37,26 +37,11 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         mem_rdata_wb_o   <= '0;
         reg_alu_wen_wb_o <= '0;
         reg_mem_wen_wb_o <= '0;
-        // valid_wb_o <= '0;
     end else begin
-        // if (valid_mem_i) begin
-        //     rd_addr_wb_o     <= rd_addr_mem_i;
-        //     alu_result_wb_o  <= alu_result_mem_i;
-        //     mem_rdata_wb_o   <= mem_rdata_mem_i;
-        //     reg_alu_wen_wb_o <= reg_alu_wen_mem_i;
-        //     reg_mem_wen_wb_o <= reg_mem_wen_mem_i;
-        // end
-        // // Insert bubble if previous stage wasn't valid
-        // else begin
-        //     reg_alu_wen_wb_o <= '0;
-        //     reg_mem_wen_wb_o <= '0;
-        // end
-            
         // Insert bubble if flushing is needed
         if (flush_wb_i) begin
             reg_alu_wen_wb_o <= '0;
             reg_mem_wen_wb_o <= '0;
-            // valid_wb_o <= 1'b0;
         end
         else begin
             rd_addr_wb_o     <= rd_addr_mem_i;
@@ -64,7 +49,6 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
             mem_rdata_wb_o   <= mem_rdata_mem_i;
             reg_alu_wen_wb_o <= reg_alu_wen_mem_i;
             reg_mem_wen_wb_o <= reg_mem_wen_mem_i;
-            // valid_wb_o <= 1'b1;
         end
     end
 end

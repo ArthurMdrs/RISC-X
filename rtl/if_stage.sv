@@ -14,7 +14,6 @@ module if_stage import core_pkg::*; (
     
     // Control inputs
     input  logic stall_if_i,
-    // input  logic flush_id_i,
     
     // Trap handling
     input               trap_id_i,
@@ -46,7 +45,6 @@ assign imem_addr_o = pc_if_o;     // Address from which the instruction is fetch
 // Pipeline registers ->IF
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
-        // pc_if_o <= '0;
         pc_if_o <= {boot_addr_i, 2'b0};
     end else begin
         if (!stall_if_i) begin
@@ -75,7 +73,6 @@ pc_controller pc_constroller_inst (
 );
 
 // Resolve validness. Not valid implies inserting bubble
-// assign valid_if_o = !stall_if_i && !flush_id_i;
 assign valid_if_o = 1'b1;
 
 endmodule

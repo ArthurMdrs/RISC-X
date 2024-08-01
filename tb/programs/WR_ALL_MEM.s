@@ -29,3 +29,5 @@ error:
 
 finish:
     slli gp, sp, 10
+    
+    ecall

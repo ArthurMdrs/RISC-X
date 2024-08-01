@@ -22,62 +22,17 @@ logic  [3:0] dmem_ben;
 logic [31:0] imem_rdata;
 logic [31:0] imem_addr;
 
-// localparam int TEXT_START_ADDR = 32'h0000_3000;
-// localparam int TEXT_END_ADDR   = 32'h0000_3ffc;
-// localparam int TEXT_SIZE       = TEXT_END_ADDR - TEXT_START_ADDR;
+// Define instruction memory bounds
 int section_text_start = 32'h0000_3000;
 int section_text_end   = 32'h0000_3ffc;
 int section_text_size  = section_text_end - section_text_start;
 
+// Instruction memory will be a dynamic array
 logic [31:0] instr_mem [];
-logic [31:0] instr_addr, idx;
+// Translate real memory address to array index
+logic [31:0] instr_addr, imem_idx;
 assign instr_addr = imem_addr - section_text_start;
-bit fetch_enable = 0;
-bit prog_end;
-always_comb begin
-    imem_rdata = '0;
-    // instr_addr = (imem_addr >= section_text_start) ? (imem_addr - section_text_start) : ('0);
-    if (fetch_enable) begin
-        idx = instr_addr >> 2;
-        if (idx > instr_mem.size() && !prog_end) begin
-            $display("%t: Out of bounds access to instr mem. Terminating...", $time);
-            $display("%t: Allowed range: %h - %h.", $time, section_text_start, section_text_end);
-            // $display("%t: Accessed addr: %h.", $time, instr_addr);
-            $display("%t: Accessed addr: %h.", $time, imem_addr);
-            $finish;
-        end
-        else begin
-            imem_rdata = instr_mem[idx];
-        end
-    end
-end
-// assign imem_rdata = instr_mem[instr_addr];
-// always_ff @(negedge clk or negedge rst_n) begin
-//     if (!rst_n) begin
-//         imem_rdata <= '0;
-//     end
-//     begin
-//         imem_rdata <= '0;
-//         // instr_addr = (imem_addr >= section_text_start) ? (imem_addr - section_text_start) : ('0);
-//         if (fetch_enable) begin
-//             if (instr_addr/4 < instr_mem.size()) begin
-//                 imem_rdata = instr_mem[instr_addr];
-//                 if ($time < 20)
-//                 $display("%t: Drove instr: %h.", $time, imem_rdata);
-//             end
-//             else begin
-//                 $display("%t: Out of bounds access to instr mem.", $time);
-//                 $display("%t: Allowed range: %h - %h.", $time, section_text_start, section_text_end);
-//                 $display("%t: Accessed addr: %h.", $time, instr_addr);
-//                 $display("%t: Accessed addr/4: %h.", $time, instr_addr/4);
-//                 $display("%t: Accessed imem_addr: %h.", $time, imem_addr);
-//                 $display("%t: Accessed section_text_start: %h.", $time, section_text_start);
-//                 $finish;
-//             end
-//         end
-//     end
-// end
-
+assign imem_idx = instr_addr >> 2; // The array is word-addressable, so this shift is needed
 
 wire [31:0] hartid    = 32'h0000_0000;
 wire [23:0] mtvec     = 24'h8000_80;
@@ -158,7 +113,10 @@ mem #(
 int n_mismatches, cycle_cnt;
 int cnt_x_instr;
 bit verbose = 0;
+bit check_regs = 1, check_mem = 1;
 int file, status;
+bit fetch_enable;
+bit prog_end;
 
 logic [31:0] regs_clone [32];
 assign regs_clone[1:31] = `CORE.id_stage_inst.register_file_inst.mem;
@@ -177,20 +135,18 @@ assign instr_clone = `CORE.id_stage_inst.instr_id;
 logic [31:0] xptd_dmem [MEM_SIZE/4];
 logic [31:0] xptd_regs [32];
 
-string progs [] = '{"OP", "OP-IMM", "LUI_AUIPC", "ST_LD", //
-                    "BRANCH", "JAL", "WR_ALL_MEM", //};
+// The array below contains simple assembly programs found in $(TB_HOME)/../programs
+string progs [] = '{"OP", "OP-IMM", "LUI_AUIPC", "ST_LD",
+                    "BRANCH", "JAL", "WR_ALL_MEM",
 // The tests below were copied from https://github.com/shrubbroom/Simple-RISC-V-testbench/tree/main
                     "1_basic", 
                     "2_hazard_control_0", "2_hazard_data_0", "2_hazard_data_1", 
                     "3_bubble_sort", "3_fib", "3_qsort"};
-// string progs_with_regs [] = '{"1_basic", 
-//                               "2_hazard_control_0", "2_hazard_data_0", "2_hazard_data_1", 
-//                               "3_bubble_sort", "3_fib", "3_qsort"};
 
 string prog_name = "LUI_AUIPC";
 string progs_path = "../basic_tb/programs";
-bit check_regs = 1, check_mem = 1;
 
+// Generate clock
 localparam int PERIOD = 2;
 localparam int MAX_CYCLES = 1000000;
 initial begin
@@ -200,11 +156,12 @@ initial begin
     $finish;
 end
 
+// Cycle counter (not the same as tracer_inst.cycles)
 always @(posedge clk) cycle_cnt++;
 
 initial begin
     // Specifying time format (%t)
-    $timeformat(-9, 0, "ns", 12); // e.g.: "900ns"
+    $timeformat(-9, 0, "ns", 12); // e.g.: "       900ns"
 
     $display("#==========================================================#");
     
@@ -236,6 +193,23 @@ initial begin
     $finish;
 end
 
+// Check if instruction memory access is valid
+always_comb begin
+    imem_rdata = '0;
+    if (fetch_enable) begin
+        if (imem_idx > instr_mem.size() && !prog_end) begin
+            $display("%t: Out of bounds access to instr mem. Terminating...", $time);
+            $display("%t: Allowed range: %h - %h.", $time, section_text_start, section_text_end);
+            // $display("%t: Accessed addr: %h.", $time, instr_addr);
+            $display("%t: Accessed addr: %h.", $time, imem_addr);
+            $finish;
+        end
+        else begin
+            imem_rdata = instr_mem[imem_idx];
+        end
+    end
+end
+
 //=================   Simulation - END   =================//
 
 //==============   Tasks and functions - BEGIN   ==============//
@@ -249,9 +223,6 @@ task reset ();
 endtask
 
 task load_instr_mem (string prog_file);
-    // logic [31:0] mem [TEXT_SIZE];
-    logic [31:0] mem [];
-    int addr;
     int num_entries;
     string line;
     
@@ -269,8 +240,9 @@ task load_instr_mem (string prog_file);
         num_entries++;
       end
     end
+    
+    // Define instruction memory bounds
     section_text_size = num_entries*4;
-    // section_text_size = num_entries;
     section_text_end = section_text_start + section_text_size;
     if(verbose) begin
         $display("%t: section_text_size in words = %h.", $time, num_entries);
@@ -278,25 +250,10 @@ task load_instr_mem (string prog_file);
         $display("%t: Section .text range = [%h, %h].", $time, section_text_start, section_text_end);
     end
     
-    mem = new [num_entries];
+    // Read instruction memory from file
     instr_mem = new [num_entries];
+    $readmemh(prog_file, instr_mem);
     
-    
-    foreach(mem[i]) mem[i] = '0;
-    $readmemh(prog_file, mem);
-    foreach(mem[i]) begin
-        // $display("%t: mem[%d] %h.", $time, i, mem[i]);
-        // addr = i*4 + section_text_start;
-        if (mem[i] !== 'x) begin
-            // addr = i*4 + section_text_start;
-            // mem_inst.mem[addr  ] = mem[i][ 0+:8];
-            // mem_inst.mem[addr+1] = mem[i][ 8+:8];
-            // mem_inst.mem[addr+2] = mem[i][16+:8];
-            // mem_inst.mem[addr+3] = mem[i][24+:8];
-            
-            instr_mem[i] = mem[i];
-        end
-    end
     // print_instr_mem();
 endtask
 
@@ -356,18 +313,7 @@ task drive_prog (string prog_name, bit check_regs, bit check_mem);
         load_instr_mem(prog_file);
         
         // Wait for instructions to end
-        
-        // do begin
-        //     @(negedge clk);
-        //     // if (instr_clone === 'x) // After the end of instr mem code, there's only unknowns
-        //     if (imem_rdata === '0) // After the end of instr mem code, there's only zeros
-        //         cnt_x_instr++;
-        //     else
-        //         cnt_x_instr = 0;
-        //     // $display("%t: Instr in WB stage is = %h. %g", $time, wrapper_inst.rvfi_insn, rvvi.valid[0][0]);
-        // end while (cnt_x_instr != 6); // Proceed when IF stage has 6 consecutive blank instr
-        
-        // An ecall marks the end of the program
+        // An ecall marks the end of the program (RISCV-DV convention)
         while (rvvi.insn[0][0] != 32'h00000073) begin// ecall
             @(negedge clk);
             if (imem_rdata == 32'h00000073)
@@ -400,7 +346,8 @@ task drive_prog (string prog_name, bit check_regs, bit check_mem);
         end
 
         $display("%t: Finished executing program %s.", $time, prog_name);
-        $display("%t: Simulation end. Number of mismatches: %0d.", $time, n_mismatches);
+        $display("%t: Clock cycles: %0d.", $time, tracer_inst.cycles);
+        $display("%t: Number of mismatches: %0d.", $time, n_mismatches);
         $display("#==========================================================#");
     end // if (prog_name != "all")
     else begin

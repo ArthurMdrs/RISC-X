@@ -30,7 +30,6 @@ module mem_stage import core_pkg::*; (
     
     // Control inputs
     input  logic stall_mem_i,
-    // input  logic flush_wb_i
     input  logic flush_mem_i
 );
 
@@ -58,23 +57,6 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         valid_mem_o <= '0;
     end else begin
         if (!stall_mem_i) begin
-            // if (valid_ex_i) begin
-            //     rd_addr_mem_o         <= rd_addr_ex_i;
-            //     alu_result_mem_o      <= alu_result_ex_i;
-            //     mem_wen_mem           <= mem_wen_ex_i;
-            //     mem_data_type_mem     <= mem_data_type_ex_i;
-            //     mem_sign_extend_mem   <= mem_sign_extend_ex_i;
-            //     mem_wdata_mem         <= mem_wdata_ex_i;
-            //     reg_alu_wen_mem_o     <= reg_alu_wen_ex_i;
-            //     reg_mem_wen_mem_o     <= reg_mem_wen_ex_i;
-            // end
-            // // Insert bubble if previous stage wasn't valid
-            // else begin
-            //     mem_wen_mem           <= '0;
-            //     reg_alu_wen_mem_o     <= '0;
-            //     reg_mem_wen_mem_o     <= '0;
-            // end
-            
             // Insert bubble if flushing is needed
             if (flush_mem_i) begin
                 mem_wen_mem           <= '0;
@@ -91,7 +73,6 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 mem_wdata_mem         <= mem_wdata_ex_i;
                 reg_alu_wen_mem_o     <= reg_alu_wen_ex_i;
                 reg_mem_wen_mem_o     <= reg_mem_wen_ex_i;
-                // valid_mem_o <= 1'b1;
                 valid_mem_o <= valid_ex_i;
             end
         end
@@ -133,8 +114,5 @@ always_comb begin
         default: mem_rdata_mem_o = dmem_rdata_i;
     endcase
 end
-
-// Resolve validness. Not valid implies inserting bubble
-// assign valid_mem_o = !stall_mem_i && !flush_wb_i;
 
 endmodule
