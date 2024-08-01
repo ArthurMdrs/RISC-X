@@ -12,12 +12,17 @@ module pc_controller import core_pkg::*; #(
     input  pc_source_t       pc_source_ex_i,
     input                    trap_id_i,
     input                    trap_ex_i,
-    input  logic [WIDTH-1:0] mtvec_i
+    
+    input                    is_mret_i,
+    input  logic [WIDTH-1:0] mtvec_i,
+    input  logic [WIDTH-1:0] mepc_i
 );
 
 next_pc_mux_t next_pc_mux;
+exc_pc_mux_t  exc_pc_mux;
+logic [31:0]  exc_pc;
 
-// Determine next instruction address (PC)
+// Determine the select signal for the next PC mux
 always_comb begin
     if (trap_ex_i)
         next_pc_mux = NPC_EXCEPTION;
@@ -31,13 +36,32 @@ always_comb begin
         next_pc_mux = NPC_P_4;
 end
 
+// Determine the select signal for the exception PC mux
 always_comb begin
-    case (next_pc_mux)
+    if (is_mret_i)
+        exc_pc_mux = EXCPC_MEPC;
+    else
+        exc_pc_mux = EXCPC_MTVEC;
+end
+
+// Determine the exception address
+always_comb begin
+    unique case (exc_pc_mux)
+        EXCPC_MTVEC: exc_pc = mtvec_i;
+        EXCPC_MEPC : exc_pc = mepc_i;
+        default: exc_pc = mtvec_i;
+    endcase
+end
+
+// Determine next instruction address (PC)
+always_comb begin
+    unique case (next_pc_mux)
         NPC_P_4      : next_pc_o = curr_pc_i + 32'd4;
         NPC_P_2      : next_pc_o = curr_pc_i + 32'd2;
         NPC_JUMP     : next_pc_o = jump_target_id_i;
         NPC_BRANCH   : next_pc_o = branch_target_ex_i;
-        NPC_EXCEPTION: next_pc_o = mtvec_i;
+        // NPC_EXCEPTION: next_pc_o = mtvec_i;
+        NPC_EXCEPTION: next_pc_o = exc_pc;
         default: next_pc_o = curr_pc_i + 32'd4;
     endcase
 end

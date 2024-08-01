@@ -4,7 +4,7 @@ export RTL_HOME := $(shell pwd)/../../rtl
 export RVFI_HOME := $(shell pwd)/../../fv
 export TB_HOME := $(shell pwd)
 FILES := -f file_list.f
-TOP := -top rvvi_tb
+TOP := -top riscv_dv_tb
 
 PROGS_PATH := $(shell pwd)/../basic_tb/programs
 PROG := 
@@ -18,7 +18,7 @@ endif
 # SEED = -svseed 2
 INPUT = -input restore.tcl
 
-ELF=/home/pedro.medeiros/Tools/riscv-dv/out_2024-07-29/asm_test/riscv_arithmetic_basic_test_0.o
+ELF=/home/pedro.medeiros/Tools/riscv-dv/mytest/asm_test/riscv_arithmetic_basic_test_0.o
 
 run: rvfi_macros.vh rvviTrace.sv sim
 
@@ -52,11 +52,12 @@ sim-elf:
 	python3 elf2hex.py $(ELF) $(PROGS_PATH)/out_prog.txt
 	xrun -64bit -sv +define+SIM $(SVA) $(TOP) $(FILES) \
 		 -timescale 1ns/1ps -access +rwc $(SEED) \
-		 +progs_path=$(PROGS_PATH) +prog=out +check_regs=0 +check_mem=0 +text_start=
+		 +progs_path=$(PROGS_PATH) +prog=out +text_start=8000_0000 \
+		 +check_regs=0 +check_mem=0 +print_trace=1
 
 sim-elf-gui:
 	python3 elf2hex.py $(ELF) $(PROGS_PATH)/out_prog.txt
 	xrun -64bit -sv +define+SIM $(SVA) $(TOP) $(FILES) -gui $(INPUT) \
 		 -timescale 1ns/1ps -access +rwc $(SEED) \
-		 +progs_path=$(PROGS_PATH) +prog=out +check_regs=0 +check_mem=0
-	
+		 +progs_path=$(PROGS_PATH) +prog=out +text_start=8000_0000 \
+		 +check_regs=0 +check_mem=0 +print_trace=1

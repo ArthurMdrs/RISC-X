@@ -27,14 +27,15 @@ module rvfi import core_pkg::*; (
     input  logic          mem_wen_id,
     
     // Input from EX stage
-    input  logic        valid_ex,
-    input  logic        stall_ex,
-    input  logic        flush_ex,
-    input  logic        trap_ex,
-    input  logic [31:0] branch_target_ex,
-    input  logic        branch_decision_ex,
-    input  logic [31:0] csr_wdata_ex,
-    input  logic [31:0] csr_rdata_ex,
+    input  logic           valid_ex,
+    input  logic           stall_ex,
+    input  logic           flush_ex,
+    input  logic           trap_ex,
+    input  logic [31:0]    branch_target_ex,
+    input  logic           branch_decision_ex,
+    input  logic [31:0]    csr_wdata_ex,
+    input  logic [31:0]    csr_rdata_ex,
+    input  csr_operation_t csr_op_ex,
     
     // Input from MEM stage
     input  logic        valid_mem,
@@ -128,42 +129,57 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         pc_n_ex       <= '0;
     end else begin
         if (!stall_ex) begin
+            instr_ex      <= instr_id;
             // rvfi_trap_ex <= trap_id;
             rvfi_trap_ex <= trap_id && !stall_id && !branch_decision_ex;
             intr_ex      <= intr_id;
+            if ((alu_source_1_id == ALU_SCR1_RS1) || (pc_source_id == PC_JALR)) begin
+                rs1_addr_ex  <= rs1_addr_id;
+                rs1_rdata_ex <= rs1_or_fwd_id;
+            end else begin
+                rs1_addr_ex  <= '0;
+                rs1_rdata_ex <= '0;
+            end
+            if ((alu_source_2_id == ALU_SCR2_RS2) || mem_wen_id) begin
+                rs2_addr_ex  <= rs2_addr_id;
+                rs2_rdata_ex <= rs2_or_fwd_id;
+            end else begin
+                rs2_addr_ex  <= '0;
+                rs2_rdata_ex <= '0;
+            end
             pc_ex        <= pc_id;
             // pc_n_ex <= (pc_source_id inside {PC_JAL, PC_JALR}) ? (jump_target_id) : (pc_if);
             // Insert bubble if flushing is needed
             if (flush_ex) begin
                 // rvfi_valid_ex <= '0;
-                instr_ex      <= '0;
+                // instr_ex      <= '0;
                 // rvfi_trap_ex  <= '0;
                 // intr_ex       <= '0;
-                rs1_addr_ex   <= '0;
-                rs2_addr_ex   <= '0;
-                rs1_rdata_ex  <= '0;
-                rs2_rdata_ex  <= '0;
+                // rs1_addr_ex   <= '0;
+                // rs2_addr_ex   <= '0;
+                // rs1_rdata_ex  <= '0;
+                // rs2_rdata_ex  <= '0;
                 pc_n_ex       <= '0;
             end
             else begin
                 // rvfi_valid_ex <= rvfi_valid_id;
-                instr_ex      <= instr_id;
+                // instr_ex      <= instr_id;
                 // rvfi_trap_ex  <= trap_id;
                 // intr_ex       <= intr_id;
-                if ((alu_source_1_id == ALU_SCR1_RS1) || (pc_source_id == PC_JALR)) begin
-                    rs1_addr_ex  <= rs1_addr_id;
-                    rs1_rdata_ex <= rs1_or_fwd_id;
-                end else begin
-                    rs1_addr_ex  <= '0;
-                    rs1_rdata_ex <= '0;
-                end
-                if ((alu_source_2_id == ALU_SCR2_RS2) || mem_wen_id) begin
-                    rs2_addr_ex  <= rs2_addr_id;
-                    rs2_rdata_ex <= rs2_or_fwd_id;
-                end else begin
-                    rs2_addr_ex  <= '0;
-                    rs2_rdata_ex <= '0;
-                end
+                // if ((alu_source_1_id == ALU_SCR1_RS1) || (pc_source_id == PC_JALR)) begin
+                //     rs1_addr_ex  <= rs1_addr_id;
+                //     rs1_rdata_ex <= rs1_or_fwd_id;
+                // end else begin
+                //     rs1_addr_ex  <= '0;
+                //     rs1_rdata_ex <= '0;
+                // end
+                // if ((alu_source_2_id == ALU_SCR2_RS2) || mem_wen_id) begin
+                //     rs2_addr_ex  <= rs2_addr_id;
+                //     rs2_rdata_ex <= rs2_or_fwd_id;
+                // end else begin
+                //     rs2_addr_ex  <= '0;
+                //     rs2_rdata_ex <= '0;
+                // end
                 // pc_ex   <= pc_id;
                 pc_n_ex <= (pc_source_id inside {PC_JAL, PC_JALR}) ? (jump_target_id) : (pc_if);
             end
@@ -183,6 +199,7 @@ logic [ 4:0] rs1_addr_mem, rs2_addr_mem;
 logic [31:0] rs1_rdata_mem, rs2_rdata_mem;
 logic [31:0] pc_mem, pc_n_mem;
 logic [31:0] csr_wdata_mem, csr_rdata_mem;
+logic        csr_wen_mem;
 
 // Pipeline registers EX->MEM
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -199,40 +216,48 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         pc_n_mem       <= '0;
         csr_wdata_mem  <= '0;
         csr_rdata_mem  <= '0;
+        csr_wen_mem    <= '0;
     end else begin
         if (!stall_mem) begin
+            instr_mem      <= instr_ex;
             // trap_mem <= rvfi_trap_ex || trap_ex;
             trap_mem <= rvfi_trap_ex || (trap_ex && !stall_ex);
             intr_mem <= intr_ex;
+            rs1_addr_mem   <= rs1_addr_ex;
+            rs2_addr_mem   <= rs2_addr_ex;
+            rs1_rdata_mem  <= rs1_rdata_ex;
+            rs2_rdata_mem  <= rs2_rdata_ex;
             pc_mem   <= pc_ex;
             // pc_n_mem <= (branch_decision_ex) ? (branch_target_ex) : (pc_n_ex);
             // Insert bubble if flushing is needed
             if (flush_mem) begin
                 // rvfi_valid_mem <= '0;
-                instr_mem      <= '0;
+                // instr_mem      <= '0;
                 // trap_mem       <= '0;
                 // intr_mem       <= '0;
-                rs1_addr_mem   <= '0;
-                rs2_addr_mem   <= '0;
-                rs1_rdata_mem  <= '0;
-                rs2_rdata_mem  <= '0;
+                // rs1_addr_mem   <= '0;
+                // rs2_addr_mem   <= '0;
+                // rs1_rdata_mem  <= '0;
+                // rs2_rdata_mem  <= '0;
                 pc_n_mem       <= '0;    
                 csr_wdata_mem  <= '0;
                 csr_rdata_mem  <= '0;
+                csr_wen_mem    <= '0;
             end
             else begin
                 // rvfi_valid_mem <= rvfi_valid_ex;
-                instr_mem      <= instr_ex;
+                // instr_mem      <= instr_ex;
                 // trap_mem       <= rvfi_trap_ex || trap_ex;
                 // intr_mem       <= intr_ex;
-                rs1_addr_mem   <= rs1_addr_ex;
-                rs2_addr_mem   <= rs2_addr_ex;
-                rs1_rdata_mem  <= rs1_rdata_ex;
-                rs2_rdata_mem  <= rs2_rdata_ex;
+                // rs1_addr_mem   <= rs1_addr_ex;
+                // rs2_addr_mem   <= rs2_addr_ex;
+                // rs1_rdata_mem  <= rs1_rdata_ex;
+                // rs2_rdata_mem  <= rs2_rdata_ex;
                 // pc_mem         <= pc_ex;
                 pc_n_mem       <= (branch_decision_ex) ? (branch_target_ex) : (pc_n_ex);
                 csr_wdata_mem  <= csr_wdata_ex;
                 csr_rdata_mem  <= csr_rdata_ex;
+                csr_wen_mem    <= (csr_op_ex != CSR_READ);
             end
         end
     end
@@ -254,6 +279,7 @@ logic [31:0] mem_addr_wb;
 logic [ 3:0] mem_wmask_wb, mem_rmask_wb;
 logic [31:0] mem_wdata_wb;//, mem_rdata_wb;
 logic [31:0] csr_wdata_wb, csr_rdata_wb;
+logic        csr_wen_wb;
 
 // Pipeline registers EX->MEM
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -275,22 +301,28 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         mem_wdata_wb  <= '0;
         csr_wdata_wb  <= '0;
         csr_rdata_wb  <= '0;
+        csr_wen_wb    <= '0;
     end else begin
         order_wb <= order_wb + {63'b0, rvfi_valid};
+        instr_wb      <= instr_mem;
         trap_wb  <= trap_mem;
         intr_wb  <= intr_mem;
+        rs1_addr_wb   <= rs1_addr_mem;
+        rs2_addr_wb   <= rs2_addr_mem;
+        rs1_rdata_wb  <= rs1_rdata_mem;
+        rs2_rdata_wb  <= rs2_rdata_mem;
         pc_wb    <= pc_mem;
         // pc_n_wb  <= pc_n_mem;
         // Insert bubble if flushing is needed
         if (flush_wb) begin
             rvfi_valid_wb <= '0;
-            instr_wb      <= '0;
+            // instr_wb      <= '0;
             // trap_wb       <= '0;
             // intr_wb       <= '0;
-            rs1_addr_wb   <= '0;
-            rs2_addr_wb   <= '0;
-            rs1_rdata_wb  <= '0;
-            rs2_rdata_wb  <= '0;
+            // rs1_addr_wb   <= '0;
+            // rs2_addr_wb   <= '0;
+            // rs1_rdata_wb  <= '0;
+            // rs2_rdata_wb  <= '0;
             pc_n_wb       <= '0;
             mem_addr_wb   <= '0;
             mem_rmask_wb  <= '0;
@@ -298,17 +330,18 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
             mem_wdata_wb  <= '0;
             csr_wdata_wb  <= '0;
             csr_rdata_wb  <= '0;
+            csr_wen_wb    <= '0;
         end
         else begin
             // rvfi_valid_wb <= rvfi_valid_mem;
             rvfi_valid_wb <= valid_mem;
-            instr_wb      <= instr_mem;
+            // instr_wb      <= instr_mem;
             // trap_wb       <= trap_mem;
             // intr_wb       <= intr_mem;
-            rs1_addr_wb   <= rs1_addr_mem;
-            rs2_addr_wb   <= rs2_addr_mem;
-            rs1_rdata_wb  <= rs1_rdata_mem;
-            rs2_rdata_wb  <= rs2_rdata_mem;
+            // rs1_addr_wb   <= rs1_addr_mem;
+            // rs2_addr_wb   <= rs2_addr_mem;
+            // rs1_rdata_wb  <= rs1_rdata_mem;
+            // rs2_rdata_wb  <= rs2_rdata_mem;
             // pc_wb         <= pc_mem;
             pc_n_wb       <= pc_n_mem;
             mem_addr_wb   <= dmem_addr_o;
@@ -317,6 +350,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
             mem_wdata_wb  <= dmem_wdata_o;
             csr_wdata_wb  <= csr_wdata_mem;
             csr_rdata_wb  <= csr_rdata_mem;
+            csr_wen_wb    <= csr_wen_mem;
         end
     end
 end
@@ -356,16 +390,18 @@ assign rvfi_mem_wmask = mem_wmask_wb;
 assign rvfi_mem_wdata = mem_wdata_wb;
 
 // misa CSR
-wire [31:0] csr_mask_wb = {32{rvfi_valid_wb}};
+// wire [31:0] csr_mask_wb = {32{rvfi_valid_wb}};
+wire [31:0] csr_rmask_wb = {32{rvfi_valid_wb}};
+wire [31:0] csr_wmask_wb = {32{csr_wen_wb}};
 assign rvfi_csr_misa_rmask = '1;
 assign rvfi_csr_misa_rdata = misa;
-assign rvfi_csr_misa_wmask = csr_mask_wb;
+assign rvfi_csr_misa_wmask = csr_wmask_wb;
 assign rvfi_csr_misa_wdata = csr_wdata_wb;
 
 `define assign_rvfi_csr(name) \
-assign rvfi_csr_``name``_rmask = csr_mask_wb; \
+assign rvfi_csr_``name``_rmask = csr_rmask_wb; \
 assign rvfi_csr_``name``_rdata = csr_rdata_wb; \
-assign rvfi_csr_``name``_wmask = csr_mask_wb; \
+assign rvfi_csr_``name``_wmask = csr_wmask_wb; \
 assign rvfi_csr_``name``_wdata = csr_wdata_wb;
 
 `assign_rvfi_csr(mhartid)
@@ -374,7 +410,9 @@ assign rvfi_csr_``name``_wdata = csr_wdata_wb;
 `assign_rvfi_csr(mimpid)
 
 `assign_rvfi_csr(mstatus)
+`assign_rvfi_csr(mie)
 `assign_rvfi_csr(mtvec)
+
 `assign_rvfi_csr(mepc)
 `assign_rvfi_csr(mcause)
 

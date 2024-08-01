@@ -42,6 +42,7 @@ module id_stage import core_pkg::*; #(
     output logic [ 4:0] rs2_addr_id_o,
     output logic        illegal_instr_id_o,
     output logic        instr_addr_misaligned_id_o,
+    output logic        is_mret_id_o,
     
     // Output to CSRs
     output logic           csr_access_id_o,
@@ -152,6 +153,9 @@ decoder #(
     .csr_access_o ( csr_access_id_o ),
     .csr_op_o     ( csr_op_id_o ),
     
+    // Indicate MRET
+    .is_mret_o ( is_mret_id_o ),
+    
     // Decoded an illegal instruction
     .illegal_instr_o ( illegal_instr_id_o ),
     
@@ -242,8 +246,8 @@ always_comb begin
         instr_addr_misaligned_id_o = jump_target_id_o[1] && (pc_source_id_o inside {PC_JAL, PC_JALR});
 end
 
-// Traps: illegal instruction decoded, jump target misaligned
-assign exception_id = illegal_instr_id_o || instr_addr_misaligned_id_o;
+// Traps: illegal instruction decoded, jump target misaligned, mret
+assign exception_id = illegal_instr_id_o || instr_addr_misaligned_id_o || is_mret_id_o;
 assign trap_id_o = valid_id_o && exception_id;
 
 // Resolve validness. Not valid implies inserting bubble

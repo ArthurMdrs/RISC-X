@@ -19,7 +19,9 @@ module if_stage import core_pkg::*; (
     // Trap handling
     input               trap_id_i,
     input               trap_ex_i,
+    input               is_mret_i,
     input  logic [31:0] mtvec_i,
+    input  logic [31:0] mepc_i,
     
     // Signals for the PC controller
     input  logic        valid_id_i,
@@ -66,7 +68,10 @@ pc_controller pc_constroller_inst (
     .pc_source_ex_i       ( pc_source_ex_i ),
     .trap_id_i            ( trap_id_i ),
     .trap_ex_i            ( trap_ex_i ),
-    .mtvec_i              ( mtvec_i )
+    
+    .is_mret_i            ( is_mret_i ),
+    .mtvec_i              ( mtvec_i ),
+    .mepc_i               ( mepc_i )
 );
 
 // Resolve validness. Not valid implies inserting bubble

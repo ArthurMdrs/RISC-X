@@ -37,6 +37,7 @@ rvfi rvfi_inst (
     .branch_decision_ex ( core_inst.branch_decision_ex ),
     .csr_wdata_ex       ( core_inst.csr_inst.csr_wdata_actual ),
     .csr_rdata_ex       ( core_inst.csr_rdata_ex ),
+    .csr_op_ex          ( core_inst.csr_op_ex ),
     
     // Input from MEM stage
     .valid_mem    ( core_inst.valid_mem ),

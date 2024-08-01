@@ -81,6 +81,9 @@ logic [ 4:0] mcause_code_n;
 assign mcause[31]   = 1'b0; // TODO Change this when interrupts are implemented
 assign mcause[30:5] = 26'b0;
 
+// Machine Interrupt Enable Register
+logic [31:0] mie, mie_n;
+
 // Define read operation
 always_comb begin
     case (csr_addr_i)
@@ -100,6 +103,8 @@ always_comb begin
         CSR_MEPC: csr_rdata_o = mepc;
         CSR_MCAUSE: csr_rdata_o = mcause;
         
+        CSR_MIE: csr_rdata_o = mie;
+        
         default: csr_rdata_o = '0;
     endcase
 end
@@ -110,6 +115,7 @@ always_comb begin
     mepc_n = mepc;
     mcause_intr_n = mcause[31];
     mcause_code_n = mcause[4:0];
+    mie_n = mie;
     
     if (csr_wen) begin
         case (csr_addr_i)
@@ -120,6 +126,10 @@ always_comb begin
             CSR_MCAUSE: begin
                 // mcause_intr_n = csr_wdata_actual[31]; // TODO Change this when interrupts are implemented
                 mcause_code_n = csr_wdata_actual[4:0];
+            end
+            CSR_MIE: begin
+                // mcause_intr_n = csr_wdata_actual[31]; // TODO Change this when interrupts are implemented
+                mie_n = csr_wdata_actual;
             end
         endcase
     end
@@ -143,6 +153,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         mepc  <= '0;
         // mcause[31] <= '0;
         mcause[4:0] <= '0;
+        mie  <= '0;
     end
     else begin
         set_initial_mtvec <= '0;
@@ -150,6 +161,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         mepc  <= mepc_n;
         // mcause[31] <= mcause_intr_n;
         mcause[4:0] <= mcause_code_n;
+        mie  <= mie_n;
     end
 end
 
@@ -171,6 +183,8 @@ end
 
 // Output some CSRs
 assign mtvec_o = mtvec;
-assign mepc_o = mepc;
+// assign mepc_o = mepc;
+// Output next value of mepc to account for writes followed by xRET 
+assign mepc_o = mepc_n;
 
 endmodule

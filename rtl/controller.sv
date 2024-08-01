@@ -38,6 +38,7 @@ module controller import core_pkg::*; (
     input  logic       illegal_instr_id_i,
     input  logic       instr_addr_misaligned_id_i,
     // input  logic       instr_addr_misaligned_ex_i,
+    input  logic       is_mret_id_i,
     output logic [4:0] exception_cause_o // Exception cause code for mcause
 );
 
@@ -136,7 +137,7 @@ always_comb begin
         save_pc_ex_o = 1'b1;
         exception_cause_o = EXC_CAUSE_INSTR_ADDR_MISAL;
     end
-    else if (trap_id_i && !branch_decision_ex_i) begin
+    else if (trap_id_i && !branch_decision_ex_i && !is_mret_id_i) begin
         save_pc_id_o = 1'b1;
         if (illegal_instr_id_i)
             exception_cause_o = EXC_CAUSE_ILLEGAL_INSN;

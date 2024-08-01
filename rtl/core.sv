@@ -79,6 +79,7 @@ logic trap_id, trap_ex;
 logic illegal_instr_id;
 logic instr_addr_misaligned_id;
 // logic instr_addr_misaligned_ex;
+logic is_mret_id;
 
 // CSR signals
 logic           csr_access_id, csr_access_ex;
@@ -114,6 +115,13 @@ if_stage if_stage_inst (
     .stall_if_i (stall_if),
     // .flush_id_i (flush_id),
     
+    // Trap handling
+    .trap_id_i ( trap_id ),
+    .trap_ex_i ( trap_ex ),
+    .is_mret_i ( is_mret_id ),
+    .mtvec_i   ( mtvec ),
+    .mepc_i    ( mepc ),
+    
     // Signals for the PC controller
     .valid_id_i           ( valid_id ),
     .valid_ex_i           ( valid_ex ),
@@ -121,12 +129,7 @@ if_stage if_stage_inst (
     .branch_target_ex_i   ( branch_target_ex ), 
     .branch_decision_ex_i ( branch_decision_ex ),
     .pc_source_id_i       ( pc_source_id ),
-    .pc_source_ex_i       ( pc_source_ex ),
-    
-    // Trap handling
-    .trap_id_i ( trap_id ),
-    .trap_ex_i ( trap_ex ),
-    .mtvec_i   ( mtvec )
+    .pc_source_ex_i       ( pc_source_ex )
 );
 
 
@@ -179,6 +182,7 @@ id_stage #(
     .rs2_addr_id_o ( rs2_addr_id ),
     .illegal_instr_id_o ( illegal_instr_id ),
     .instr_addr_misaligned_id_o ( instr_addr_misaligned_id ),
+    .is_mret_id_o ( is_mret_id ),
     
     // Output to CSRs
     .csr_access_id_o ( csr_access_id ),
@@ -419,6 +423,7 @@ controller controller_inst (
     .illegal_instr_id_i ( illegal_instr_id ),
     .instr_addr_misaligned_id_i ( instr_addr_misaligned_id ),
     // .instr_addr_misaligned_ex_i ( instr_addr_misaligned_ex ),
+    .is_mret_id_i      ( is_mret_id ),
     .exception_cause_o ( exception_cause )
 );
 

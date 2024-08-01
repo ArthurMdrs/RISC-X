@@ -32,6 +32,9 @@ module decoder import core_pkg::*; #(
     output logic           csr_access_o,
     output csr_operation_t csr_op_o,
     
+    // Indicate MRET
+    output logic is_mret_o,
+    
     // Decoded an illegal instruction
     output logic illegal_instr_o,
     
@@ -69,6 +72,8 @@ always_comb begin
     
     csr_access_o = 1'b0;
     csr_op_o     = CSR_READ;
+    
+    is_mret_o = 1'b0;
     
     illegal_instr_o = 1'b0;
     
@@ -242,11 +247,36 @@ always_comb begin
         /////////////////////////////////////////////
         OPCODE_SYSTEM: begin
             // Non CSR related SYSTEM instructions
-            if ({instr_i[19:15], instr_i[11:7]} == '0)
-            begin
-                illegal_instr_o = 1'b1;
+            if (funct3 == '0) begin
+                if ({instr_i[19:15], instr_i[11:7]} == '0) begin
+                    unique case (instr_i[31:20])
+                        12'h000: begin // ecall
+                            illegal_instr_o = 1'b1;
+                        end
+                        12'h001: begin // ebreak
+                            illegal_instr_o = 1'b1;
+                        end
+                        12'h302: begin // mret
+                            is_mret_o = 1'b1;
+                        end
+                        12'h002: begin // uret
+                            illegal_instr_o = 1'b1;
+                        end
+                        12'h7b2: begin // dret
+                            illegal_instr_o = 1'b1;
+                        end
+                        12'h105: begin // wfi
+                            illegal_instr_o = 1'b1;
+                        end
+                        default: illegal_instr_o = 1'b1;
+                    endcase
+                end
+                else begin
+                    illegal_instr_o = 1'b1;
+                end
             end
-            else begin // Instructions that read/modify CSRs
+            // Instructions that read/modify CSRs
+            else begin 
                 csr_access_o  = 1'b1;
                 reg_alu_wen_o = 1'b1;
                 alu_source_2_o = ALU_SCR2_IMM;
@@ -293,7 +323,9 @@ always_comb begin
                     CSR_MHARTID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
                     
                     CSR_MSTATUS,
-                    CSR_MTVEC,
+                    CSR_MIE,
+                    CSR_MTVEC: ;
+                    
                     CSR_MEPC,
                     CSR_MCAUSE: ;
                     

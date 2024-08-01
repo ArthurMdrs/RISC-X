@@ -1,4 +1,4 @@
-module rvvi_tb;
+module riscv_dv_tb;
 
 localparam int ADDR_WIDTH = 16;
 localparam int MEM_SIZE = 2**ADDR_WIDTH;
@@ -29,8 +29,56 @@ int section_text_start = 32'h0000_3000;
 int section_text_end   = 32'h0000_3ffc;
 int section_text_size  = section_text_end - section_text_start;
 
+logic [31:0] instr_mem [];
+logic [31:0] instr_addr, idx;
+assign instr_addr = imem_addr - section_text_start;
+bit fetch_enable = 0;
+always_comb begin
+    imem_rdata = '0;
+    // instr_addr = (imem_addr >= section_text_start) ? (imem_addr - section_text_start) : ('0);
+    if (fetch_enable) begin
+        idx = instr_addr >> 2;
+        if (idx >= instr_mem.size()) begin
+            $display("%t: Out of bounds access to instr mem.", $time);
+            $display("%t: Allowed range: %h - %h.", $time, section_text_start, section_text_end);
+            $display("%t: Accessed addr: %h.", $time, instr_addr);
+            $finish;
+        end
+        else begin
+            imem_rdata = instr_mem[idx];
+        end
+    end
+end
+// assign imem_rdata = instr_mem[instr_addr];
+// always_ff @(negedge clk or negedge rst_n) begin
+//     if (!rst_n) begin
+//         imem_rdata <= '0;
+//     end
+//     begin
+//         imem_rdata <= '0;
+//         // instr_addr = (imem_addr >= section_text_start) ? (imem_addr - section_text_start) : ('0);
+//         if (fetch_enable) begin
+//             if (instr_addr/4 < instr_mem.size()) begin
+//                 imem_rdata = instr_mem[instr_addr];
+//                 if ($time < 20)
+//                 $display("%t: Drove instr: %h.", $time, imem_rdata);
+//             end
+//             else begin
+//                 $display("%t: Out of bounds access to instr mem.", $time);
+//                 $display("%t: Allowed range: %h - %h.", $time, section_text_start, section_text_end);
+//                 $display("%t: Accessed addr: %h.", $time, instr_addr);
+//                 $display("%t: Accessed addr/4: %h.", $time, instr_addr/4);
+//                 $display("%t: Accessed imem_addr: %h.", $time, imem_addr);
+//                 $display("%t: Accessed section_text_start: %h.", $time, section_text_start);
+//                 $finish;
+//             end
+//         end
+//     end
+// end
+
+
 wire [31:0] hartid    = 32'h0000_0000;
-wire [23:0] mtvec     = 24'h0000_80;
+wire [23:0] mtvec     = 24'h8000_80;
 wire [29:0] boot_addr = section_text_start[31:2];
 
 `define CORE wrapper_inst.core_inst
@@ -92,9 +140,11 @@ mem #(
     .ben_a   (dmem_ben),
     
     // Port b (instruction)
-    .rdata_b (imem_rdata),
+    // .rdata_b (imem_rdata),
+    .rdata_b (),
     .wdata_b (32'b0),
-    .addr_b  (imem_addr[ADDR_WIDTH-1:0]),
+    // .addr_b  (imem_addr[ADDR_WIDTH-1:0]),
+    .addr_b  ('0),
     .wen_b   (1'b0),
     .ben_b   (4'b0)
 );
@@ -140,7 +190,7 @@ string progs_path = "../basic_tb/programs";
 bit check_regs = 1, check_mem = 1;
 
 localparam int PERIOD = 2;
-localparam int MAX_CYCLES = 100000;
+localparam int MAX_CYCLES = 1000000;
 initial begin
     clk = 0; 
     repeat(MAX_CYCLES) #(PERIOD/2) clk = ~clk;
@@ -156,6 +206,7 @@ initial begin
 
     $display("#==========================================================#");
     
+    fetch_enable = 0;
     reset ();
     
     if ($value$plusargs("prog=%s", prog_name)) begin
@@ -164,14 +215,14 @@ initial begin
     if ($value$plusargs("progs_path=%s", progs_path)) begin
         $display("Got progs_path from plusargs:\n  %s", progs_path);
     end
-    if ($value$plusargs("check_regs=%s", check_regs)) begin
+    if ($value$plusargs("check_regs=%b", check_regs)) begin
         $display("Got check_regs from plusargs:\n  %b", check_regs);
     end
-    if ($value$plusargs("check_mem=%s", check_mem)) begin
+    if ($value$plusargs("check_mem=%b", check_mem)) begin
         $display("Got check_mem from plusargs:\n  %b", check_mem);
     end
-    if ($value$plusargs("text_start=%s", section_text_start)) begin
-        $display("Got text_start from plusargs:\n  %b", section_text_start);
+    if ($value$plusargs("text_start=%h", section_text_start)) begin
+        $display("Got text_start from plusargs:\n  %h", section_text_start);
     end
         
     drive_prog(prog_name, check_regs, check_mem);
@@ -216,22 +267,32 @@ task load_instr_mem (string prog_file);
         num_entries++;
       end
     end
-    // section_text_size = num_entries*4;
-    section_text_size = num_entries;
-    $display("%t: section_text_size = %h.", $time, section_text_size);
+    section_text_size = num_entries*4;
+    // section_text_size = num_entries;
+    section_text_end = section_text_start + section_text_size;
+    if(verbose) begin
+        $display("%t: section_text_size in words = %h.", $time, num_entries);
+        $display("%t: section_text_size in bytes = %h.", $time, section_text_size);
+        $display("%t: Section .text range = [%h, %h].", $time, section_text_start, section_text_end);
+    end
     
-    mem = new [section_text_size];
+    mem = new [num_entries];
+    instr_mem = new [num_entries];
+    
+    
     foreach(mem[i]) mem[i] = '0;
     $readmemh(prog_file, mem);
     foreach(mem[i]) begin
         // $display("%t: mem[%d] %h.", $time, i, mem[i]);
         // addr = i*4 + section_text_start;
         if (mem[i] !== 'x) begin
-            addr = i*4 + section_text_start;
-            mem_inst.mem[addr  ] = mem[i][ 0+:8];
-            mem_inst.mem[addr+1] = mem[i][ 8+:8];
-            mem_inst.mem[addr+2] = mem[i][16+:8];
-            mem_inst.mem[addr+3] = mem[i][24+:8];
+            // addr = i*4 + section_text_start;
+            // mem_inst.mem[addr  ] = mem[i][ 0+:8];
+            // mem_inst.mem[addr+1] = mem[i][ 8+:8];
+            // mem_inst.mem[addr+2] = mem[i][16+:8];
+            // mem_inst.mem[addr+3] = mem[i][24+:8];
+            
+            instr_mem[i] = mem[i];
         end
     end
     // print_instr_mem();
@@ -286,20 +347,27 @@ task drive_prog (string prog_name, bit check_regs, bit check_mem);
         $display("#==========================================================#");
         $display("%t: Executing program %s.", $time, prog_name);
         reset ();
+        fetch_enable = 1;
         
         // Load instructions into instruction memory
         load_instr_mem(prog_file);
         
         // Wait for instructions to end
-        do begin
-            @(negedge clk);
-            // if (instr_clone === 'x) // After the end of instr mem code, there's only unknowns
-            if (imem_rdata === '0) // After the end of instr mem code, there's only zeros
-                cnt_x_instr++;
-            else
-                cnt_x_instr = 0;
-            // $display("%t: Instr in WB stage is = %h. %g", $time, wrapper_inst.rvfi_insn, rvvi.valid[0][0]);
-        end while (cnt_x_instr != 6); // Proceed when IF stage has 6 consecutive blank instr
+        
+        // do begin
+        //     @(negedge clk);
+        //     // if (instr_clone === 'x) // After the end of instr mem code, there's only unknowns
+        //     if (imem_rdata === '0) // After the end of instr mem code, there's only zeros
+        //         cnt_x_instr++;
+        //     else
+        //         cnt_x_instr = 0;
+        //     // $display("%t: Instr in WB stage is = %h. %g", $time, wrapper_inst.rvfi_insn, rvvi.valid[0][0]);
+        // end while (cnt_x_instr != 6); // Proceed when IF stage has 6 consecutive blank instr
+        
+        // An ecall marks the end of the program
+        while (rvvi.insn[0][0] != 32'h00000073) // ecall
+            @(posedge clk);
+        fetch_enable = 0;
 
         // Get expected data memory values (got from RARS simulator)
         if (check_mem)
@@ -335,12 +403,6 @@ task drive_prog (string prog_name, bit check_regs, bit check_mem);
         
             drive_prog (single_prog, 1, 1);
         end
-        // foreach(progs_with_regs[i]) begin
-        //     string single_prog;
-        //     single_prog = progs_with_regs[i];
-        
-        //     drive_prog (single_prog, 1, 1);
-        // end
     end
 endtask
 
