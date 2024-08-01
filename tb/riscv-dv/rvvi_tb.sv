@@ -33,15 +33,17 @@ logic [31:0] instr_mem [];
 logic [31:0] instr_addr, idx;
 assign instr_addr = imem_addr - section_text_start;
 bit fetch_enable = 0;
+bit prog_end;
 always_comb begin
     imem_rdata = '0;
     // instr_addr = (imem_addr >= section_text_start) ? (imem_addr - section_text_start) : ('0);
     if (fetch_enable) begin
         idx = instr_addr >> 2;
-        if (idx >= instr_mem.size()) begin
-            $display("%t: Out of bounds access to instr mem.", $time);
+        if (idx > instr_mem.size() && !prog_end) begin
+            $display("%t: Out of bounds access to instr mem. Terminating...", $time);
             $display("%t: Allowed range: %h - %h.", $time, section_text_start, section_text_end);
-            $display("%t: Accessed addr: %h.", $time, instr_addr);
+            // $display("%t: Accessed addr: %h.", $time, instr_addr);
+            $display("%t: Accessed addr: %h.", $time, imem_addr);
             $finish;
         end
         else begin
@@ -348,6 +350,7 @@ task drive_prog (string prog_name, bit check_regs, bit check_mem);
         $display("%t: Executing program %s.", $time, prog_name);
         reset ();
         fetch_enable = 1;
+        prog_end = 0;
         
         // Load instructions into instruction memory
         load_instr_mem(prog_file);
@@ -365,8 +368,12 @@ task drive_prog (string prog_name, bit check_regs, bit check_mem);
         // end while (cnt_x_instr != 6); // Proceed when IF stage has 6 consecutive blank instr
         
         // An ecall marks the end of the program
-        while (rvvi.insn[0][0] != 32'h00000073) // ecall
-            @(posedge clk);
+        while (rvvi.insn[0][0] != 32'h00000073) begin// ecall
+            @(negedge clk);
+            if (imem_rdata == 32'h00000073)
+                prog_end = 1;
+        end
+        @(negedge clk);
         fetch_enable = 0;
 
         // Get expected data memory values (got from RARS simulator)

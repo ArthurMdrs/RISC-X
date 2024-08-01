@@ -17,13 +17,14 @@ ${RTL_HOME}/wb_stage.sv
 ${RTL_HOME}/core.sv
 
 +incdir+${RVFI_HOME}
-${TB_HOME}/rvfi_defines.sv
-${TB_HOME}/rvfi_macros.vh
+${RVFI_HOME}/rvfi_defines.sv
+${RVFI_HOME}/rvfi_macros.vh
 ${RVFI_HOME}/rvfi.sv
 
+${RVVI_HOME}/rvviTrace.sv
+${RVVI_HOME}/riscv_decoder.sv
+${RVVI_HOME}/rvvi_tracer.sv
+${RVVI_HOME}/rvvi_wrapper.sv
+
 ${TB_HOME}/mem.sv
-${TB_HOME}/riscv_decoder.sv
-${TB_HOME}/rvviTrace.sv
-${TB_HOME}/rvvi_tracer.sv
-${TB_HOME}/rvvi_wrapper.sv
 ${TB_HOME}/rvvi_tb.sv
