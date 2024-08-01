@@ -2,7 +2,7 @@
 
 ## multiplier.sv
 
-- Bloco pra instrução de multiplicador de 32bits utilizando handshake com lógica binária de deslocamento e algoritmo de multiplicação binária de Booth.
+- Bloco pra instrução de multiplicador de 32bits utilizando handshake com lógica do algoritmo de multiplicação binária de Booth.
 
 ## tb_multiplier.sv
 
