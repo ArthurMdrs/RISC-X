@@ -1,0 +1,50 @@
+xrun(64): 22.09-s007: (c) Copyright 1995-2023 Cadence Design Systems, Inc.
+TOOL:	xrun(64)	22.09-s007: Started on Aug 02, 2024 at 17:53:00 -03
+xrun
+	-access +r
+	-uvm
+	+uvm_set_config_int=*,recording_detail,1
+	-coverage all
+	-covoverwrite
+	-DSYSTEM_CLOCK_UNITS_PER_SECOND=100
+	-timescale 1ns/1ns
+	../bvm/system_clock.c
+	+incdir+../bvm
+	../bvm/bvm_pkg.sv
+	dut.sv
+	interface.sv
+	test_pkg.sv
+	top.sv
+	+UVM_VERBOSITY=LOW
+
+   User defined plus("+") options:
+	+uvm_set_config_int=*,recording_detail,1
+	+UVM_VERBOSITY=LOW
+
+Recompiling... reason: file './dut.sv' is newer than expected.
+	expected: Fri Jul 19 19:21:58 2024
+	actual:   Fri Aug  2 17:36:34 2024
+Compiling UVM packages (uvm_pkg.sv cdns_uvm_pkg.sv) using uvmhome location /opt/cadence/XCELIUM2209/tools/methodology/UVM/CDNS-1.1d
+$CDSROOT = /opt/cadence/XCELIUM2209
+$TESTDIR = /home/xmen/Desktop/RISC-X/UVM/uvm/DIVISOR/raiz/work
+
+TOOL:	xmsc(64)	22.09-s007
+xmsc cc parameters: 
+	$CDSROOT/tools/cdsgcc/gcc/9.3/bin/gcc
+	-DSYSTEM_CLOCK_UNITS_PER_SECOND=100
+	-I$CDSROOT/tools/include
+	-I$CDSROOT/tools/inca/include
+	-I$CDSROOT/tools/methodology/UVM/CDNS-1.1d/sc/sc
+	-I$CDSROOT/tools/methodology/UVM/CDNS-1.1d/ml/sc 
+	-DXMSC
+	-DNCSC
+	-fPIC
+	-D_GLIBCXX_USE_CXX11_ABI=1 -c
+	-x c  -Wall
+
+make: *** No rule to make target '/home/xmen/Desktop/RISC-X-UVM_verification/tb/uvm/CONTROLLER/raiz/work/../bvm/system_clock.c', needed by 'xcelium.d/run.lnx8664.22.09.d/xmsc_run/xmsc_obj/system_clock_0.o'.  Stop.
+xmsc_run: *W,TBPARC: Unable to open file ./xcelium.d/run.lnx8664.22.09.d/xmsc_run/xmsc_obj/xmsc_system_clock_0.log
+xmsc_run: *E,TBBLDF: Failed to generate object ./xcelium.d/run.lnx8664.22.09.d/xmsc_run/xmsc_obj/system_clock_0.o
+
+xrun: *E,CCERR: Error during cc compilation (status 1), exiting.
+TOOL:	xrun(64)	22.09-s007: Exiting on Aug 02, 2024 at 17:53:01 -03  (total: 00:00:01)

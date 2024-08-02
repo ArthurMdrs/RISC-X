@@ -1,0 +1,54 @@
+Como criar um testbench para qualquer DUT
+=========================================
+
+a partir do último passo do curso UVM interativo on-line chamado UVM_steps.
+
+A cada passo, sem falta, coloque para rodar e verifique o resultado,
+observando sempre a visualização das transações no diagrama
+de tempo (simvision, vsim, ou dve).
+
+Dependente das propriedades desejadas do testbench novo,
+os passos sugeridos aqui podem ser outros.
+
+1) Modifique a transação
+   No arquivo trans.svh, não apague nada referente à variável a,
+   nem modifique o nome da transação.
+
+2) Define constraints para randomização
+
+3) Acrescente mais elementos da transação, um por um,
+   e randomize, um por um.
+
+4) Modifique o modelo de referência
+   No arquivo refmod.svh, acrescente funcionalidades desejadas
+   relacionadas aos elementos acrescentadas à transação.
+   Resultados precisam usar elementos da transação a_tr, já
+   que ainda não temos outra transação definida.
+
+5) Acrescente uma definição de transação
+   No arquivo trans.svh, não apague nada, copie/cole entre
+   class e endclass e modifique o nome da cópia para um nome desejado.
+
+6) No modelo de referência, acrescente uma porta de saída
+   para a nova transação.
+   Copie o sorvedouro do primeiro passo do UVM_steps (drain.svh).
+   Adapte-o à nova transação e conecte-o na nova porta de saída.
+
+7) No DUT, acrescente sinais e barramentos para a nova transação,
+   ou instancie um DUT novo ao lado ou dentro do existente.
+
+8) Crie uma nova interface e conecte-a no DUT.
+
+9) Crie um novo monitor dentro do agent de saída e conecte um
+   sorvedouro copiado e adaptado de drain.svh nele.
+
+10) Conecte o monitor na interface.
+
+11) Substitue os dois sorvedouros por um comparador.
+
+D'aí você já pegou o jeito de fazer e poderá andar em frente.
+Qualquer dúvida, entre em contato sem demora.
+
+xx) Mais na frente, quando não está mais sendo usado em nenhuma parte,
+      elimine o DUT original do UVM_steps e depois elimine o elemento "a"
+     da transação original.
