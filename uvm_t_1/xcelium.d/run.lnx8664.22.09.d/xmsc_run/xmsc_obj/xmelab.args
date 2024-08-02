@@ -1,0 +1,4 @@
+-nocopyright
+-cdslib /home/xmen/Desktop/RISC-X/UVM/uvm/DIVISOR/raiz/work/./xcelium.d/run.lnx8664.22.09.d/cdsrun.lib
+-hdlvar /home/xmen/Desktop/RISC-X/UVM/uvm/DIVISOR/raiz/work/./xcelium.d/run.lnx8664.22.09.d/hdlrun.var
+-work worklib

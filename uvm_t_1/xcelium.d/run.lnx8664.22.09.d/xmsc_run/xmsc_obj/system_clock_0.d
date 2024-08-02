@@ -1,0 +1,2 @@
+system_clock_0.o: \
+ /home/xmen/Desktop/RISC-X-UVM_verification/tb/uvm/CONTROLLER/raiz/work/../bvm/system_clock.c  /opt/cadence/XCELIUM2209/tools.lnx86/cdsgcc/gcc/9.3/install/lib/gcc/x86_64-redhat-linux/9.3.0/include/stddef.h 
