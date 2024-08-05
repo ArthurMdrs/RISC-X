@@ -37,17 +37,19 @@ typedef enum logic [1:0] {
 
 
 
-typedef enum logic [3:0] {
+typedef enum logic [4:0] {
     IMM_I,
     IMM_S,
     IMM_B,
     IMM_U,
     IMM_J,
+
     IMM_CJ,
+    IMM_CJR,
     IMM_CI,
     IMM_CLUI,
-    IMM_CSSL,
-    IMM_CSSS,
+    IMM_CSPL,
+    IMM_CSPS,
     IMM_CLS,
     IMM_CB
 } immediate_source_t;
@@ -101,6 +103,10 @@ localparam logic [6:0] OPCODE_JALR   = 7'b110_0111; // 7'h67
 localparam logic [6:0] OPCODE_LUI    = 7'b011_0111; // 7'h37
 localparam logic [6:0] OPCODE_AUIPC  = 7'b001_0111; // 7'h17
 localparam logic [6:0] OPCODE_SYSTEM = 7'b111_0011; // 7'h73
+
+localparam logic [6:0] OPCODE_QUADRANTE_0   = 7'bxxxxx_00;
+localparam logic [6:0] OPCODE_QUADRANTE_1   = 7'bxxxxx_01;
+localparam logic [6:0] OPCODE_QUADRANTE_2   = 7'bxxxxx_10;
 
 // CSRs mnemonics (some might not be implemented)
 
