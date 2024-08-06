@@ -89,6 +89,123 @@ always_comb begin
 
     unique case (opcode)
         /////////////////////////////////////////////
+        /////////////        typeC      /////////////
+        /////////////////////////////////////////////
+        7'bxxxxx_10: begin
+                case (funct3_C)
+                    3'b000: begin //CSLLi
+                        alu_source_2_o  = ALU_SCR2_IMM;
+                        reg_alu_wen_o   = 1'b1;
+                        alu_operation_o = ALU_SLL;
+                        
+                        immediate_type_o = IMM_CI;
+
+                        rd_addr_C  = instr_i[11:7];
+                        rs1_addr_C = instr_i[11:7];
+                    end
+                    3'b01x: begin //CLs
+                        alu_operation_o  = ALU_ADD;
+                        alu_source_2_o   = ALU_SCR2_IMM;
+                        immediate_type_o = IMM_I;
+                        mem_data_type_o  = WORD;
+                        //immediate_type_o = IMM_I;
+                        reg_mem_wen_o    = 1'b1;
+                        
+                        immediate_type_o = IMM_CSPL;
+
+                        rs1_addr_C = 5'd2; //x2
+                        rd_addr_C  = instr_i[11:7];
+                        if (funct3_C[0])
+                            mem_wen_o = 1'b1; //C_FLWSP?
+
+                    end
+                    3'b100: begin
+                        if (funct4_C[0] == 1'd0) begin
+                            if (instr_i[11:7] == 5'd0) illegal_instr_o = 1'b1; else begin
+                                if (instr_i[6:2] == 5'd0) begin //C_JR
+                                    // ALU calculates PC+4 or PC+2
+                                    // The jump target has a dedicated adder in ID stage
+                                
+                                    alu_operation_o  = ALU_ADD;
+                                    alu_source_1_o   = ALU_SCR1_PC;
+                                    alu_source_2_o   = ALU_SCR2_4_OR_2;
+                                    //immediate_type_o = IMM_I;
+                                    reg_alu_wen_o  = 1'b1;
+                                    pc_source_o    = PC_JALR;
+
+                                    
+                                    immediate_type_o = IMM_CJR;
+
+                                    rs1_addr_C = instr_i[11:7];
+                                    rs2_addr_C = 5'd0;
+                                    rd_addr_C  = 5'd0;
+
+                                end
+                                else begin //C_MV
+                                    reg_alu_wen_o   = 1'b1;
+                                    alu_operation_o = ALU_ADD;
+
+                                    rd_addr_C  = instr_i[11:7];
+                                    rs1_addr_C = 5'd0; //zero (x0)
+                                    rs2_addr_C = instr_i[6:2];
+                                end
+                            end
+
+                        end
+                        else begin
+                            if (instr_i[11:2] == 10'd0) illegal_instr_o = 1'b1; else begin //C_BREAK
+                                if (instr_i[6:2] == 5'd0) begin //C_JALR
+                                    // ALU calculates PC+4 or PC+2
+                                    // The jump target has a dedicated adder in ID stage
+                                
+                                    alu_operation_o  = ALU_ADD;
+                                    alu_source_1_o   = ALU_SCR1_PC;
+                                    alu_source_2_o   = ALU_SCR2_4_OR_2;
+                                    //immediate_type_o = IMM_I;
+                                    reg_alu_wen_o    = 1'b1;
+                                    pc_source_o      = PC_JALR;
+
+                                    immediate_type_o = IMM_CJR;
+
+                                    rs1_addr_C = instr_i[11:7];
+                                    rs2_addr_C = 5'd1;
+                                    rd_addr_C  = 5'd1;
+
+                                end
+                                else begin //C_ADD
+                                    reg_alu_wen_o   = 1'b1;
+                                    alu_operation_o = ALU_ADD;
+
+                                    rd_addr_C  = instr_i[11:7];
+                                    rs1_addr_C = instr_i[11:7];
+                                    rs2_addr_C = instr_i[6:2];
+                                end
+                            end
+                        end
+
+
+                    end
+                    3'b11x: begin //C_SWSP
+                        alu_operation_o  = ALU_ADD;
+                        alu_source_2_o   = ALU_SCR2_IMM;
+                        mem_data_type_o  = WORD;
+                        //immediate_type_o = IMM_S;
+                        mem_wen_o        = 1'b1;
+
+                        immediate_type_o = IMM_CSPS;
+
+                        rs1_addr_C = 5'd2; //x2
+                        rs2_addr_C = instr_i[6:2];
+                        if (funct3_C[0])
+                            mem_wen_o = 1'b1; //C_FSWSP?
+                    end
+                    default: illegal_instr_o = 1'b1;
+                endcase
+        end
+
+
+
+        /////////////////////////////////////////////
         /////////////        ALU        /////////////
         /////////////////////////////////////////////
         OPCODE_OP: begin

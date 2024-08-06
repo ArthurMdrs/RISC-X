@@ -30,7 +30,7 @@ module if_stage import core_pkg::*; (
 ///////////////////////////////////////////////////////////////////////////////
 
 logic [31:0] pc_if_n;
-logic pc_if_p2_or_p4;
+logic        is_compressed_if_o;
 
 // Next instruction pointer decision maker
 assign is_compressed_if_o = ~(imem_rdata_i[1] & imem_rdata_i[0]);

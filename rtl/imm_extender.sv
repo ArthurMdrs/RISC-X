@@ -11,7 +11,7 @@ AST_DWIDTH_MORE_THAN_IMM_SIZE: assert property (@ (instr_i) DWIDTH >= 12);
 `endif
 
 always_comb begin
-    unique case (immediate_type_i)
+    unique case (immediate_type_i)  
         IMM_I: immediate = {{(DWIDTH-12){instr_i[31]}}, instr_i[31:20]};
         IMM_S: immediate = {{(DWIDTH-12){instr_i[31]}}, instr_i[31:25], instr_i[11:7]};
         IMM_B: immediate = {{(DWIDTH-13){instr_i[31]}}, instr_i[31], instr_i[7], instr_i[30:25], instr_i[11:8], 1'b0};
