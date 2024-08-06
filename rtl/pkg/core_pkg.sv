@@ -3,23 +3,23 @@ package core_pkg;
 // ALU-related types
 
 typedef enum logic [3:0] {
-    ALU_AND, 
-    ALU_OR, 
-    ALU_XOR, 
+    ALU_AND,    // 0000
+    ALU_OR,     // 0001
+    ALU_XOR,    // 0010
     
-    ALU_ADD, 
-    ALU_SUB, 
+    ALU_ADD,    // 0011
+    ALU_SUB,    // 0100
     
-    ALU_SLL, 
-    ALU_SRL, 
-    ALU_SRA,
+    ALU_SLL,    // 0101
+    ALU_SRL,    // 0110
+    ALU_SRA,    // 0111
     
-    ALU_SLT, 
-    ALU_SLTU, 
-    ALU_SGE, 
-    ALU_SGEU,
-    ALU_SEQ,
-    ALU_SNE
+    ALU_SLT,    // 1000
+    ALU_SLTU,   // 1001
+    ALU_SGE,    // 1010
+    ALU_SGEU,   // 1011
+    ALU_SEQ,    // 1100
+    ALU_SNE     // 1101
 } alu_operation_t;
 
 typedef enum logic [1:0] { 
@@ -101,6 +101,12 @@ localparam logic [6:0] OPCODE_JALR   = 7'b110_0111; // 7'h67
 localparam logic [6:0] OPCODE_LUI    = 7'b011_0111; // 7'h37
 localparam logic [6:0] OPCODE_AUIPC  = 7'b001_0111; // 7'h17
 localparam logic [6:0] OPCODE_SYSTEM = 7'b111_0011; // 7'h73
+
+// Type RVC opcode:
+
+localparam logic [6:0] OPCODE_RVC_1 = 7'bxxx_xx00; // First Quadrant
+localparam logic [6:0] OPCODE_RVC_2 = 7'bxxx_xx01; // Second
+localparam logic [6:0] OPCODE_RVC_3 = 7'bxxx_xx10; // Third
 
 // CSRs mnemonics (some might not be implemented)
 
