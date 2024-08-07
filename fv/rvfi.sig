@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wavelist version="3">
-  <insertion-point-position>46</insertion-point-position>
+  <insertion-point-position>25</insertion-point-position>
   <wave>
     <expr>clock</expr>
     <label/>
@@ -10,17 +10,22 @@
     <expr/>
     <label>rvfi_valid</label>
     <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_id</expr>
+      <expr>wrapper.core_inst.valid_if</expr>
       <label/>
       <radix/>
     </wave>
     <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_ex</expr>
+      <expr>wrapper.core_inst.valid_id</expr>
       <label/>
       <radix/>
     </wave>
     <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_mem</expr>
+      <expr>wrapper.core_inst.valid_ex</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.valid_mem</expr>
       <label/>
       <radix/>
     </wave>
@@ -33,6 +38,11 @@
   <group collapsed="false">
     <expr/>
     <label>Instr</label>
+    <wave collapsed="true">
+      <expr>wrapper.core_inst.instr_if</expr>
+      <label/>
+      <radix/>
+    </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.instr_id</expr>
       <label/>
@@ -79,6 +89,35 @@
     </wave>
     <wave>
       <expr>wrapper.rvfi_inst.trap_wb</expr>
+      <label/>
+      <radix/>
+    </wave>
+  </group>
+  <group collapsed="false">
+    <expr/>
+    <label>Intr</label>
+    <wave>
+      <expr>wrapper.rvfi_inst.intr_if</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.intr_id</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.intr_ex</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.intr_mem</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.intr_wb</expr>
       <label/>
       <radix/>
     </wave>
@@ -272,6 +311,10 @@
     <!--Users can remove the highlightlist block if they want to load the signal save file into older version of Jasper-->
     <highlight>
       <expr>wrapper.rvfi_inst.instr_wb</expr>
+      <color>#ff8787</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.rvfi_inst.intr_wb</expr>
       <color>#ff8787</color>
     </highlight>
     <highlight>

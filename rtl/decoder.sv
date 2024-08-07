@@ -32,6 +32,9 @@ module decoder import core_pkg::*; #(
     output logic           csr_access_o,
     output csr_operation_t csr_op_o,
     
+    // Indicate MRET
+    output logic is_mret_o,
+    
     // Decoded an illegal instruction
     output logic illegal_instr_o,
     
@@ -64,11 +67,13 @@ always_comb begin
     reg_alu_wen_o = 1'b0;
     reg_mem_wen_o = 1'b0;
     
-    pc_source_o = PC_P_4;
+    pc_source_o = PC_NEXT;
     is_branch_o = 1'b0;
     
     csr_access_o = 1'b0;
     csr_op_o     = CSR_READ;
+    
+    is_mret_o = 1'b0;
     
     illegal_instr_o = 1'b0;
     
@@ -77,7 +82,6 @@ always_comb begin
         /////////////        ALU        /////////////
         /////////////////////////////////////////////
         OPCODE_OP: begin
-            // if ({instr_i[31], instr_i[29:25]} != 6'b0) // funct7 must be 7'h00 or 7'h20
             if (!(funct7 inside {7'h00, 7'h20}))
                 illegal_instr_o = 1'b1;
             
@@ -242,11 +246,36 @@ always_comb begin
         /////////////////////////////////////////////
         OPCODE_SYSTEM: begin
             // Non CSR related SYSTEM instructions
-            if ({instr_i[19:15], instr_i[11:7]} == '0)
-            begin
-                illegal_instr_o = 1'b1;
+            if (funct3 == '0) begin
+                if ({instr_i[19:15], instr_i[11:7]} == '0) begin
+                    unique case (instr_i[31:20])
+                        12'h000: begin // ecall
+                            illegal_instr_o = 1'b1;
+                        end
+                        12'h001: begin // ebreak
+                            illegal_instr_o = 1'b1;
+                        end
+                        12'h302: begin // mret
+                            is_mret_o = 1'b1;
+                        end
+                        12'h002: begin // uret
+                            illegal_instr_o = 1'b1;
+                        end
+                        12'h7b2: begin // dret
+                            illegal_instr_o = 1'b1;
+                        end
+                        12'h105: begin // wfi
+                            illegal_instr_o = 1'b1;
+                        end
+                        default: illegal_instr_o = 1'b1;
+                    endcase
+                end
+                else begin
+                    illegal_instr_o = 1'b1;
+                end
             end
-            else begin // Instructions that read/modify CSRs
+            // Instructions that read/modify CSRs
+            else begin 
                 csr_access_o  = 1'b1;
                 reg_alu_wen_o = 1'b1;
                 alu_source_2_o = ALU_SCR2_IMM;
@@ -279,18 +308,25 @@ always_comb begin
                 endcase
                 
                 // Check privilege level
-                // if (instr_rdata_i[29:28] > current_priv_lvl_i) begin
+                // if (instr_i[29:28] > current_priv_lvl_i) begin
                 //     illegal_instr_o = 1'b1;
                 // end
                 
                 // Determine if CSR access is illegal
                 case (instr_i[31:20])
-                    CSR_MISA:;
+                    CSR_MISA: ;
         
-                    CSR_MVENDORID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
-                    CSR_MARCHID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
-                    CSR_MIMPID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
+                    CSR_MVENDORID,
+                    CSR_MARCHID,
+                    CSR_MIMPID,
                     CSR_MHARTID: if (csr_op_o != CSR_READ) illegal_instr_o = 1'b1;
+                    
+                    CSR_MSTATUS,
+                    CSR_MIE,
+                    CSR_MTVEC: ;
+                    
+                    CSR_MEPC,
+                    CSR_MCAUSE: ;
                     
                     default: illegal_instr_o = 1'b1;
                 endcase

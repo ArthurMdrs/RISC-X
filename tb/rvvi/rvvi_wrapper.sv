@@ -17,6 +17,13 @@ module rvvi_wrapper #(
     input  logic [31:0] imem_rdata_i,
     output logic [31:0] imem_addr_o,
     
+    // Hart ID, defined by system
+    input  logic [31:0] hartid_i,
+    // mtvec initial address, defined by system
+    input  logic [23:0] mtvec_i, // 24 upper bits, 256-byte aligned
+    // Boot addr (first fetch)
+    input  logic [29:0] boot_addr_i, // 30 upper bits, word aligned
+    
     // RVVI interface
     rvviTrace rvvi
 );
@@ -39,59 +46,14 @@ core #(
     .dmem_ben_o   ( dmem_ben_o ),
     
     .imem_rdata_i ( imem_rdata_i ),
-    .imem_addr_o  ( imem_addr_o )
+    .imem_addr_o  ( imem_addr_o ),
+    
+    .hartid_i    ( hartid_i ),
+    .mtvec_i     ( mtvec_i ),
+    .boot_addr_i ( boot_addr_i )
 );
 
-rvfi rvfi_inst (
-    .clk_i ( clk_i ),
-    .rst_n_i ( rst_n_i ),
-    
-    // Input from IF stage
-    .valid_if ( core_inst.valid_if ),
-    .pc_if ( core_inst.pc_if ),
-    
-    // Input from ID stage
-    .valid_id ( core_inst.valid_id ),
-    .stall_id ( core_inst.stall_id ),
-    
-    .instr_id ( core_inst.id_stage_inst.instr_id ),
-    .illegal_instr_id ( core_inst.id_stage_inst.illegal_instr_id ),
-    .alu_source_1_id ( core_inst.id_stage_inst.alu_source_1_id ),
-    .alu_source_2_id ( core_inst.id_stage_inst.alu_source_2_id ),
-    
-    .rs1_addr_id ( core_inst.rs1_addr_id ),
-    .rs2_addr_id ( core_inst.rs2_addr_id ),
-    
-    .rs1_or_fwd_id ( core_inst.id_stage_inst.rs1_or_fwd_id ),
-    .rs2_or_fwd_id ( core_inst.id_stage_inst.rs2_or_fwd_id ),
-    .pc_id ( core_inst.id_stage_inst.pc_id ),
-    .pc_source_id ( core_inst.pc_source_id ),
-    .jump_target_id ( core_inst.jump_target_id ),
-    .mem_wen_id ( core_inst.mem_wen_id ),
-    
-    // Input from EX stage
-    .valid_ex ( core_inst.valid_ex ),
-    .stall_ex ( core_inst.stall_ex ),
-    .flush_ex ( core_inst.flush_ex ),
-    .branch_target_ex ( core_inst.branch_target_ex ),
-    .branch_decision_ex ( core_inst.branch_decision_ex ),
-    
-    // Input from MEM stage
-    .valid_mem ( core_inst.valid_mem ),
-    .stall_mem ( core_inst.stall_mem ),
-    .dmem_wdata_o ( core_inst.dmem_wdata_o ),
-    .dmem_addr_o ( core_inst.dmem_addr_o ),
-    .dmem_wen_o ( core_inst.dmem_wen_o ),
-    .dmem_ben_o ( core_inst.dmem_ben_o ),
-    
-    // Input from WB stage
-    .rd_addr_wb ( core_inst.rd_addr_wb ),
-    .reg_wen_wb ( core_inst.reg_wen_wb ),
-    .reg_wdata_wb ( core_inst.reg_wdata_wb ),
-    .mem_rdata_wb ( core_inst.mem_rdata_wb ),
-  
-    `RVFI_CONN
-);
+`include "rvfi_inst.sv"
 
 
 
@@ -109,18 +71,14 @@ assign rvvi.debug_mode[0][0] = '0;
 assign rvvi.pc_rdata[0][0] = rvfi_pc_rdata;
 
 // X Registers
-logic [31:0][31:0] x_wdata;   // X data value
+logic [31:0][31:0] x_wdata;   // X write data value
 logic [31:0]       x_wb   ;   // X data writeback (change) flag
 always_comb begin
     foreach(rvvi.x_wdata[0][0][i]) begin
-        // rvvi.x_wdata[0][0][i] = '0;
-        // rvvi.x_wb[0][0][i]    = '0;
         x_wdata[i] = '0;
         x_wb[i]    = '0;
     end
     if (rvfi_rd_addr != '0) begin
-        // rvvi.x_wdata[0][0][rvfi_rd_addr] = rvfi_rd_wdata;
-        // rvvi.x_wb[0][0][rvfi_rd_addr]    = '1;
         x_wdata[rvfi_rd_addr] = rvfi_rd_wdata;
         x_wb[rvfi_rd_addr]    = '1;
     end
@@ -129,35 +87,72 @@ assign rvvi.x_wdata[0][0] = x_wdata;
 assign rvvi.x_wb[0][0]    = x_wb;
 
 // F Registers
-// always_comb begin
-//     foreach(rvvi.f_wdata[0][0][i]) begin
-//         rvvi.f_wdata[0][0][i] <= '0;
-//         rvvi.f_wb[0][0][i]    <= '0;
-//     end
-// end
 assign rvvi.f_wdata[0][0] = '{default:'0};
 assign rvvi.f_wb[0][0]    = '{default:'0};
 
 
 // V Registers
-// always_comb begin
-//     foreach(rvvi.v_wdata[0][0][i]) begin
-//         rvvi.v_wdata[0][0][i] <= '0;
-//         rvvi.v_wb[0][0][i]    <= '0;
-//     end
-// end
 assign rvvi.v_wdata[0][0] = '{default:'0};
 assign rvvi.v_wb[0][0]    = '{default:'0};
 
 // Control and Status Registers
-// always_comb begin
-//     foreach(rvvi.csr[0][0][i]) begin
-//         rvvi.csr[0][0][i]    <= '0;
-//         rvvi.csr_wb[0][0][i] <= '0;
-//     end
-// end
-assign rvvi.csr[0][0]    = '{default:'0};
-assign rvvi.csr_wb[0][0] = '{default:'0};
+logic [4095:0][31:0] csr_wdata;   // CSR write data value
+logic [4095:0]       csr_wb   ;   // CSR data writeback (change) flag
+always_comb begin
+    foreach(rvvi.csr[0][0][i]) begin
+        csr_wdata[i] = '0;
+        csr_wb[i]    = '0;
+    end
+    if(rvfi_inst.csr_wen_wb) begin
+        case(1'b1)
+            (rvfi_insn[31:20]==CSR_MISA): begin
+                csr_wdata[CSR_MISA] = rvfi_csr_misa_wdata;
+                csr_wb[CSR_MISA]    = 1'b1;
+            end
+            
+            (rvfi_insn[31:20]==CSR_MVENDORID): begin
+                csr_wdata[CSR_MVENDORID] = rvfi_csr_mvendorid_wdata;
+                csr_wb[CSR_MVENDORID]    = 1'b1;
+            end
+            (rvfi_insn[31:20]==CSR_MARCHID): begin
+                csr_wdata[CSR_MARCHID] = rvfi_csr_marchid_wdata;
+                csr_wb[CSR_MARCHID]    = 1'b1;
+            end
+            (rvfi_insn[31:20]==CSR_MIMPID): begin
+                csr_wdata[CSR_MIMPID] = rvfi_csr_mimpid_wdata;
+                csr_wb[CSR_MIMPID]    = 1'b1;
+            end
+            (rvfi_insn[31:20]==CSR_MHARTID): begin
+                csr_wdata[CSR_MHARTID] = rvfi_csr_mhartid_wdata;
+                csr_wb[CSR_MHARTID]    = 1'b1;
+            end
+            
+            (rvfi_insn[31:20]==CSR_MSTATUS): begin
+                csr_wdata[CSR_MSTATUS] = rvfi_csr_mstatus_wdata;
+                csr_wb[CSR_MSTATUS]    = 1'b1;
+            end
+            (rvfi_insn[31:20]==CSR_MIE): begin
+                csr_wdata[CSR_MIE] = rvfi_csr_mie_wdata;
+                csr_wb[CSR_MIE]    = 1'b1;
+            end
+            (rvfi_insn[31:20]==CSR_MTVEC): begin
+                csr_wdata[CSR_MTVEC] = rvfi_csr_mtvec_wdata;
+                csr_wb[CSR_MTVEC]    = 1'b1;
+            end
+            
+            (rvfi_insn[31:20]==CSR_MEPC): begin
+                csr_wdata[CSR_MEPC] = rvfi_csr_mepc_wdata;
+                csr_wb[CSR_MEPC]    = 1'b1;
+            end
+            (rvfi_insn[31:20]==CSR_MCAUSE): begin
+                csr_wdata[CSR_MCAUSE] = rvfi_csr_mcause_wdata;
+                csr_wb[CSR_MCAUSE]    = 1'b1;
+            end
+        endcase
+    end
+end
+assign rvvi.csr[0][0]    = csr_wdata;
+assign rvvi.csr_wb[0][0] = csr_wb;
 
 // Atomic Memory Control
 assign rvvi.lrsc_cancel[0][0] = '0;
