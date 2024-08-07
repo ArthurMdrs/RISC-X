@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wavelist version="3">
-  <insertion-point-position>29</insertion-point-position>
+  <insertion-point-position>27</insertion-point-position>
   <wave>
     <expr>clock</expr>
     <label/>
@@ -21,6 +21,84 @@
     </wave>
     <wave>
       <expr>checker_inst.expect_pc_valid</expr>
+      <label/>
+      <radix/>
+    </wave>
+  </group>
+  <group collapsed="false">
+    <expr/>
+    <label>rvfi_valid</label>
+    <wave>
+      <expr>wrapper.core_inst.valid_if</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.valid_id</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.valid_ex</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.valid_mem</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.rvfi_valid_id</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.rvfi_valid_ex</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.rvfi_valid_mem</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.rvfi_valid_wb</expr>
+      <label/>
+      <radix/>
+    </wave>
+  </group>
+  <group collapsed="false">
+    <expr/>
+    <label>Intr</label>
+    <wave collapsed="true">
+      <expr>wrapper.rvfi_inst.next_pc_mux</expr>
+      <label/>
+      <radix>wrapper.rvfi_inst.next_pc_mux</radix>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.intr_if</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.intr_id</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.intr_ex</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.intr_mem</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.intr_wb</expr>
       <label/>
       <radix/>
     </wave>
@@ -48,7 +126,11 @@
       <label/>
       <radix/>
     </wave>
-    <spacer/>
+    <wave collapsed="true">
+      <expr>wrapper.core_inst.if_stage_inst.pc_constroller_inst.next_pc_mux</expr>
+      <label/>
+      <radix>wrapper.rvfi_inst.next_pc_mux</radix>
+    </wave>
     <wave collapsed="true">
       <expr>wrapper.core_inst.if_stage_inst.pc_if_n</expr>
       <label/>
@@ -75,9 +157,19 @@
       <radix/>
     </wave>
   </group>
+  <wave>
+    <expr>wrapper.rvfi_inst.rvfi_valid</expr>
+    <label/>
+    <radix/>
+  </wave>
   <group collapsed="false">
     <expr/>
     <label>Instr</label>
+    <wave collapsed="true">
+      <expr>wrapper.core_inst.instr_if</expr>
+      <label/>
+      <radix/>
+    </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.instr_id</expr>
       <label/>
@@ -106,48 +198,19 @@
   </group>
   <group collapsed="false">
     <expr/>
-    <label>rvfi_valid</label>
-    <wave>
-      <expr>wrapper.rvfi_inst.valid_id</expr>
-      <label/>
-      <radix/>
-    </wave>
-    <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_id</expr>
-      <label/>
-      <radix/>
-    </wave>
-    <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_ex</expr>
-      <label/>
-      <radix/>
-    </wave>
-    <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_mem</expr>
-      <label/>
-      <radix/>
-    </wave>
-    <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_wb</expr>
-      <label/>
-      <radix/>
-    </wave>
-  </group>
-  <wave>
-    <expr>wrapper.rvfi_inst.rvfi_valid</expr>
-    <label/>
-    <radix/>
-  </wave>
-  <group collapsed="false">
-    <expr/>
     <label>Trap</label>
     <wave>
-      <expr>wrapper.rvfi_inst.illegal_instr_id</expr>
+      <expr>wrapper.core_inst.trap_id</expr>
       <label/>
       <radix/>
     </wave>
     <wave>
-      <expr>wrapper.rvfi_inst.trap_ex</expr>
+      <expr>wrapper.core_inst.trap_ex</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.rvfi_trap_ex</expr>
       <label/>
       <radix/>
     </wave>
@@ -158,6 +221,35 @@
     </wave>
     <wave>
       <expr>wrapper.rvfi_inst.trap_wb</expr>
+      <label/>
+      <radix/>
+    </wave>
+  </group>
+  <group collapsed="false">
+    <expr/>
+    <label>Control</label>
+    <wave>
+      <expr>wrapper.core_inst.flush_id</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.flush_ex</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.stall_if</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.stall_id</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.stall_ex</expr>
       <label/>
       <radix/>
     </wave>
@@ -188,22 +280,22 @@
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.rs1_or_fwd_id</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.rs1_rdata_ex</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.rs1_rdata_mem</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.rs1_rdata_wb</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
   </group>
   <group collapsed="true">
@@ -232,25 +324,25 @@
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.rs2_or_fwd_id</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.rs2_rdata_ex</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.rs2_rdata_mem</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.rs2_rdata_wb</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
   </group>
-  <group collapsed="true">
+  <group collapsed="false">
     <expr/>
     <label>rd</label>
     <wave collapsed="true">
@@ -266,21 +358,21 @@
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.reg_wdata_wb</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.rvfi_rd_wdata</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
   </group>
-  <group collapsed="true">
+  <group collapsed="false">
     <expr/>
     <label>Mem</label>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.mem_addr_wb</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.mem_rmask_wb</expr>
@@ -300,7 +392,7 @@
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.mem_wdata_wb</expr>
       <label/>
-      <radix/>
+      <radix>wrapper.rvfi_inst.rs1_or_fwd_id</radix>
     </wave>
   </group>
   <highlightlist>
@@ -310,20 +402,68 @@
       <color>builtin_blue</color>
     </highlight>
     <highlight>
+      <expr>checker_inst.insn_spec.spec_pc_wdata</expr>
+      <color>#beffc0</color>
+    </highlight>
+    <highlight>
+      <expr>checker_inst.insn_spec.spec_rd_addr</expr>
+      <color>#beffc0</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.rvfi_inst.instr_wb</expr>
+      <color>#ff8787</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.rvfi_inst.intr_wb</expr>
+      <color>#ff8787</color>
+    </highlight>
+    <highlight>
       <expr>wrapper.rvfi_inst.pc_id</expr>
-      <color>builtin_blue</color>
+      <color>#55ffff</color>
     </highlight>
     <highlight>
       <expr>wrapper.rvfi_inst.pc_if</expr>
-      <color>builtin_blue</color>
+      <color>#55ffff</color>
     </highlight>
     <highlight>
       <expr>wrapper.rvfi_inst.pc_n_wb</expr>
-      <color>builtin_red</color>
+      <color>#ff8787</color>
     </highlight>
     <highlight>
       <expr>wrapper.rvfi_inst.pc_wb</expr>
-      <color>builtin_red</color>
+      <color>#ff8787</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.rvfi_inst.rs1_addr_wb</expr>
+      <color>#ff8787</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.rvfi_inst.rs1_rdata_wb</expr>
+      <color>#ff8787</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.rvfi_inst.rs2_addr_wb</expr>
+      <color>#ff8787</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.rvfi_inst.rs2_rdata_wb</expr>
+      <color>#ff8787</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.rvfi_inst.rvfi_rd_addr</expr>
+      <color>#ff8787</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.rvfi_inst.rvfi_rd_wdata</expr>
+      <color>#ff8787</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.rvfi_inst.rvfi_valid_wb</expr>
+      <color>#ff8787</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.rvfi_inst.trap_wb</expr>
+      <color>#ff8787</color>
     </highlight>
   </highlightlist>
 </wavelist>

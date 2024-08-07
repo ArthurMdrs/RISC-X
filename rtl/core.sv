@@ -25,14 +25,18 @@ module core #(
     input  logic [31:0] imem_rdata_i,
     output logic [31:0] imem_addr_o,
     
-    // Hart ID defined by system
-    input  logic [31:0] hart_id_i
+    // Hart ID, defined by system
+    input  logic [31:0] hartid_i,
+    // mtvec initial address, defined by system
+    input  logic [23:0] mtvec_i, // 24 upper bits, 256-byte aligned
+    // Boot addr (first fetch)
+    input  logic [29:0] boot_addr_i // 30 upper bits, word aligned
 );
 
 import core_pkg::*;
 
 // Program Counter, Instruction and pipeline control signals
-logic [31:0] pc_if;
+logic [31:0] pc_if, pc_id, pc_ex;
 logic [31:0] instr_if;
 logic        valid_if, valid_id, valid_ex, valid_mem;
 // logic        ready_if, ready_id, ready_ex, ready_mem, ready_wb;
@@ -70,8 +74,12 @@ logic [31:0] branch_target_id, branch_target_ex;
 logic [31:0] jump_target_id;
 logic        branch_decision_ex;
 
-// Indicator of illegal instruction
-// logic illegal_instr_id;
+// Indicator of traps
+logic trap_id, trap_ex;
+logic illegal_instr_id;
+logic instr_addr_misaligned_id;
+// logic instr_addr_misaligned_ex;
+logic is_mret_id;
 
 // CSR signals
 logic           csr_access_id, csr_access_ex;
@@ -79,6 +87,9 @@ csr_operation_t csr_op_id, csr_op_ex;
 logic [31:0]    csr_wdata_ex;
 logic [31:0]    csr_rdata_ex;
 csr_addr_t      csr_addr_ex;
+logic [31:0]    mtvec, mepc;
+logic           save_pc_id, save_pc_ex;
+logic [ 4:0]    exception_cause;
 
 
 
@@ -89,6 +100,7 @@ csr_addr_t      csr_addr_ex;
 if_stage if_stage_inst (
     .clk_i   ( clk_i ),
     .rst_n_i ( rst_n_i ),
+    .boot_addr_i ( boot_addr_i ),
     
     // Interface with instruction memory
     .imem_rdata_i ( imem_rdata_i ),
@@ -101,7 +113,13 @@ if_stage if_stage_inst (
     
     // Control inputs
     .stall_if_i (stall_if),
-    .flush_id_i (flush_id),
+    
+    // Trap handling
+    .trap_id_i ( trap_id ),
+    .trap_ex_i ( trap_ex ),
+    .is_mret_i ( is_mret_id ),
+    .mtvec_i   ( mtvec ),
+    .mepc_i    ( mepc ),
     
     // Signals for the PC controller
     .valid_id_i           ( valid_id ),
@@ -134,6 +152,7 @@ id_stage #(
     
     // Output to IF stage
     .jump_target_id_o ( jump_target_id ),
+    .trap_id_o        ( trap_id ),
     
     // Output to EX stage
     .alu_operation_id_o     ( alu_operation_id ),
@@ -144,6 +163,7 @@ id_stage #(
     .reg_alu_wen_id_o       ( reg_alu_wen_id ),
     .reg_mem_wen_id_o       ( reg_mem_wen_id ),
     .pc_source_id_o         ( pc_source_id ),
+    .pc_id_o                ( pc_id ),
     .is_branch_id_o         ( is_branch_id ),
     .alu_operand_1_id_o     ( alu_operand_1_id ),
     .alu_operand_2_id_o     ( alu_operand_2_id ),
@@ -159,6 +179,9 @@ id_stage #(
     // Output to controller
     .rs1_addr_id_o ( rs1_addr_id ),
     .rs2_addr_id_o ( rs2_addr_id ),
+    .illegal_instr_id_o ( illegal_instr_id ),
+    .instr_addr_misaligned_id_o ( instr_addr_misaligned_id ),
+    .is_mret_id_o ( is_mret_id ),
     
     // Output to CSRs
     .csr_access_id_o ( csr_access_id ),
@@ -166,7 +189,7 @@ id_stage #(
     
     // Control inputs
     .stall_id_i ( stall_id ),
-    .flush_ex_i ( flush_ex ),
+    .flush_id_i (flush_id),
     
     // Inputs for forwarding
     .fwd_op1_id_i       ( fwd_op1_id ),
@@ -197,6 +220,7 @@ ex_stage #(
     .pc_source_ex_o       ( pc_source_ex ),
     .branch_target_ex_o   ( branch_target_ex ),
     .branch_decision_ex_o ( branch_decision_ex ),
+    .trap_ex_o            ( trap_ex ),
     
     // Input from ID stage
     .alu_operation_id_i     ( alu_operation_id ),
@@ -206,6 +230,7 @@ ex_stage #(
     .mem_sign_extend_id_i   ( mem_sign_extend_id ),
     .reg_alu_wen_id_i       ( reg_alu_wen_id ),
     .reg_mem_wen_id_i       ( reg_mem_wen_id ),
+    .pc_id_i                ( pc_id ),
     .pc_source_id_i         ( pc_source_id ),
     .is_branch_id_i         ( is_branch_id ),
     .alu_operand_1_id_i     ( alu_operand_1_id ),
@@ -227,7 +252,11 @@ ex_stage #(
     .reg_mem_wen_ex_o     ( reg_mem_wen_ex ),
     .valid_ex_o           ( valid_ex ),
     
+    // Output to controller
+    // .instr_addr_misaligned_ex_o ( instr_addr_misaligned_ex ),
+    
     // Output to CSRs
+    .pc_ex_o         ( pc_ex ),
     .csr_addr_ex_o   ( csr_addr_ex ),
     .csr_wdata_ex_o  ( csr_wdata_ex ),
     .csr_op_ex_o     ( csr_op_ex ),
@@ -238,8 +267,8 @@ ex_stage #(
     .csr_rdata_ex_i       ( csr_rdata_ex ),
     
     // Control inputs
-    .stall_ex_i  ( stall_ex ),
-    .flush_mem_i ( flush_mem )
+    .stall_ex_i ( stall_ex ),
+    .flush_ex_i ( flush_ex )
 );
 
 
@@ -280,7 +309,7 @@ mem_stage mem_stage_inst (
     
     // Control inputs
     .stall_mem_i ( stall_mem ),
-    .flush_wb_i  ( flush_wb )
+    .flush_mem_i ( flush_mem )
 );
 
 
@@ -310,8 +339,10 @@ wb_stage wb_stage_inst (
     .alu_result_wb_o  ( alu_result_wb ),
     .mem_rdata_wb_o   ( mem_rdata_wb ),
     .reg_alu_wen_wb_o ( reg_alu_wen_wb ),
-    .reg_mem_wen_wb_o ( reg_mem_wen_wb )
+    .reg_mem_wen_wb_o ( reg_mem_wen_wb ),
     
+    // Control inputs
+    .flush_wb_i  ( flush_wb )
 );
 
 
@@ -329,7 +360,17 @@ csr csr_inst (
     .csr_op_i    ( csr_op_ex ),
     .csr_rdata_o ( csr_rdata_ex ),
     
-    .hart_id_i ( hart_id_i )
+    .hartid_i ( hartid_i ),
+    .mtvec_i  ( mtvec_i ),
+    
+    .mtvec_o ( mtvec ),
+    .mepc_o  ( mepc ),
+    
+    .save_pc_id_i ( save_pc_id ),
+    .save_pc_ex_i ( save_pc_ex ),
+    .pc_id_i      ( pc_id ),
+    .pc_ex_i      ( pc_ex ),
+    .exception_cause_i ( exception_cause )
 );
 
 
@@ -368,7 +409,18 @@ controller controller_inst (
     .flush_mem_o ( flush_mem ),
     .flush_wb_o  ( flush_wb ),
     .pc_source_id_i       ( pc_source_id ),
-    .branch_decision_ex_i ( branch_decision_ex )
+    .branch_decision_ex_i ( branch_decision_ex ),
+    .trap_id_i ( trap_id ),
+    .trap_ex_i ( trap_ex ),
+    
+    // Trap handling
+    .save_pc_id_o      ( save_pc_id ),
+    .save_pc_ex_o      ( save_pc_ex ),
+    .illegal_instr_id_i ( illegal_instr_id ),
+    .instr_addr_misaligned_id_i ( instr_addr_misaligned_id ),
+    // .instr_addr_misaligned_ex_i ( instr_addr_misaligned_ex ),
+    .is_mret_id_i      ( is_mret_id ),
+    .exception_cause_o ( exception_cause )
 );
 
 endmodule

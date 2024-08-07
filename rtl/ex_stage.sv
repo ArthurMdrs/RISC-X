@@ -10,6 +10,7 @@ module ex_stage import core_pkg::*; #(
     output pc_source_t  pc_source_ex_o,
     output logic [31:0] branch_target_ex_o,
     output logic        branch_decision_ex_o,
+    output logic        trap_ex_o,
     
     // Input from ID stage
     input  alu_operation_t alu_operation_id_i,
@@ -19,6 +20,7 @@ module ex_stage import core_pkg::*; #(
     input  logic           mem_sign_extend_id_i,
     input  logic           reg_alu_wen_id_i,
     input  logic           reg_mem_wen_id_i,
+    input  logic [31:0]    pc_id_i,
     input  pc_source_t     pc_source_id_i,
     input  logic           is_branch_id_i,
     input  logic [31:0]    alu_operand_1_id_i,
@@ -40,7 +42,11 @@ module ex_stage import core_pkg::*; #(
     output logic        reg_mem_wen_ex_o,
     output logic        valid_ex_o,
     
+    // Output to controller
+    // output logic instr_addr_misaligned_ex_o,
+    
     // Output to CSRs
+    output logic [31:0]    pc_ex_o,
     output csr_addr_t      csr_addr_ex_o,
     output logic [31:0]    csr_wdata_ex_o,
     output csr_operation_t csr_op_ex_o,
@@ -52,7 +58,7 @@ module ex_stage import core_pkg::*; #(
     
     // Control inputs
     input  logic stall_ex_i,
-    input  logic flush_mem_i
+    input  logic flush_ex_i
 );
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -66,6 +72,7 @@ logic [31:0]    alu_result_ex;
 logic is_branch_ex;
 
 logic instr_addr_misaligned_ex;
+logic exception_ex;
 
 // Pipeline registers ID->EX
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -80,16 +87,28 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         mem_wdata_ex_o       <= '0;
         reg_alu_wen_ex_o     <= '0;
         reg_mem_wen_ex_o     <= '0;
-        pc_source_ex_o       <= PC_P_4;
+        pc_ex_o              <= '0;
+        pc_source_ex_o       <= PC_NEXT;
         is_branch_ex         <= '0;
         branch_target_ex_o   <= '0;
         csr_access_ex_o      <= '0;
         csr_op_ex_o          <= CSR_READ;
         csr_wdata_ex_o       <= '0;
         csr_addr_ex_o        <= CSR_USTATUS;
+        valid_ex_o           <= '0;
     end else begin
         if (!stall_ex_i) begin
-            if (valid_id_i) begin
+            // Insert bubble if flushing is needed
+            if (flush_ex_i) begin
+                mem_wen_ex_o     <= '0;
+                reg_alu_wen_ex_o <= '0;
+                reg_mem_wen_ex_o <= '0;
+                is_branch_ex     <= '0;
+                csr_op_ex_o      <= CSR_READ;
+                csr_access_ex_o  <= '0;
+                valid_ex_o       <= 1'b0;
+            end
+            else begin
                 rd_addr_ex_o         <= rd_addr_id_i;
                 alu_operation_ex     <= alu_operation_id_i;
                 alu_operand_1_ex     <= alu_operand_1_id_i;
@@ -100,6 +119,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 mem_wdata_ex_o       <= mem_wdata_id_i;
                 reg_alu_wen_ex_o     <= reg_alu_wen_id_i;
                 reg_mem_wen_ex_o     <= reg_mem_wen_id_i;
+                pc_ex_o              <= pc_id_i;
                 pc_source_ex_o       <= pc_source_id_i;
                 is_branch_ex         <= is_branch_id_i;
                 branch_target_ex_o   <= branch_target_id_i;
@@ -109,15 +129,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                     csr_wdata_ex_o <= alu_operand_1_id_i; // wdata is passed through operand 1
                     csr_addr_ex_o  <= csr_addr_t'(alu_operand_2_id_i[11:0]); // addr is passed through operand 2
                 end
-            end
-            // Insert bubble if previous stage wasn't valid
-            else begin
-                mem_wen_ex_o     <= '0;
-                reg_alu_wen_ex_o <= '0;
-                reg_mem_wen_ex_o <= '0;
-                is_branch_ex     <= '0;
-                csr_op_ex_o      <= CSR_READ;
-                csr_access_ex_o  <= '0;
+                valid_ex_o <= valid_id_i;
             end
         end
     end
@@ -146,8 +158,8 @@ always_comb begin
         instr_addr_misaligned_ex = branch_target_ex_o[1] && branch_decision_ex_o;
 end
 
-// Resolve validness. Not valid implies inserting bubble
-// assign valid_ex_o = !stall_ex_i && !flush_mem_i;
-assign valid_ex_o = !stall_ex_i && !flush_mem_i && !instr_addr_misaligned_ex;
+// Traps: branch target misaligned
+assign exception_ex = instr_addr_misaligned_ex;
+assign trap_ex_o = valid_ex_o && exception_ex;
 
 endmodule

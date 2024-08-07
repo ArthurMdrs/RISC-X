@@ -13,6 +13,7 @@ module id_stage import core_pkg::*; #(
     
     // Output to IF stage
     output logic [31:0] jump_target_id_o,
+    output logic        trap_id_o,
     
     // Output to EX stage
     output alu_operation_t alu_operation_id_o,
@@ -22,6 +23,7 @@ module id_stage import core_pkg::*; #(
     output logic           mem_sign_extend_id_o,
     output logic           reg_alu_wen_id_o,
     output logic           reg_mem_wen_id_o,
+    output logic [31:0]    pc_id_o,
     output pc_source_t     pc_source_id_o,
     output logic           is_branch_id_o,
     output logic [31:0]    alu_operand_1_id_o,
@@ -38,6 +40,9 @@ module id_stage import core_pkg::*; #(
     // Output to controller
     output logic [ 4:0] rs1_addr_id_o,
     output logic [ 4:0] rs2_addr_id_o,
+    output logic        illegal_instr_id_o,
+    output logic        instr_addr_misaligned_id_o,
+    output logic        is_mret_id_o,
     
     // Output to CSRs
     output logic           csr_access_id_o,
@@ -45,7 +50,7 @@ module id_stage import core_pkg::*; #(
     
     // Control inputs
     input  logic stall_id_i,
-    input  logic flush_ex_i,
+    input  logic flush_id_i,
     
     // Inputs for forwarding
     input  forward_t    fwd_op1_id_i,
@@ -62,7 +67,6 @@ module id_stage import core_pkg::*; #(
 //////////////////////        INSTRUCTION DECODE        ///////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-logic [31:0] pc_id;
 logic [31:0] instr_id;
 
 logic [31:0] rs1_rdata_id, rs2_rdata_id;
@@ -73,25 +77,26 @@ alu_source_2_t     alu_source_2_id;
 immediate_source_t immediate_type_id;
 logic [31:0]       immediate_id;
 
-logic illegal_instr_id;
-logic instr_addr_misaligned_id;
-logic trap_id;
+logic exception_id;
 
 // Pipeline registers IF->ID
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
-        pc_id    <= '0;
+        pc_id_o  <= '0;
         instr_id <= '0;
+        
+        valid_id_o <= '0;
     end else begin
         if (!stall_id_i) begin
-            if (valid_if_i) begin
-                pc_id    <= pc_if_i;
-                instr_id <= instr_if_i;
-            end
-            // Insert bubble if previous stage wasn't valid
-            else begin
-                // instr_id <= '0;
+            // Insert bubble if flushing is needed
+            if (flush_id_i) begin
                 instr_id <= 32'h0000_0013; // NOP instruction
+                valid_id_o <= 1'b0;
+            end
+            else begin
+                pc_id_o  <= pc_if_i;
+                instr_id <= instr_if_i;
+                valid_id_o <= valid_if_i;
             end
         end
     end
@@ -130,8 +135,11 @@ decoder #(
     .csr_access_o ( csr_access_id_o ),
     .csr_op_o     ( csr_op_id_o ),
     
+    // Indicate MRET
+    .is_mret_o ( is_mret_id_o ),
+    
     // Decoded an illegal instruction
-    .illegal_instr_o ( illegal_instr_id ),
+    .illegal_instr_o ( illegal_instr_id_o ),
     
     // Instruction to be decoded
 	.instr_i ( instr_id )
@@ -183,7 +191,7 @@ end
 always_comb begin
     unique case (alu_source_1_id)
         ALU_SCR1_RS1    : alu_operand_1_id_o = rs1_or_fwd_id;
-        ALU_SCR1_PC     : alu_operand_1_id_o = pc_id;
+        ALU_SCR1_PC     : alu_operand_1_id_o = pc_id_o;
         ALU_SCR1_ZERO   : alu_operand_1_id_o = 32'b0;
         ALU_SCR1_IMM_CSR: alu_operand_1_id_o = {27'b0, instr_id[19:15]}; // Pass CSR wdata as ALU operand
         default: alu_operand_1_id_o = 32'b0;
@@ -200,14 +208,14 @@ end
 assign mem_wdata_id_o = rs2_or_fwd_id;
 
 // Calculate branch target
-assign branch_target_id_o = pc_id + immediate_id;
+assign branch_target_id_o = pc_id_o + immediate_id;
 
 // Calculate jump target
 always_comb begin
     unique case (pc_source_id_o)
-        PC_JAL : jump_target_id_o = pc_id + immediate_id;
+        PC_JAL : jump_target_id_o = pc_id_o + immediate_id;
         PC_JALR: jump_target_id_o = rs1_or_fwd_id + immediate_id;
-        default: jump_target_id_o = pc_id + immediate_id;
+        default: jump_target_id_o = pc_id_o + immediate_id;
     endcase
     jump_target_id_o[0] = 1'b0; // Clear LSB
 end
@@ -215,17 +223,14 @@ end
 // Jump target misaligned exception
 always_comb begin
     if (ISA_C) // No such exceptions if compressed instructions are allowed
-        instr_addr_misaligned_id = 1'b0;
+        instr_addr_misaligned_id_o = 1'b0;
     else // If no compressed instructions, target must be 4-byte aligned
-        instr_addr_misaligned_id = jump_target_id_o[1] && (pc_source_id_o inside {PC_JAL, PC_JALR});
+        instr_addr_misaligned_id_o = jump_target_id_o[1] && (pc_source_id_o inside {PC_JAL, PC_JALR});
 end
 
-// Traps: illegal instruction decoded, jump target misaligned
-assign trap_id = illegal_instr_id || instr_addr_misaligned_id;
-
-// Resolve validness. Not valid implies inserting bubble
-// assign valid_id_o = !stall_id_i && !flush_ex_i && !illegal_instr_id;
-assign valid_id_o = !stall_id_i && !flush_ex_i && !trap_id;
+// Traps: illegal instruction decoded, jump target misaligned, mret
+assign exception_id = illegal_instr_id_o || instr_addr_misaligned_id_o || is_mret_id_o;
+assign trap_id_o = valid_id_o && exception_id;
 
 
 endmodule
