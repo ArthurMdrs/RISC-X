@@ -89,123 +89,6 @@ always_comb begin
 
     unique case (opcode)
         /////////////////////////////////////////////
-        /////////////        typeC      /////////////
-        /////////////////////////////////////////////
-        7'bxxxxx_10: begin
-                case (funct3_C)
-                    3'b000: begin //CSLLi
-                        alu_source_2_o  = ALU_SCR2_IMM;
-                        reg_alu_wen_o   = 1'b1;
-                        alu_operation_o = ALU_SLL;
-                        
-                        immediate_type_o = IMM_CI;
-
-                        rd_addr_C  = instr_i[11:7];
-                        rs1_addr_C = instr_i[11:7];
-                    end
-                    3'b01x: begin //CLs
-                        alu_operation_o  = ALU_ADD;
-                        alu_source_2_o   = ALU_SCR2_IMM;
-                        immediate_type_o = IMM_I;
-                        mem_data_type_o  = WORD;
-                        //immediate_type_o = IMM_I;
-                        reg_mem_wen_o    = 1'b1;
-                        
-                        immediate_type_o = IMM_CSPL;
-
-                        rs1_addr_C = 5'd2; //x2
-                        rd_addr_C  = instr_i[11:7];
-                        if (funct3_C[0])
-                            mem_wen_o = 1'b1; //C_FLWSP?
-
-                    end
-                    3'b100: begin
-                        if (funct4_C[0] == 1'd0) begin
-                            if (instr_i[11:7] == 5'd0) illegal_instr_o = 1'b1; else begin
-                                if (instr_i[6:2] == 5'd0) begin //C_JR
-                                    // ALU calculates PC+4 or PC+2
-                                    // The jump target has a dedicated adder in ID stage
-                                
-                                    alu_operation_o  = ALU_ADD;
-                                    alu_source_1_o   = ALU_SCR1_PC;
-                                    alu_source_2_o   = ALU_SCR2_4_OR_2;
-                                    //immediate_type_o = IMM_I;
-                                    reg_alu_wen_o  = 1'b1;
-                                    pc_source_o    = PC_JALR;
-
-                                    
-                                    immediate_type_o = IMM_CJR;
-
-                                    rs1_addr_C = instr_i[11:7];
-                                    rs2_addr_C = 5'd0;
-                                    rd_addr_C  = 5'd0;
-
-                                end
-                                else begin //C_MV
-                                    reg_alu_wen_o   = 1'b1;
-                                    alu_operation_o = ALU_ADD;
-
-                                    rd_addr_C  = instr_i[11:7];
-                                    rs1_addr_C = 5'd0; //zero (x0)
-                                    rs2_addr_C = instr_i[6:2];
-                                end
-                            end
-
-                        end
-                        else begin
-                            if (instr_i[11:2] == 10'd0) illegal_instr_o = 1'b1; else begin //C_BREAK
-                                if (instr_i[6:2] == 5'd0) begin //C_JALR
-                                    // ALU calculates PC+4 or PC+2
-                                    // The jump target has a dedicated adder in ID stage
-                                
-                                    alu_operation_o  = ALU_ADD;
-                                    alu_source_1_o   = ALU_SCR1_PC;
-                                    alu_source_2_o   = ALU_SCR2_4_OR_2;
-                                    //immediate_type_o = IMM_I;
-                                    reg_alu_wen_o    = 1'b1;
-                                    pc_source_o      = PC_JALR;
-
-                                    immediate_type_o = IMM_CJR;
-
-                                    rs1_addr_C = instr_i[11:7];
-                                    rs2_addr_C = 5'd1;
-                                    rd_addr_C  = 5'd1;
-
-                                end
-                                else begin //C_ADD
-                                    reg_alu_wen_o   = 1'b1;
-                                    alu_operation_o = ALU_ADD;
-
-                                    rd_addr_C  = instr_i[11:7];
-                                    rs1_addr_C = instr_i[11:7];
-                                    rs2_addr_C = instr_i[6:2];
-                                end
-                            end
-                        end
-
-
-                    end
-                    3'b11x: begin //C_SWSP
-                        alu_operation_o  = ALU_ADD;
-                        alu_source_2_o   = ALU_SCR2_IMM;
-                        mem_data_type_o  = WORD;
-                        //immediate_type_o = IMM_S;
-                        mem_wen_o        = 1'b1;
-
-                        immediate_type_o = IMM_CSPS;
-
-                        rs1_addr_C = 5'd2; //x2
-                        rs2_addr_C = instr_i[6:2];
-                        if (funct3_C[0])
-                            mem_wen_o = 1'b1; //C_FSWSP?
-                    end
-                    default: illegal_instr_o = 1'b1;
-                endcase
-        end
-
-
-
-        /////////////////////////////////////////////
         /////////////        ALU        /////////////
         /////////////////////////////////////////////
         OPCODE_OP: begin
@@ -436,11 +319,11 @@ always_comb begin
         /////////////////////////////////////////////
         
         OPCODE_RVC_1: begin
-            unique case (instruction[15:13])
+            unique case (instr_i[15:13])
                 
                 /*3'b000: begin
                     // C.ADDI4SPN
-                    rd_addr_C = {2'b01, instruction[4:2]};
+                    rd_addr_C = {2'b01, instr_i[4:2]};
                     //rs1_addr_C =;
                     //rs2_addr_C =;
                     //imm = IMM_CLS;
@@ -454,7 +337,7 @@ always_comb begin
                 3'b001: begin
                     // C.FLD
                     reg_mem_wen_o = 1'b1;
-                    rd_addr_C = {2'b01, instruction[4:2]};
+                    rd_addr_C = {2'b01, instr_i[4:2]};
                     rs1_addr_C ={2'b01, instr_i[9:7]};
                     
 
@@ -469,7 +352,7 @@ always_comb begin
                     // C.LW
                     reg_mem_wen_o = 1'b1;
                     rs1_addr_C = {2'b01, instr_i[9:7]};
-                    rd_addr_C = {2'b01, instruction[4:2]};
+                    rd_addr_C = {2'b01, instr_i[4:2]};
 
                     immediate_type_o = IMM_CLS;
                     
@@ -493,8 +376,8 @@ always_comb begin
 
                 /*3'b101:begin // C.FSD  
 
-                    rs1_addr_C = {2'b01, instruction[9:7]};
-                    rs2_addr_C = {2'b01, instruction[4:2]};
+                    rs1_addr_C = {2'b01, instr_i[9:7]};
+                    rs2_addr_C = {2'b01, instr_i[4:2]};
 
                     immediate_type_o = IMM_CLS;
 
@@ -506,8 +389,8 @@ always_comb begin
 
                 3'b110: begin
                     // C.SW
-                    rs1_addr_C = {2'b01, instruction[9:7]};
-                    rs2_addr_C = {2'b01, instruction[4:2]};
+                    rs1_addr_C = {2'b01, instr_i[9:7]};
+                    rs2_addr_C = {2'b01, instr_i[4:2]};
 
                     immediate_type_o = IMM_CLS;
 
@@ -521,8 +404,8 @@ always_comb begin
 
                 3'b111: begin
                     // C.FSW
-                    rs1_addr_C = {2'b01, instruction[9:7]};
-                    rs2_addr_C = {2'b01, instruction[4:2]};
+                    rs1_addr_C = {2'b01, instr_i[9:7]};
+                    rs2_addr_C = {2'b01, instr_i[4:2]};
 
                     immediate_type_o = IMM_CLS;
 
@@ -542,12 +425,12 @@ always_comb begin
         end
 
         OPCODE_RVC_2: begin
-            case (instruction[15:13]) // Concluido
+            case (instr_i[15:13]) // Concluido
                 3'b000: begin
                     // C.ADDI
                     reg_alu_wen_o = 1'b1;
-                    rd_addr_C = instruction[11:7];
-                    rs1_addr_C = instruction[11:7];
+                    rd_addr_C = instr_i[11:7];
+                    rs1_addr_C = instr_i[11:7];
                     
                     alu_source_2_o = ALU_SCR2_IMM;
                     alu_source_1_o = ALU_SCR1_RS1;
@@ -576,7 +459,7 @@ always_comb begin
 
                 3'b010: begin
                     // C.LI
-                    rd_addr_C = instruction[11:7];
+                    rd_addr_C = instr_i[11:7];
                     
                     alu_operation_o  = ALU_ADD;
 
@@ -592,7 +475,7 @@ always_comb begin
                 end
 
                 3'b011: begin
-                    if (instruction[11:7] == 5'b00010) begin
+                    if (instr_i[11:7] == 5'b00010) begin
                         // C.ADDI16SP
 
                         rd_addr_C = 5'b00010;
@@ -606,7 +489,7 @@ always_comb begin
 
                     end else begin // Não ENTENDI COMO FAZER
                         // C.LUI
-                        rd_addr_C = instruction[11:7];
+                        rd_addr_C = instr_i[11:7];
                         reg_alu_wen_o  = 1'b1; // Estou na duvida sobre isso aqui!
 
                         alu_operation_o  = ALU_ADD;
@@ -620,10 +503,10 @@ always_comb begin
                 end
 
                 3'b100: begin
-                    case (instruction[11:10])
+                    case (instr_i[11:10])
                         2'b00: begin
                             // C.SRLI
-                            rd_addr_C = instruction[9:7];
+                            rd_addr_C = instr_i[9:7];
                             reg_alu_wen_o = 1'b1;
 
                             immediate_type_o = IMM_CI;
@@ -632,7 +515,7 @@ always_comb begin
                         end
                         2'b01: begin
                             // C.SRAI
-                            rd_addr_C = instruction[9:7];
+                            rd_addr_C = instr_i[9:7];
                             reg_alu_wen_o = 1'b1;
 
                             immediate_type_o = IMM_CI;
@@ -641,7 +524,7 @@ always_comb begin
                         end
                         2'b10: begin
                             // C.ANDI
-                            rd_addr_C = instruction[9:7];
+                            rd_addr_C = instr_i[9:7];
                             reg_alu_wen_o = 1'b1;
 
                             immediate_type_o = IMM_CI; // sign-extend
@@ -649,33 +532,33 @@ always_comb begin
                             alu_operation_o = ALU_AND; // AND
                         end
                         2'b11: begin
-                            case (instruction[6:5])
+                            case (instr_i[6:5])
                                 2'b00: begin
                                     // C.SUB
-                                    rd_addr_C = {2'b01, instruction[4:2]};
+                                    rd_addr_C = {2'b01, instr_i[4:2]};
                                     reg_alu_wen_o = 1'b1;
-                                    rs2_addr_C = {2'b01, instruction[9:7]};
+                                    rs2_addr_C = {2'b01, instr_i[9:7]};
                                     alu_operation_o = ALU_SUB; // SUB
                                 end
                                 2'b01: begin
                                     // C.XOR
-                                    rd_addr_C = {2'b01, instruction[4:2]};
+                                    rd_addr_C = {2'b01, instr_i[4:2]};
                                     reg_alu_wen_o = 1'b1;
-                                    rs2_addr_C = {2'b01, instruction[9:7]};
+                                    rs2_addr_C = {2'b01, instr_i[9:7]};
                                     alu_operation_o = ALU_XOR; // XOR
                                 end
                                 2'b10: begin
                                     // C.OR
-                                    rd_addr_C = {2'b01, instruction[4:2]};
+                                    rd_addr_C = {2'b01, instr_i[4:2]};
                                     reg_alu_wen_o = 1'b1;
-                                    rs2_addr_C = {2'b01, instruction[9:7]};
+                                    rs2_addr_C = {2'b01, instr_i[9:7]};
                                     alu_operation_o = ALU_OR; // OR
                                 end
                                 2'b11: begin
                                     // C.AND
-                                    rd_addr_C = {2'b01, instruction[4:2]};
+                                    rd_addr_C = {2'b01, instr_i[4:2]};
                                     reg_alu_wen_o = 1'b1;
-                                    rs2_addr_C = {2'b01, instruction[9:7]};
+                                    rs2_addr_C = {2'b01, instr_i[9:7]};
                                     alu_operation_o = ALU_AND; // AND
                                 end
                             endcase
@@ -685,7 +568,7 @@ always_comb begin
                 3'b101: begin //PAREI AQUI
                     // C.J
                     immediate_type_o = IMM_CJ;
-                    alu_op = ALU_ADD; // JUMP
+                    alu_operation_o = ALU_ADD; // JUMP
                     alu_source_1_o = ALU_SCR1_PC;
                     alu_source_2_o = ALU_SCR2_IMM;
                     
@@ -696,14 +579,14 @@ always_comb begin
                 end
                 3'b110: begin
                     // C.BEQZ
-                    rs1_addr_C = {2'b01, instruction[9:7]};
+                    rs1_addr_C = {2'b01, instr_i[9:7]};
                     immediate_type_o = IMM_CB;
                     alu_operation_o = ALU_SEQ; // BEQ
 
                 end
                 3'b111: begin
                     // C.BNEZ
-                    rs1_addr_C = {2'b01, instruction[9:7]};
+                    rs1_addr_C = {2'b01, instr_i[9:7]};
                     immediate_type_o = IMM_CB;
                     alu_operation_o = ALU_SNE; // BNE
                 end
