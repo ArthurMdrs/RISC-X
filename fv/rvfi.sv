@@ -130,6 +130,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
     end else begin
         if (!stall_ex) begin
             instr_ex     <= instr_id;
+            // instr_ex     <= (instr_id[1:0] == 2'b11) ? (instr_id) : ({16'b0, instr_id[15:0]});
             rvfi_trap_ex <= trap_id && !stall_id && !branch_decision_ex;
             intr_ex      <= intr_id;
             if ((alu_source_1_id == ALU_SCR1_RS1) || (pc_source_id == PC_JALR)) begin

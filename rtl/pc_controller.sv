@@ -7,7 +7,7 @@ module pc_controller import core_pkg::*; #(
     input  logic [WIDTH-1:0] jump_target_id_i, 
     input  logic [WIDTH-1:0] branch_target_ex_i, 
     input  logic             branch_decision_ex_i,
-    input  logic             is_compressed_if_o,
+    input  logic             is_compressed_if_i,
     input  pc_source_t       pc_source_id_i,
     input  pc_source_t       pc_source_ex_i,
     input                    trap_id_i,
@@ -32,6 +32,8 @@ always_comb begin
         next_pc_mux = NPC_EXCEPTION;
     else if (pc_source_id_i == PC_JAL || pc_source_id_i == PC_JALR)
         next_pc_mux = NPC_JUMP;
+    else if (is_compressed_if_i)
+        next_pc_mux = NPC_P_2;
     else
         next_pc_mux = NPC_P_4;
 end

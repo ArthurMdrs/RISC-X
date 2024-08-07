@@ -65,7 +65,7 @@ pc_controller pc_constroller_inst (
     .jump_target_id_i     ( jump_target_id_i ), 
     .branch_target_ex_i   ( branch_target_ex_i ), 
     .branch_decision_ex_i ( branch_decision_ex_i ),
-    .is_compressed_if_o   ( is_compressed_if_o),
+    .is_compressed_if_i   ( is_compressed_if_o),
     .pc_source_id_i       ( pc_source_id_i ),
     .pc_source_ex_i       ( pc_source_ex_i ),
     .trap_id_i            ( trap_id_i ),

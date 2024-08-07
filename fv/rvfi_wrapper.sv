@@ -40,8 +40,21 @@ assign hartid    = 32'h0000_0000;
 assign mtvec     = 24'h0000_80;
 assign boot_addr = 30'h0000_0c00; // Equivalent to 32'b0000_3000;
 
+`ifdef RISCV_FORMAL_COMPRESSED
+    localparam bit ISA_C = 1;
+`else
+    localparam bit ISA_C = 0;
+`endif
+
+localparam ISA_M = 0;
+localparam ISA_F = 0;
+
 `default_nettype none
-core core_inst (
+core #(
+    .ISA_M(ISA_M),
+    .ISA_C(ISA_C),
+    .ISA_F(ISA_F)
+) core_inst (
     .clk_i   ( clk_i ),
     .rst_n_i ( rst_n_i ),
     

@@ -121,9 +121,13 @@ localparam logic [6:0] OPCODE_SYSTEM = 7'b111_0011; // 7'h73
 
 // Type RVC opcode:
 
-localparam logic [6:0] OPCODE_RVC_1 = 7'bxxx_xx00; // First Quadrant
-localparam logic [6:0] OPCODE_RVC_2 = 7'bxxx_xx01; // Second
-localparam logic [6:0] OPCODE_RVC_3 = 7'bxxx_xx10; // Third
+// localparam logic [6:0] OPCODE_RVC_1 = 7'bxxx_xx00; // First Quadrant
+// localparam logic [6:0] OPCODE_RVC_2 = 7'bxxx_xx01; // Second
+// localparam logic [6:0] OPCODE_RVC_3 = 7'bxxx_xx10; // Third
+
+localparam logic [1:0] OPCODE_RVC_1 = 2'b00; // First Quadrant
+localparam logic [1:0] OPCODE_RVC_2 = 2'b01; // Second
+localparam logic [1:0] OPCODE_RVC_3 = 2'b10; // Third
 
 // CSRs mnemonics (some might not be implemented)
 

@@ -351,7 +351,11 @@ wb_stage wb_stage_inst (
 ////////////////////       CONTROL/STATUS REGISTERS       /////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-csr csr_inst (
+csr #(
+    .ISA_M ( ISA_M ),
+    .ISA_C ( ISA_C ),
+    .ISA_F ( ISA_F )
+) csr_inst (
     .clk_i   ( clk_i ),
     .rst_n_i ( rst_n_i ),
     
