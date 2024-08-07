@@ -1,5 +1,5 @@
 
-# RISCV
+# RISC-X
 
 ---
 
