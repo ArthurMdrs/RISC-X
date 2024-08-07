@@ -495,7 +495,7 @@ always_comb begin
                         alu_operation_o  = ALU_ADD;
                         alu_source_1_o   = ALU_SCR1_ZERO;
                         alu_source_2_o   = ALU_SCR2_IMM;
-                        immediate_type_o = IMM_CI;
+                        immediate_type_o = IMM_CLUI;
                         
                         
 
