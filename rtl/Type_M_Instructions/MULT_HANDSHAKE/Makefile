@@ -1,5 +1,5 @@
 DIR  		= mkdir -p ./work/
-FILES  	= ../multiplier.sv \
+FILES  	= ../mult.sv \
 					../tb_multiplier.sv
 
 .PHONY: sim clean
