@@ -13,12 +13,12 @@ module div(
 	
 	logic [31:0] quatient		;
 	logic [31:0] remeinder	;
-	logic	[31:0] a_internal	;
+	logic [31:0] a_internal	;
 	logic [31:0] b_internal ;	
 	enum {IDLE,START_LOAD, CALCULATION_LOOP, DONE} states;
 	logic [31:0] state, next;
-	always_comb a_internal  = (state == START_LOAD) ? a:a_internal;
-	always_comb b_internal  = (state == START_LOAD) ? b:b_internal;
+	always_comb a_internal  = (next == START_LOAD) ? a:a_internal;
+	always_comb b_internal  = (next == START_LOAD) ? b:b_internal;
 	always_comb c						= (state == DONE) ? quatient : c;
 	always_comb done				=	(state == DONE);
 	always_ff@(posedge clock, negedge nreset)begin
