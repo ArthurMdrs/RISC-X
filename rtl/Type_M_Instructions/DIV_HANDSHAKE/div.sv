@@ -26,10 +26,10 @@ module div(
 		else begin  state <= next	;
 			    if(state == START_LOAD)begin
 						quatient 	 <= 0;
-						remeinder  <= a_internal;
+						remeinder  <= a;
 			    end else begin
 				    	quatient 	<= next == DONE ? quatient : quatient +1;
-							remeinder	<= next == DONE ? remeinder : remeinder -b_internal;
+							remeinder	<= next == DONE ? remeinder : remeinder -b;
 							nclocks <= (state == CALCULATION_LOOP) ? nclocks + 1 :nclocks;
 			    end
 
