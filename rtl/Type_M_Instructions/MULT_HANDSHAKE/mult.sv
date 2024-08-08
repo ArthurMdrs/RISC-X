@@ -22,4 +22,8 @@ module mult(
 
   );
 
+
+    logic [31:0] next,state;
+
+    
 endmodule
