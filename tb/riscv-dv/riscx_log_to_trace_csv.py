@@ -10,6 +10,10 @@ import logging
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
+riscv_dv_root = os.environ.get('RISCV_DV_ROOT')
+riscv_dv_scripts = riscv_dv_root + "/scripts"
+sys.path.insert(0, riscv_dv_scripts)
+
 from riscv_trace_csv import *
 # from lib import *
 
@@ -114,19 +118,6 @@ def read_riscx_trace(path, full_trace):
 
     """
 
-    # This loop is a simple FSM with states TRAMPOLINE, INSTR, EFFECT. The idea
-    # is that we're in state TRAMPOLINE until we get to the end of RISC-X's
-    # trampoline, then we switch between INSTR (where we expect to read an
-    # instruction) and EFFECT (where we expect to read commit information).
-    #
-    # We yield a RiscvInstructionTraceEntry object each time we leave EFFECT
-    # (going back to INSTR), we loop back from INSTR to itself, or we get to the
-    # end of the file and have an instruction in hand.
-    #
-    # On entry to the loop body, we are in state TRAMPOLINE if in_trampoline is
-    # true. Otherwise, we are in state EFFECT if instr is not None, otherwise we
-    # are in state INSTR.
-
     instr = None
 
     with open(path, 'r') as handle:
@@ -146,7 +137,7 @@ def read_riscx_trace(path, full_trace):
             if instr.instr_str == 'ecall':
                 break
             
-            if instr.gpr[0] == "":
+            if instr.gpr[0] == "" and not full_trace:
                 continue
             # groups = instr_match.groupdict()
             # print(instr.gpr)

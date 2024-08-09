@@ -25,7 +25,7 @@ else
 	PLUS_ARG += +prog=$(PROG)
 endif
 
-SEED = 
+SEED = 1
 INPUT = -input restore.tcl
 
 ELF=/home/pedro.medeiros/Tools/riscv-dv/mytest/asm_test/$(DV_SIM_TEST)_0.o
@@ -54,9 +54,6 @@ $(RVFI_HOME)/rvfi_macros.vh:
 $(RVVI_HOME)/rvviTrace.sv:
 	@curl -L -o $(RVVI_HOME)/rvviTrace.sv https://raw.githubusercontent.com/riscv-verification/RVVI/main/source/host/rvvi/rvviTrace.sv
 
-clean:
-	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log trace* mytest
-	
 rars:
 	python3 run_rars.py $(PROGS_PATH) $(PROG)
 
@@ -78,37 +75,13 @@ sim-elf-gui: $(DEPS)
 		 -timescale 1ns/1ps -access +rwc -svseed $(SEED)
 
 ##########################################################################################################################
-
+# Attempt to do RISCV-DV stuff manually
 # compile-instr-generator:
 # 	xrun $(XRUN_COMP_FLAGS) +incdir+riscx_target +incdir+$(RISCV_DV_ROOT)/user_extension \
 # 		-f $(DV_FILE_LIST) -top riscv_instr_gen_tb_top
 
 # run-instr-generator: $(DV_OUT_DIR)
 # 	xrun $(XRUN_SIM_FLAGS) -R -xmlibdirpath $(DV_OUT_DIR) +UVM_TESTNAME=$(DV_GEN_TEST) +num_of_tests=$(DV_NUM_TESTS)
-
-##########################################################################################################################
-
-# compile-instr-generator:
-# 	cd $(RISCV_DV_ROOT) && python3 run.py --co --output $(DV_OUT_DIR) \
-# 		--custom_target $(DV_RISCX_TARGET) --simulator xlm
-
-# gen-and-compile-asm:
-# 	cd $(RISCV_DV_ROOT) && python3 run.py --test=$(DV_SIM_TEST) --so --output $(DV_OUT_DIR) \
-# 		--custom_target $(DV_RISCX_TARGET) --isa rv32i_zicsr_zifencei --mabi ilp32 \
-# 		--iss_yaml $(DV_ISS_YAML) --simulator xlm \
-# 		--steps gen,gcc_compile --noclean
-
-# dv-sim:
-# 	cd $(RISCV_DV_ROOT) && python3 run.py --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) \
-# 		--custom_target $(DV_RISCX_TARGET) --isa rv32i_zicsr_zifencei --mabi ilp32 \
-# 		--iss_yaml $(DV_ISS_YAML) --simulator xlm --iss=risc-x,spike \
-# 		--steps iss_sim --noclean
-
-# dv-cmp:
-# 	cd $(RISCV_DV_ROOT) && python3 run.py --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) \
-# 		--custom_target $(DV_RISCX_TARGET) --isa rv32i_zicsr_zifencei --mabi ilp32 \
-# 		--iss_yaml $(DV_ISS_YAML) --simulator xlm --iss=risc-x,spike \
-# 		--steps iss_cmp --noclean 
 
 ##########################################################################################################################
 
@@ -126,8 +99,61 @@ sim-dv:
 compare:
 	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --steps iss_cmp \
 		--iss=risc-x,spike
-	
-testing:
-	python3 run_mod.py --test=$(DV_SIM_TEST) --custom_target $(DV_RISCX_TARGET) --isa rv32i_zicsr_zifencei \
-		--mabi ilp32 --iss_yaml $(DV_ISS_YAML) --simulator xlm --output $(DV_OUT_DIR) --steps gen,gcc_compile,iss_sim
-	
+
+dv-full: compile-instr-generator gen-and-compile-asm sim-dv compare
+
+##########################################################################################################################
+
+DV_COV_DIR := $(DV_OUT_DIR)/cov
+COV_TESTS_DIR := $(DV_COV_DIR)/default
+# export COV_TEST_RUN := $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*' | head -n 1)
+export COV_RUNS := $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
+export COV_MERGED_DIR := $(DV_COV_DIR)/merged
+export COV_REPORT_DIR := $(TB_HOME)/cov_report
+RISCX_LOG := $(wildcard $(DV_OUT_DIR)/risc-x_sim/*.log)
+
+log2csv:
+	@for log_file in $(RISCX_LOG); do \
+		csv_file=$$(echo $$log_file | sed 's/\.log$$/\.csv/') ; \
+		python3 -c "import riscx_log_to_trace_csv as l2t; l2t.process_riscx_sim_log('$$log_file', '$$csv_file', 1)"; \
+	done
+
+cov-collect:
+	python3 cov_mod.py --output $(DV_COV_DIR) --dir $(DV_OUT_DIR)/risc-x_sim \
+		--core=risc-x --simulator xlm --noclean
+
+cov-collect-spike:
+	python3 cov_mod.py --output $(DV_COV_DIR) --dir $(DV_OUT_DIR)/spike_sim \
+		--iss=spike --simulator xlm --noclean
+
+cov-merge:
+	@imc -exec cov_merge.tcl
+
+cov-report: $(COV_TESTS_DIR)
+	@imc -exec cov_script.tcl
+
+cov-full: log2csv cov-collect cov-report
+
+##########################################################################################################################
+
+# clean:
+# 	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log trace* mytest
+
+clean-sim:
+	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log trace*
+
+clean-dv:
+	rm -rf $(DV_OUT_DIR)/asm_test/ $(DV_OUT_DIR)/*_sim/
+
+clean-cov:
+	rm -rf imc.* cov_work/ mdv.log $(DV_COV_DIR)
+
+clean: clean-sim clean-dv clean-cov
+
+##########################################################################################################################
+
+# export aux := $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
+# test:
+# 	@for x in $(aux); do \
+# 		echo $$x ; \
+# 	done
