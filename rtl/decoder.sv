@@ -95,27 +95,30 @@ always_comb begin
     rs1_addr_C = 5'd0;
     rs2_addr_C = 5'd0;
     rd_addr_C = 5'd0;
-    
-    if (ISA_C && is_compressed) begin
+    if (ISA_C) begin //generates the case only if ISA_C == 1
+    //if (is_compressed) begin
 
         case (opcode_C)
         OPCODE_RVC_1: begin
-            unique case (instr_i[15:13])
+            unique case (funct3_C)
                 
-                /*3'b000: begin
+                3'b000: begin
                     // C.ADDI4SPN
-                    rd_addr_C = {2'b01, instr_i[4:2]};
-                    //rs1_addr_C =;
-                    //rs2_addr_C =;
-                    //imm = IMM_CLS;
-                    alu_source_1_o = ALU_SCR1_ZERO;
-                    alu_source_2_o = ALU_SCR2_IMM;
-                    alu_operation_o = ALU_ADD; // ADD
                     reg_alu_wen_o = 1'b1;
+                    rd_addr_C = {2'b01, instr_i[4:2]}; //x8 - x15
+                    rs1_addr_C = 5'd2; //x2
+                    
+                    alu_source_1_o = ALU_SCR1_RS1;
+                    alu_source_2_o = ALU_SCR2_IMM;
+                    reg_alu_wen_o  = 1'b1;
+                    
+                    alu_operation_o  = ALU_ADD; // ADD
+                    immediate_type_o = IMM_CIW;
 
-                end*/
 
-                3'b001: begin
+                end
+
+                /*3'b001: begin
                     // C.FLD
                     reg_mem_wen_o = 1'b1;
                     rd_addr_C = {2'b01, instr_i[4:2]};
@@ -127,7 +130,7 @@ always_comb begin
                     alu_source_2_o = ALU_SCR2_IMM;
                     alu_operation_o  = ALU_ADD;
 
-                end
+                end*/
 
                 3'b010: begin
                     // C.LW
@@ -141,7 +144,7 @@ always_comb begin
                     alu_operation_o  = ALU_ADD;
                 end
 
-                3'b011: begin
+                /*3'b011: begin
                     // C.FLW
 
                     reg_mem_wen_o = 1'b1;
@@ -153,7 +156,7 @@ always_comb begin
                     alu_operation_o  = ALU_ADD;
                     alu_source_2_o   = ALU_SCR2_IMM;
 
-                end
+                end*/
 
                 /*3'b101:begin // C.FSD  
 
@@ -183,7 +186,7 @@ always_comb begin
 
                 end
 
-                3'b111: begin
+                /*3'b111: begin
                     // C.FSW
                     rs1_addr_C = {2'b01, instr_i[9:7]};
                     rs2_addr_C = {2'b01, instr_i[4:2]};
@@ -196,7 +199,7 @@ always_comb begin
                     mem_data_type_o = WORD;
                     mem_sign_extend_o = 1'b0;
 
-                end
+                end*/
                 
                 default: begin
                     illegal_instr_o = 1'b1;
@@ -388,7 +391,7 @@ always_comb begin
                     rd_addr_C  = instr_i[11:7];
                     rs1_addr_C = instr_i[11:7];
                 end
-                3'b01x: begin //CLs
+                3'b010: begin //CLWSP
                     alu_operation_o  = ALU_ADD;
                     alu_source_2_o   = ALU_SCR2_IMM;
                     immediate_type_o = IMM_I;
@@ -400,10 +403,22 @@ always_comb begin
 
                     rs1_addr_C = 5'd2; //x2
                     rd_addr_C  = instr_i[11:7];
-                    if (funct3_C[0])
-                        mem_wen_o = 1'b1; //C_FLWSP?
 
                 end
+                /*3'b011: begin //CFLWSP
+                    alu_operation_o  = ALU_ADD;
+                    alu_source_2_o   = ALU_SCR2_IMM;
+                    immediate_type_o = IMM_I;
+                    mem_data_type_o  = WORD;
+                    //immediate_type_o = IMM_I;
+                    reg_mem_wen_o    = 1'b1;
+                    
+                    immediate_type_o = IMM_CSPL;
+
+                    rs1_addr_C = 5'd2; //x2
+                    rd_addr_C  = instr_i[11:7];
+
+                end*/
                 3'b100: begin
                     if (funct4_C[0] == 1'd0) begin
                         if (instr_i[11:7] == 5'd0) illegal_instr_o = 1'b1; else begin
@@ -468,7 +483,7 @@ always_comb begin
                         end
                     end
                 end
-                3'b11x: begin //C_SWSP
+                3'b110: begin //C_SWSP
                     alu_operation_o  = ALU_ADD;
                     alu_source_2_o   = ALU_SCR2_IMM;
                     mem_data_type_o  = WORD;
@@ -479,16 +494,25 @@ always_comb begin
 
                     rs1_addr_C = 5'd2; //x2
                     rs2_addr_C = instr_i[6:2];
-                    if (funct3_C[0])
-                        mem_wen_o = 1'b1; //C_FSWSP?
                 end
+                /*3'b111: begin //C_FSWSP
+                    alu_operation_o  = ALU_ADD;
+                    alu_source_2_o   = ALU_SCR2_IMM;
+                    mem_data_type_o  = WORD;
+                    //immediate_type_o = IMM_S;
+                    mem_wen_o        = 1'b1;
+
+                    immediate_type_o = IMM_CSPS;
+
+                    rs1_addr_C = 5'd2; //x2
+                    rs2_addr_C = instr_i[6:2];
+                end*/
                 default: illegal_instr_o = 1'b1;
             endcase
         end
         endcase
+    //end
     end
-    else begin
-        
     unique case (opcode)
         /////////////////////////////////////////////
         /////////////        ALU        /////////////
@@ -1140,7 +1164,6 @@ always_comb begin
         default: illegal_instr_o = 1'b1;
     endcase
     
-    end
 end
     
 endmodule

@@ -47,6 +47,7 @@ typedef enum logic [4:0] {
     IMM_CJ,
     IMM_CJR,
     IMM_CI,
+    IMM_CIW,
     IMM_CLUI,
     IMM_CSPL,
     IMM_CSPS,
