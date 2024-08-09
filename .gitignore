@@ -16,3 +16,7 @@ restore.tcl.svcf
 rvfi_macros.vh
 rvviTrace.sv
 jg.tcl
+*mytest/
+out_prog.txt
+run.py
+log.txt
