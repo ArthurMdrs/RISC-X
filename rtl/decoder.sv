@@ -95,10 +95,9 @@ always_comb begin
     rs1_addr_C = 5'd0;
     rs2_addr_C = 5'd0;
     rd_addr_C = 5'd0;
-    if (ISA_C) begin //generates the case only if ISA_C == 1
-    //if (is_compressed) begin
+    if (ISA_C && is_compressed) begin 
 
-        case (opcode_C)
+        unique case (opcode_C)
         OPCODE_RVC_1: begin
             unique case (funct3_C)
                 
@@ -511,8 +510,8 @@ always_comb begin
             endcase
         end
         endcase
-    //end
     end
+    else begin
     unique case (opcode)
         /////////////////////////////////////////////
         /////////////        ALU        /////////////
@@ -1163,7 +1162,7 @@ always_comb begin
 
         default: illegal_instr_o = 1'b1;
     endcase
-    
+    end
 end
     
 endmodule
