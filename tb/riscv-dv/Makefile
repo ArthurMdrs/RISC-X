@@ -1,9 +1,8 @@
-# SVA = +define+SVA_ON=1
-
 export RTL_HOME := $(abspath $(shell pwd)/../../rtl)
 export RVFI_HOME := $(abspath $(shell pwd)/../../fv)
 export RVVI_HOME := $(abspath $(shell pwd)/../rvvi)
 export TB_HOME := $(abspath $(shell pwd))
+export RISC_X_PATH := $(abspath $(shell pwd))
 
 DV_OUT_DIR := $(TB_HOME)/mytest
 DV_FILE_LIST := $(RISCV_DV_ROOT)/files.f
@@ -16,6 +15,13 @@ DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) \
 					   --simulator xlm --noclean \
 					   --custom_target $(DV_RISCX_TARGET) --isa rv32i_zicsr_zifencei --mabi ilp32 
 
+MTVEC_ALIGNMENT_OPT := +tvec_alignment=8
+ifeq ($(strip $(MTVEC_ALIGNMENT_OPT)),)
+	GENERATOR_SIM_OPTS :=
+else
+	GENERATOR_SIM_OPTS := --sim_opts $(MTVEC_ALIGNMENT_OPT)
+endif
+
 PROGS_PATH := $(abspath $(shell pwd)/../programs)
 PROG := 
 PLUS_ARG := +progs_path=$(PROGS_PATH)
@@ -26,9 +32,10 @@ else
 endif
 
 SEED = 1
+# SVA = +define+SVA_ON=1
 INPUT = -input restore.tcl
 
-ELF=/home/pedro.medeiros/Tools/riscv-dv/mytest/asm_test/$(DV_SIM_TEST)_0.o
+ELF=$(DV_OUT_DIR)/asm_test/$(DV_SIM_TEST)_0.o
 
 XRUN_COMMON_FLAGS := -64bit -sv -uvm -uvmhome $(UVMHOME)
 XRUN_COMP_FLAGS := $(XRUN_COMMON_FLAGS) -elaborate -l $(DV_OUT_DIR)/compile.log -xmlibdirpath $(DV_OUT_DIR)
@@ -37,6 +44,8 @@ FILES := -f file_list.f
 SIM_TOP := -top riscv_dv_tb
 
 DEPS := $(RVVI_HOME)/rvviTrace.sv $(RVFI_HOME)/rvfi_macros.vh
+
+##########################################################################################################################
 
 run: $(DEPS) sim
 
@@ -90,7 +99,7 @@ compile-instr-generator:
 		--custom_target $(DV_RISCX_TARGET) --simulator xlm
 
 gen-and-compile-asm:
-	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --so --steps gen,gcc_compile
+	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --so --steps gen,gcc_compile $(GENERATOR_SIM_OPTS)
 
 sim-dv:
 	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --steps iss_sim \
@@ -101,6 +110,11 @@ compare:
 		--iss=risc-x,spike
 
 dv-full: compile-instr-generator gen-and-compile-asm sim-dv compare
+
+# gen-sim-cmp: gen-and-compile-asm sim-dv compare
+gen-sim-cmp:
+	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --so \
+		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike
 
 ##########################################################################################################################
 
@@ -132,7 +146,7 @@ cov-merge:
 cov-report: $(COV_TESTS_DIR)
 	@imc -exec cov_script.tcl
 
-cov-full: log2csv cov-collect cov-report
+cov-full: log2csv cov-collect cov-merge cov-report
 
 ##########################################################################################################################
 
@@ -146,9 +160,12 @@ clean-dv:
 	rm -rf $(DV_OUT_DIR)/asm_test/ $(DV_OUT_DIR)/*_sim/
 
 clean-cov:
-	rm -rf imc.* cov_work/ mdv.log $(DV_COV_DIR)
+	rm -rf imc.* cov_work/ mdv.log $(DV_COV_DIR) $(COV_REPORT_DIR)
 
-clean: clean-sim clean-dv clean-cov
+clean-generator:
+	rm -rf $(DV_OUT_DIR)
+
+clean: clean-sim clean-dv clean-cov clean-generator
 
 ##########################################################################################################################
 

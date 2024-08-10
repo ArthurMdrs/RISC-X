@@ -47,8 +47,8 @@ rvviTrace #(
     .XLEN(32),  // GPR length in bits
     .FLEN(32),  // FPR length in bits
     .VLEN(256), // Vector register size in bits
-    .NHART(1),   // Number of harts reported
-    .RETIRE(1)    // Number of instructions that can retire during valid event
+    .NHART(1),  // Number of harts reported
+    .RETIRE(1)  // Number of instructions that can retire during valid event
 ) rvvi ();
 
 rvvi_wrapper #(
@@ -78,7 +78,6 @@ rvvi_wrapper #(
 rvvi_tracer tracer_inst (
     .clk_i   ( clk ),
     .rst_n_i ( rst_n ),
-    
     .rvvi ( rvvi )
 );
 

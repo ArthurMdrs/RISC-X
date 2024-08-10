@@ -27,7 +27,7 @@ parameter satp_mode_t SATP_MODE = BARE;
 privileged_mode_t supported_privileged_mode[] = {MACHINE_MODE};
 
 // Unsupported instructions
-riscv_instr_name_t unsupported_instr[];
+riscv_instr_name_t unsupported_instr[] = '{FENCE, FENCE_I};
 
 // ISA supported by the processor
 // riscv_instr_group_t supported_isa[$] = {RV32I, RV32M, RV32C};
@@ -110,12 +110,12 @@ const privileged_reg_t implemented_csr[] = {
     MISA,       // ISA and extensions
     MIE,        // Machine interrupt-enable register
     MTVEC,      // Machine trap-handler base address
-    MCOUNTEREN, // Machine counter enable
+    // MCOUNTEREN, // Machine counter enable
     MSCRATCH,   // Scratch register for machine trap handlers
     MEPC,       // Machine exception program counter
-    MCAUSE,     // Machine trap cause
-    MTVAL,      // Machine bad address or instruction
-    MIP         // Machine interrupt pending
+    MCAUSE     // Machine trap cause
+    // MTVAL,      // Machine bad address or instruction
+    // MIP         // Machine interrupt pending
 };
 
 // Implementation-specific custom CSRs
