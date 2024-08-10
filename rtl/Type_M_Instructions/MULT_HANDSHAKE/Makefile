@@ -1,5 +1,13 @@
+# ------------------------------------------------------------------------------------------------
+# DESCRIÇÃO: Makefile para executar validação
+# ------------------------------------------------------------------------------------------------
+# RELEASE HISTORY  :
+# DATA                 VERSÃO    	 AUTOR  									
+# 2024-08-10           0.01        	 André Medeiros     	    
+# ------------------------------------------------------------------------------------------------
+
 DIR  		= mkdir -p ./work/
-FILES  	= ../mult.sv \
+FILES  	= ../multiplier.sv \
 					../tb_multiplier.sv
 
 .PHONY: sim clean
@@ -18,7 +26,7 @@ wave:
 	simvision waves.shm &
 
 clean:
-	rm -rf xrun.* *.log .simvision ./work/
+	rm -rf xrun.* *.log .simvision xcelium.d ./work
 
 help:
 	@echo "Xcelium and VManager need to be installed and environment needs to be set up to use this Makefile."
