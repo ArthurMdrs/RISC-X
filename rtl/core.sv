@@ -42,6 +42,7 @@ logic        valid_if, valid_id, valid_ex, valid_mem;
 // logic        ready_if, ready_id, ready_ex, ready_mem, ready_wb;
 logic        stall_if, stall_id, stall_ex, stall_mem;
 logic        flush_id, flush_ex, flush_mem, flush_wb;
+logic        is_compressed_if;
 
 // Source and destiny registers from register file
 logic [ 4:0] rs1_addr_id, rs2_addr_id;
@@ -107,9 +108,10 @@ if_stage if_stage_inst (
     .imem_addr_o  ( imem_addr_o ),
     
     // Output to ID stage
-    .pc_if_o    ( pc_if ),
-    .instr_if_o ( instr_if ),
-    .valid_if_o ( valid_if ),
+    .pc_if_o            ( pc_if ),
+    .instr_if_o         ( instr_if ),
+    .valid_if_o         ( valid_if ),
+    .is_compressed_if_o ( is_compressed_if ),
     
     // Control inputs
     .stall_if_i (stall_if),
@@ -146,9 +148,10 @@ id_stage #(
     .rst_n_i ( rst_n_i ),
     
     // Input from IF stage
-    .pc_if_i    ( pc_if ),
-    .instr_if_i ( instr_if ),
-    .valid_if_i ( valid_if ),
+    .pc_if_i            ( pc_if ),
+    .instr_if_i         ( instr_if ),
+    .valid_if_i         ( valid_if ),
+    .is_compressed_if_i ( is_compressed_if ),
     
     // Output to IF stage
     .jump_target_id_o ( jump_target_id ),

@@ -11,6 +11,7 @@ module if_stage import core_pkg::*; (
     output logic [31:0] pc_if_o,
     output logic [31:0] instr_if_o,
     output logic        valid_if_o,
+    output logic        is_compressed_if_o,
     
     // Control inputs
     input  logic stall_if_i,
@@ -37,10 +38,10 @@ module if_stage import core_pkg::*; (
 ///////////////////////////////////////////////////////////////////////////////
 
 logic [31:0] pc_if_n;
-logic        is_compressed_if_o;
+// logic        is_compressed_if_o;
 
 // Next instruction pointer decision maker
-assign is_compressed_if_o = ~(imem_rdata_i[1] & imem_rdata_i[0]);
+assign is_compressed_if_o = ~(imem_rdata_i[1] && imem_rdata_i[0]);
     
 // Instruction Memory Interface
 assign instr_if_o = imem_rdata_i; // Instruction read from memory
