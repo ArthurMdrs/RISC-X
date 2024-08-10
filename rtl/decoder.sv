@@ -48,7 +48,7 @@ logic [2:0] funct3;
 logic [6:0] opcode;
 
 logic [1:0] opcode_C;
-logic [5:0] funct6_C;
+// logic [5:0] funct6_C;
 logic [3:0] funct4_C;
 logic [2:0] funct3_C;
 logic [1:0] funct2_C;
@@ -59,7 +59,7 @@ assign funct3 = instr_i[14:12];
 assign opcode = instr_i[ 6: 0];
 
 assign opcode_C = instr_i[ 1: 0];
-assign funct6_C = instr_i[15:10];
+// assign funct6_C = instr_i[15:10];
 assign funct4_C = instr_i[15:12];
 assign funct3_C = instr_i[15:13];
 assign funct2_C = instr_i[ 6: 5];
@@ -107,16 +107,19 @@ always_comb begin
         OPCODE_RVC_0: begin
             unique case (funct3_C)
                 3'b000: begin // c.addi4spn
-                    reg_alu_wen_o = 1'b1;
-                    rd_addr_C = {2'b01, instr_i[4:2]}; //x8 - x15
-                    rs1_addr_C = 5'd2; //x2
-                    
-                    alu_source_1_o = ALU_SCR1_RS1;
-                    alu_source_2_o = ALU_SCR2_IMM;
-                    reg_alu_wen_o  = 1'b1;
-                    
-                    alu_operation_o  = ALU_ADD; // ADD
+                    alu_operation_o  = ALU_ADD;
+                    // alu_source_1_o = ALU_SCR1_RS1;
+                    alu_source_2_o   = ALU_SCR2_IMM;
                     immediate_type_o = IMM_CIW;
+                    
+                    reg_alu_wen_o = 1'b1;
+                    
+                    rs1_addr_C = 5'd2; //x2
+                    rd_addr_C  = {2'b01, instr_i[4:2]}; //x8 - x15
+                    
+                    // Code points with imm=0 are reserved
+                    if (instr_i[12:5] == 8'd0)
+                        illegal_instr_o = 1'b1;
                 end
                 /*3'b001: begin // c.fld
                     reg_mem_wen_o = 1'b1;
@@ -187,21 +190,17 @@ always_comb begin
         end
 
         OPCODE_RVC_1: begin
-            case (instr_i[15:13]) // Concluido
+            unique case (funct3_C)
                 3'b000: begin // c.addi
+                    alu_operation_o  = ALU_ADD;
+                    // alu_source_1_o = ALU_SCR1_RS1;
+                    alu_source_2_o = ALU_SCR2_IMM;
+                    immediate_type_o = IMM_CI;
                     
                     reg_alu_wen_o = 1'b1;
-                    rd_addr_C = instr_i[11:7];
-                    rs1_addr_C = instr_i[11:7];
-                    
-                    alu_source_2_o = ALU_SCR2_IMM;
-                    alu_source_1_o = ALU_SCR1_RS1;
-                    reg_alu_wen_o  = 1'b1;
-                    
-                    alu_operation_o  = ALU_ADD;
 
-                    immediate_type_o = IMM_CI;
-
+                    // Code points with imm=0 are hints
+                    // if ({instr_i[12],instr_i[6:2]} != 6'd0)
                 end
                 3'b001: begin // c.jal
                     // ALU calculates PC+2
@@ -218,109 +217,117 @@ always_comb begin
                     rd_addr_C = 5'd1; // x1/ra
                 end
                 3'b010: begin // c.li
-                   
-                    rd_addr_C = instr_i[11:7];
-                    
                     alu_operation_o  = ALU_ADD;
-
-                    reg_mem_wen_o = 1'b1;
-                    
-
-                    rs1_addr_C = {2'b01, instr_i[9:7]};
-
-                    immediate_type_o = IMM_CI;
-
+                    alu_source_1_o   = ALU_SCR1_ZERO;
                     alu_source_2_o   = ALU_SCR2_IMM;
-                    alu_operation_o  = ALU_ADD;
+                    immediate_type_o = IMM_CI;
+                    
+                    // When rd is 0, it's a hint instr
+                    // if (rd_addr_C != 5'd0) // This is not necessary, as writes to x0 do nothing
+                        reg_alu_wen_o = 1'b1;
                 end
-                3'b011: begin // c.addi16sp
-                    if (instr_i[11:7] == 5'b00010) begin
-                       
-
-                        rd_addr_C = 5'b00010;
+                3'b011: begin
+                    if (rd_addr_C == 5'd2) begin // c.addi16sp
+                        alu_operation_o  = ALU_ADD;
+                        alu_source_2_o   = ALU_SCR2_IMM;
+                        immediate_type_o = IMM_C16;
+                        
                         reg_alu_wen_o = 1'b1;
 
-                        immediate_type_o = IMM_CI;
-
-                        alu_source_2_o   = ALU_SCR2_IMM;
-                        alu_operation_o = ALU_ADD;
-                        
-
-                    end else begin // Não ENTENDI COMO FAZER
-                        // C.LUI
-                        rd_addr_C = instr_i[11:7];
-                        reg_alu_wen_o  = 1'b1; // Estou na duvida sobre isso aqui!
-
+                        // Code points with imm=0 are reserved
+                        if ({instr_i[12],instr_i[6:2]} == 6'd0)
+                            illegal_instr_o = 1'b1;
+                    end else begin // c.lui
                         alu_operation_o  = ALU_ADD;
                         alu_source_1_o   = ALU_SCR1_ZERO;
                         alu_source_2_o   = ALU_SCR2_IMM;
                         immediate_type_o = IMM_CLUI;
                         
-                        
-
+                        // When rd is 0, it's a hint instr
+                        // if (rd_addr_C != 5'd0) // This is not necessary, as writes to x0 do nothing
+                            reg_alu_wen_o  = 1'b1;
+                            
+                        // Code points with imm=0 are reserved
+                        if ({instr_i[12],instr_i[6:2]} == 6'd0)
+                            illegal_instr_o = 1'b1;
                     end
                 end
                 3'b100: begin
-                    case (instr_i[11:10])
-                        2'b00: begin // C.SRLI
+                    unique case (instr_i[11:10])
+                        2'b00: begin // c.srli
+                            alu_operation_o  = ALU_SRL;
+                            alu_source_2_o   = ALU_SCR2_IMM;
+                            immediate_type_o = IMM_CI;
                            
-                            rd_addr_C = instr_i[9:7];
                             reg_alu_wen_o = 1'b1;
-
-                            immediate_type_o = IMM_CI;
+                           
+                            rs1_addr_C = {2'b01, instr_i[9:7]};
+                            rd_addr_C  = {2'b01, instr_i[9:7]};
                             
-                            alu_operation_o = ALU_SRL; // SRL
+                            // For RV32C, shamt[5] must be zero
+                            // The code points with shamt[5]=1 are designated for custom extensions
+                            if (instr_i[12] == 1'b1)
+                                illegal_instr_o = 1'b1;
                         end
-                        2'b01: begin
-                            // C.SRAI
-                            rd_addr_C = instr_i[9:7];
-                            reg_alu_wen_o = 1'b1;
-
+                        2'b01: begin // c.srai
+                            alu_operation_o  = ALU_SRA;
+                            alu_source_2_o   = ALU_SCR2_IMM;
                             immediate_type_o = IMM_CI;
-
-                            alu_operation_o = ALU_SRA; // SRA
-                        end
-                        2'b10: begin
-                            // C.ANDI
-                            rd_addr_C = instr_i[9:7];
+                           
                             reg_alu_wen_o = 1'b1;
-
-                            immediate_type_o = IMM_CI; // sign-extend
-
-                            alu_operation_o = ALU_AND; // AND
+                           
+                            rs1_addr_C = {2'b01, instr_i[9:7]};
+                            rd_addr_C  = {2'b01, instr_i[9:7]};
+                            
+                            // For RV32C, shamt[5] must be zero
+                            // The code points with shamt[5]=1 are designated for custom extensions
+                            if (instr_i[12] == 1'b1)
+                                illegal_instr_o = 1'b1;
+                        end
+                        2'b10: begin // c.andi
+                            alu_operation_o  = ALU_AND;
+                            alu_source_2_o   = ALU_SCR2_IMM;
+                            immediate_type_o = IMM_CI;
+                           
+                            reg_alu_wen_o = 1'b1;
+                           
+                            rs1_addr_C = {2'b01, instr_i[9:7]};
+                            rd_addr_C  = {2'b01, instr_i[9:7]};
                         end
                         2'b11: begin
-                            case (instr_i[6:5])
-                                2'b00: begin
-                                    // C.SUB
-                                    rd_addr_C = {2'b01, instr_i[4:2]};
+                            unique case (instr_i[6:5])
+                                2'b00: begin // c.sub
+                                    alu_operation_o = ALU_SUB;
                                     reg_alu_wen_o = 1'b1;
-                                    rs2_addr_C = {2'b01, instr_i[9:7]};
-                                    alu_operation_o = ALU_SUB; // SUB
+                                    rs1_addr_C = {2'b01, instr_i[9:7]};
+                                    rs2_addr_C = {2'b01, instr_i[4:2]};
+                                    rd_addr_C  = {2'b01, instr_i[9:7]};
                                 end
-                                2'b01: begin
-                                    // C.XOR
-                                    rd_addr_C = {2'b01, instr_i[4:2]};
+                                2'b01: begin // c.xor
+                                    alu_operation_o = ALU_XOR;
                                     reg_alu_wen_o = 1'b1;
-                                    rs2_addr_C = {2'b01, instr_i[9:7]};
-                                    alu_operation_o = ALU_XOR; // XOR
+                                    rs1_addr_C = {2'b01, instr_i[9:7]};
+                                    rs2_addr_C = {2'b01, instr_i[4:2]};
+                                    rd_addr_C  = {2'b01, instr_i[9:7]};
                                 end
-                                2'b10: begin
-                                    // C.OR
-                                    rd_addr_C = {2'b01, instr_i[4:2]};
+                                2'b10: begin // c.or
+                                    alu_operation_o = ALU_OR;
                                     reg_alu_wen_o = 1'b1;
-                                    rs2_addr_C = {2'b01, instr_i[9:7]};
-                                    alu_operation_o = ALU_OR; // OR
+                                    rs1_addr_C = {2'b01, instr_i[9:7]};
+                                    rs2_addr_C = {2'b01, instr_i[4:2]};
+                                    rd_addr_C  = {2'b01, instr_i[9:7]};
                                 end
-                                2'b11: begin
-                                    // C.AND
-                                    rd_addr_C = {2'b01, instr_i[4:2]};
+                                2'b11: begin // c.and
+                                    alu_operation_o = ALU_AND;
                                     reg_alu_wen_o = 1'b1;
-                                    rs2_addr_C = {2'b01, instr_i[9:7]};
-                                    alu_operation_o = ALU_AND; // AND
+                                    rs1_addr_C = {2'b01, instr_i[9:7]};
+                                    rs2_addr_C = {2'b01, instr_i[4:2]};
+                                    rd_addr_C  = {2'b01, instr_i[9:7]};
                                 end
+                                default: illegal_instr_o = 1'b1;
                             endcase
                         end
+                        default: illegal_instr_o = 1'b1;
                     endcase
                 end
                 3'b101: begin // c.j
@@ -361,20 +368,23 @@ always_comb begin
                     rs1_addr_C = {2'b01, instr_i[9:7]};
                     rs2_addr_C = 5'd0;
                 end
+                default: illegal_instr_o = 1'b1;
             endcase
         end
 
         OPCODE_RVC_2: begin
             case (funct3_C)
                 3'b000: begin // c.slli
-                    alu_source_2_o  = ALU_SCR2_IMM;
-                    reg_alu_wen_o   = 1'b1;
                     alu_operation_o = ALU_SLL;
-                    
+                    alu_source_2_o  = ALU_SCR2_IMM;
                     immediate_type_o = IMM_CI;
-
-                    rd_addr_C  = instr_i[11:7];
-                    rs1_addr_C = instr_i[11:7];
+                    
+                    reg_alu_wen_o   = 1'b1;
+                    
+                    // For RV32C, shamt[5] must be zero
+                    // The code points with shamt[5]=1 are designated for custom extensions
+                    if (instr_i[12] == 1'b1)
+                        illegal_instr_o = 1'b1;
                 end
                 3'b010: begin // c.lwsp
                     alu_operation_o  = ALU_ADD;
@@ -422,46 +432,50 @@ always_comb begin
                                 illegal_instr_o = 1'b1;
                         end
                         else begin // c.mv
-                            reg_alu_wen_o   = 1'b1;
                             alu_operation_o = ALU_ADD;
+                            alu_source_1_o  = ALU_SCR1_ZERO;
+                            
+                            reg_alu_wen_o   = 1'b1;
 
-                            rd_addr_C  = instr_i[11:7];
-                            rs1_addr_C = 5'd0; //zero (x0)
-                            rs2_addr_C = instr_i[6:2];
+                            // rd_addr_C  = instr_i[11:7];
+                            // rs1_addr_C = 5'd0; //zero (x0)
+                            // rs2_addr_C = instr_i[6:2];
+                            
+                            // Code points with rd=0 are hints
                         end
                     end
                     else begin
-                        // if (instr_i[11:2] == 10'd0) illegal_instr_o = 1'b1; else begin // C_BREAK
-                            if (rs2_addr_C == 5'd0) begin
-                                if (rs1_addr_C == 5'd0) begin // c.ebreak
-                                    // NOT IMPLEMENTED!
-                                end
-                                else begin // c.jalr
-                                    // ALU calculates PC+2
-                                    // The jump target has a dedicated adder in ID stage
-                                    alu_operation_o  = ALU_ADD;
-                                    alu_source_1_o   = ALU_SCR1_PC;
-                                    alu_source_2_o   = ALU_SCR2_4_OR_2;
-                                    immediate_type_o = IMM_CJR;
-                                    
-                                    reg_alu_wen_o    = 1'b1;
-                                    pc_source_o      = PC_JALR;
-
-
-                                    // rs1_addr_C = instr_i[11:7];
-                                    // rs2_addr_C = 5'd1;
-                                    rd_addr_C = 5'd1; // x1/ra
-                                end
+                        if (rs2_addr_C == 5'd0) begin
+                            if (rs1_addr_C == 5'd0) begin // c.ebreak
+                                // NOT IMPLEMENTED!
                             end
-                            else begin // c.add
-                                reg_alu_wen_o   = 1'b1;
-                                alu_operation_o = ALU_ADD;
+                            else begin // c.jalr
+                                // ALU calculates PC+2
+                                // The jump target has a dedicated adder in ID stage
+                                alu_operation_o  = ALU_ADD;
+                                alu_source_1_o   = ALU_SCR1_PC;
+                                alu_source_2_o   = ALU_SCR2_4_OR_2;
+                                immediate_type_o = IMM_CJR;
+                                
+                                reg_alu_wen_o    = 1'b1;
+                                pc_source_o      = PC_JALR;
 
-                                rd_addr_C  = instr_i[11:7];
-                                rs1_addr_C = instr_i[11:7];
-                                rs2_addr_C = instr_i[6:2];
+
+                                // rs1_addr_C = instr_i[11:7];
+                                // rs2_addr_C = 5'd1;
+                                rd_addr_C = 5'd1; // x1/ra
                             end
-                        // end
+                        end
+                        else begin // c.add
+                            alu_operation_o = ALU_ADD;
+                            reg_alu_wen_o   = 1'b1;
+                            
+                            // Code points with rd=0 are hints
+                            
+                            // rd_addr_C  = instr_i[11:7];
+                            // rs1_addr_C = instr_i[11:7];
+                            // rs2_addr_C = instr_i[6:2];
+                        end
                     end
                 end
                 3'b110: begin // c.swsp
