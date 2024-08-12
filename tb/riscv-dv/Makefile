@@ -24,11 +24,13 @@ endif
 
 PROGS_PATH := $(abspath $(shell pwd)/../programs)
 PROG := 
+VERBOSE := 0
 PLUS_ARG := +progs_path=$(PROGS_PATH)
-ifeq ($(strip $(PROG)),)
-	PLUS_ARG +=
-else
+ifneq ($(strip $(PROG)),)
 	PLUS_ARG += +prog=$(PROG)
+endif
+ifeq ($(strip $(VERBOSE)), 1)
+	PLUS_ARG += +verbose=1
 endif
 
 SEED = 1
@@ -73,14 +75,14 @@ sim-elf: $(DEPS)
 	python3 elf2hex.py $(ELF) $(PROGS_PATH)/out_prog.txt
 	xrun -64bit -sv +define+SIM $(SVA) $(SIM_TOP) $(FILES) \
 		 +progs_path=$(PROGS_PATH) +prog=out +text_start=8000_0000 \
-		 +check_regs=0 +check_mem=0 +print_trace=1 \
+		 +check_regs=0 +check_mem=0 +print_trace=1 +verbose=$(VERBOSE) \
 		 -timescale 1ns/1ps -access +rwc -svseed $(SEED)
 
 sim-elf-gui: $(DEPS)
 	python3 elf2hex.py $(ELF) $(PROGS_PATH)/out_prog.txt
 	xrun -64bit -sv +define+SIM $(SVA) $(SIM_TOP) $(FILES) -gui $(INPUT) \
 		 +progs_path=$(PROGS_PATH) +prog=out +text_start=8000_0000 \
-		 +check_regs=0 +check_mem=0 +print_trace=1 \
+		 +check_regs=0 +check_mem=0 +print_trace=1 +verbose=$(VERBOSE) \
 		 -timescale 1ns/1ps -access +rwc -svseed $(SEED)
 
 ##########################################################################################################################
@@ -116,15 +118,19 @@ gen-sim-cmp:
 	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --so \
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike
 
+sim-and-compare:
+	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --so --steps iss_sim,iss_cmp \
+		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike
+
 ##########################################################################################################################
 
 DV_COV_DIR := $(DV_OUT_DIR)/cov
 COV_TESTS_DIR := $(DV_COV_DIR)/default
 # export COV_TEST_RUN := $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*' | head -n 1)
-export COV_RUNS := $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
-export COV_MERGED_DIR := $(DV_COV_DIR)/merged
+export COV_RUNS = $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
+export COV_MERGED_DIR = $(DV_COV_DIR)/merged
 export COV_REPORT_DIR := $(TB_HOME)/cov_report
-RISCX_LOG := $(wildcard $(DV_OUT_DIR)/risc-x_sim/*.log)
+RISCX_LOG = $(wildcard $(DV_OUT_DIR)/risc-x_sim/*.log)
 
 log2csv:
 	@for log_file in $(RISCX_LOG); do \
@@ -154,7 +160,7 @@ cov-full: log2csv cov-collect cov-merge cov-report
 # 	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log trace* mytest
 
 clean-sim:
-	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log trace*
+	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log trace* $(DV_OUT_DIR)/*_sim/
 
 clean-dv:
 	rm -rf $(DV_OUT_DIR)/asm_test/ $(DV_OUT_DIR)/*_sim/
@@ -174,3 +180,11 @@ clean: clean-sim clean-dv clean-cov clean-generator
 # 	@for x in $(aux); do \
 # 		echo $$x ; \
 # 	done
+
+SPIKE_LOG := $(wildcard $(DV_OUT_DIR)/spike_sim/*.log)
+spike_full_csv:
+	@for log_file in $(SPIKE_LOG); do \
+		csv_file=$$(echo $$log_file | sed 's/\.log$$/\.csv/') ; \
+		python3 -c "import run; run.process_spike_sim_log('$$log_file', '$$csv_file', 1)"; \
+	done
+	
