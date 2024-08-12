@@ -80,6 +80,8 @@ logic        mcause_intr_n;
 logic [ 4:0] mcause_code_n;
 assign mcause[31]   = 1'b0; // TODO Change this when interrupts are implemented
 assign mcause[30:5] = 26'b0;
+// Machine Scratch Register
+logic [31:0] mscratch, mscratch_n;
 
 // Machine Interrupt Enable Register
 logic [31:0] mie, mie_n;
@@ -98,12 +100,12 @@ always_comb begin
                                     mstatus.mxr, mstatus.sum, mstatus.mprv, mstatus.xs, mstatus.fs,
                                     mstatus.mpp, mstatus.vs, mstatus.spp, mstatus.mpie, mstatus.ube,
                                     mstatus.spie, 1'b0, mstatus.mie, 1'b0, mstatus.sie, 1'b0};
-        
+        CSR_MIE: csr_rdata_o = mie;
         CSR_MTVEC: csr_rdata_o = mtvec;
+        
         CSR_MEPC: csr_rdata_o = mepc;
         CSR_MCAUSE: csr_rdata_o = mcause;
-        
-        CSR_MIE: csr_rdata_o = mie;
+        CSR_MSCRATCH: csr_rdata_o = mscratch;
         
         default: csr_rdata_o = '0;
     endcase
@@ -111,11 +113,12 @@ end
 
 // Define next values of CSRs
 always_comb begin
+    mie_n = mie;
     mtvec_n = (set_initial_mtvec) ? ({mtvec_i, 8'b0}) : (mtvec);
     mepc_n = mepc;
     mcause_intr_n = mcause[31];
     mcause_code_n = mcause[4:0];
-    mie_n = mie;
+    mscratch_n = mscratch;
     
     if (csr_wen) begin
         case (csr_addr_i)
@@ -130,6 +133,9 @@ always_comb begin
             CSR_MIE: begin
                 // mcause_intr_n = csr_wdata_actual[31]; // TODO Change this when interrupts are implemented
                 mie_n = csr_wdata_actual;
+            end
+            CSR_MSCRATCH: begin
+                mscratch_n = csr_wdata_actual;
             end
         endcase
     end
@@ -149,19 +155,21 @@ end
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
         set_initial_mtvec <= '1;
+        mie  <= '0;
         mtvec <= '0;
         mepc  <= '0;
         // mcause[31] <= '0;
         mcause[4:0] <= '0;
-        mie  <= '0;
+        mscratch <= '0;
     end
     else begin
         set_initial_mtvec <= '0;
+        mie  <= mie_n;
         mtvec <= mtvec_n;
         mepc  <= mepc_n;
         // mcause[31] <= mcause_intr_n;
         mcause[4:0] <= mcause_code_n;
-        mie  <= mie_n;
+        mscratch <= mscratch_n;
     end
 end
 

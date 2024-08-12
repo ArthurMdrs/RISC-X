@@ -1,5 +1,7 @@
 import subprocess
 from sys import argv
+import os
+# from pathlib import Path
 
 riscv_prefix = "riscv32-unknown-linux-gnu-"
 
@@ -10,6 +12,7 @@ def elf2hex(elf_path, hex_path):
     hex_output = ""
     # print(elf_path)
     # print(hex_path)
+    # print(output)
     for line in output.splitlines():
         parts = line.split()
         if len(parts) > 1 and parts[0].endswith(':') and all(c in '0123456789abcdef' for c in parts[1].lower()):
@@ -30,6 +33,14 @@ def main():
         hex_path = argv[2]
     else:
         hex_path = elf_path + ".txt"
+    if os.path.isfile(hex_path):
+        print("Deleting existing HEX file.")
+        os.remove(hex_path)
+    if not os.path.isfile(os.path.abspath(elf_path)):
+    # if not Path(elf_path).exists():
+        print("Error converting ELF file. File does not exist! File path:")
+        print(os.path.abspath(elf_path))
+        return
     elf2hex(elf_path, hex_path)
 
 if __name__ == "__main__":
