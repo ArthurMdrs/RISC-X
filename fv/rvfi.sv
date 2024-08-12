@@ -354,5 +354,6 @@ assign rvfi_csr_``name``_wdata = csr_wdata_wb;
 
 `assign_rvfi_csr(mepc)
 `assign_rvfi_csr(mcause)
+`assign_rvfi_csr(mscratch)
 
 endmodule

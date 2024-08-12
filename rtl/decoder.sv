@@ -755,7 +755,8 @@ always_comb begin
                     CSR_MTVEC: ;
                     
                     CSR_MEPC,
-                    CSR_MCAUSE: ;
+                    CSR_MCAUSE,
+                    CSR_MSCRATCH: ;
                     
                     default: illegal_instr_o = 1'b1;
                 endcase

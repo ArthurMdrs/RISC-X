@@ -34,6 +34,11 @@ logic [31:0] instr_addr, imem_idx;
 assign instr_addr = imem_addr - section_text_start;
 assign imem_idx = instr_addr >> 2; // The array is word-addressable, so this shift is needed
 
+// Data memory will be an associative array
+// logic [7:0] data_mem [logic [31:0]];
+logic [31:0] data_mem [logic [31:0]];
+logic [31:0] dmem_rdata_aux;
+
 wire [31:0] hartid    = 32'h0000_0000;
 wire [23:0] mtvec     = 24'h8000_80;
 wire [29:0] boot_addr = section_text_start[31:2];
@@ -47,8 +52,8 @@ rvviTrace #(
     .XLEN(32),  // GPR length in bits
     .FLEN(32),  // FPR length in bits
     .VLEN(256), // Vector register size in bits
-    .NHART(1),   // Number of harts reported
-    .RETIRE(1)    // Number of instructions that can retire during valid event
+    .NHART(1),  // Number of harts reported
+    .RETIRE(1)  // Number of instructions that can retire during valid event
 ) rvvi ();
 
 rvvi_wrapper #(
@@ -78,7 +83,6 @@ rvvi_wrapper #(
 rvvi_tracer tracer_inst (
     .clk_i   ( clk ),
     .rst_n_i ( rst_n ),
-    
     .rvvi ( rvvi )
 );
 
@@ -90,11 +94,17 @@ mem #(
     .rst_n,
     
     // Port a (data)
-    .rdata_a (dmem_rdata),
-    .wdata_a (dmem_wdata),
-    .addr_a  (dmem_addr[ADDR_WIDTH-1:0]),
-    .wen_a   (dmem_wen),
-    .ben_a   (dmem_ben),
+    // .rdata_a (dmem_rdata),
+    // .wdata_a (dmem_wdata),
+    // .addr_a  (dmem_addr[ADDR_WIDTH-1:0]),
+    // .wen_a   (dmem_wen),
+    // .ben_a   (dmem_ben),
+    
+    .rdata_a (),
+    .wdata_a ('0),
+    .addr_a  ('0),
+    .wen_a   ('0),
+    .ben_a   ('0),
     
     // Port b (instruction)
     // .rdata_b (imem_rdata),
@@ -183,11 +193,17 @@ initial begin
     if ($value$plusargs("text_start=%h", section_text_start)) begin
         $display("Got text_start from plusargs:\n  %h", section_text_start);
     end
+    if ($value$plusargs("verbose=%b", verbose)) begin
+        $display("Got verbose from plusargs:\n  %b", verbose);
+    end
         
     drive_prog(prog_name, check_regs, check_mem);
     
     $display("%t: Simulation end. Number of mismatches: %0d.", $time, n_mismatches);
     $display("%t: Clock cycles: %0d.", $time, cycle_cnt);
+    
+    // print_data_mem();
+        
 
     $display("#==========================================================#");
     $finish;
@@ -207,6 +223,26 @@ always_comb begin
         else begin
             imem_rdata = instr_mem[imem_idx];
         end
+    end
+end
+
+// Update data mem associative array
+always @(negedge clk, negedge rst_n) begin
+    if (!rst_n) begin
+        data_mem.delete();
+    end else begin
+        if (dmem_wen)
+            data_mem_store (dmem_addr, dmem_ben, dmem_wdata);
+        data_mem_load (dmem_addr, dmem_ben, dmem_rdata);
+        
+        // data_mem_load (dmem_addr, dmem_ben, dmem_rdata_aux);
+        // if (`CORE.reg_mem_wen_wb || dmem_wen)
+        // if (`CORE.reg_mem_wen_mem)
+        //     if (dmem_rdata_aux != dmem_rdata) begin
+        //         $display("%t: ERROR. Read data_mem[%h] = 0x%h. dmem_rdata = 0x%h.", $time, dmem_addr, dmem_rdata_aux, dmem_rdata);
+        //         $display("%t: ERROR. data_mem[%h] = 0x%h.", $time, {dmem_addr[31:2], 2'b0}, data_mem[dmem_addr]);
+        //         $display("%t: ERROR. data_mem[%h] = 0x%h.", $time, {dmem_addr[31:2], 2'b0}+32'd4, data_mem[dmem_addr]);
+        //     end
     end
 end
 
@@ -256,6 +292,163 @@ task load_instr_mem (string prog_file);
     
     // print_instr_mem();
 endtask
+
+function void data_mem_store (logic [31:0] addr, logic [3:0] ben, logic [31:0] wdata);
+    // if (ben[0])
+    //     data_mem[addr  ] = wdata[ 7: 0];
+    // if (ben[1])
+    //     data_mem[addr+1] = wdata[15: 8];
+    // if (ben[2])
+    //     data_mem[addr+2] = wdata[23:16];
+    // if (ben[3])
+    //     data_mem[addr+3] = wdata[31:24];
+    
+    logic [31:0] addr_int, wdata_int;
+    addr_int = {addr[31:2], 2'b0}; // We can only access 4-byte aligned addresses
+    wdata_int = '0;
+    if (data_mem.exists(addr_int)) wdata_int = data_mem[addr_int];
+    case (addr[1:0])
+        2'b00: begin
+            if(ben[0]) wdata_int[ 7: 0] = wdata[ 7: 0];
+            if(ben[1]) wdata_int[15: 8] = wdata[15: 8];
+            if(ben[2]) wdata_int[23:16] = wdata[23:16];
+            if(ben[3]) wdata_int[31:24] = wdata[31:24];
+            data_mem[addr_int] = wdata_int;
+        end
+        2'b01: begin
+            if(ben[0]) wdata_int[15: 8] = wdata[ 7: 0];
+            if(ben[1]) wdata_int[23:16] = wdata[15: 8];
+            if(ben[2]) wdata_int[31:24] = wdata[23:16];
+            data_mem[addr_int] = wdata_int;
+            if(ben[3]) begin
+                addr_int += 32'd4;
+                data_mem_store (addr_int, 4'b0001, {24'b0, wdata[31:24]});
+            end
+        end
+        2'b10: begin
+            if(ben[0]) wdata_int[23:16] = wdata[ 7: 0];
+            if(ben[1]) wdata_int[31:24] = wdata[15: 8];
+            data_mem[addr_int] = wdata_int;
+            if(ben[3:2] == 2'b11) begin // We assume ben is one of: 0001, 0011, 1111
+                addr_int += 32'd4;
+                data_mem_store (addr_int, 4'b0011, {16'b0, wdata[31:16]});
+            end
+        end
+        2'b11: begin
+            if(ben[0]) wdata_int[31:24] = wdata[ 7: 0];
+            data_mem[addr_int] = wdata_int;
+            if(ben[3:1] == 3'b001) begin // We assume ben is one of: 0001, 0011, 1111
+                addr_int += 32'd4;
+                data_mem_store (addr_int, 4'b0001, {24'b0, wdata[15:8]});
+            end
+            else if(ben[3:1] == 3'b111) begin // We assume ben is one of: 0001, 0011, 1111
+                addr_int += 32'd4;
+                data_mem_store (addr_int, 4'b0111, {8'b0, wdata[31:8]});
+            end
+        end
+    endcase
+endfunction
+
+function void data_mem_load (logic [31:0] addr, logic [3:0] ben, output logic [31:0] rdata);
+    // rdata[ 7: 0] = data_mem[addr  ];
+    // rdata[15: 8] = data_mem[addr+1];
+    // rdata[23:16] = data_mem[addr+2];
+    // rdata[31:24] = data_mem[addr+3];
+    
+    logic [31:0] addr_int, rdata_int, rdata_aux;
+    addr_int = {addr[31:2], 2'b0}; // We can only access 4-byte aligned addresses
+    rdata_int = '0;
+    if (data_mem.exists(addr_int)) rdata_int = data_mem[addr_int];
+    case (addr[1:0])
+        2'b00: begin
+            // if(ben[0]) rdata_int[ 7: 0] = wdata[ 7: 0];
+            // if(ben[1]) rdata_int[15: 8] = wdata[15: 8];
+            // if(ben[2]) rdata_int[23:16] = wdata[23:16];
+            // if(ben[3]) rdata_int[31:24] = wdata[31:24];
+            rdata = rdata_int;
+        end
+        2'b01: begin
+            rdata_int = rdata_int >> 8;
+            rdata = rdata_int;
+            if(ben[3:2] == 2'b11) begin // We assume ben is one of: 0001, 0011, 1111
+                addr_int += 32'd4;
+                data_mem_load (addr_int, 4'b0001, rdata_aux);
+                rdata[31:24] = rdata_aux[7:0];
+            end
+        end
+        2'b10: begin
+            rdata_int = rdata_int >> 16;
+            rdata = rdata_int;
+            if(ben[3:2] == 2'b11) begin // We assume ben is one of: 0001, 0011, 1111
+                addr_int += 32'd4;
+                data_mem_load (addr_int, 4'b0011, rdata_aux);
+                rdata[31:16] = rdata_aux[15:0];
+            end
+        end
+        2'b11: begin
+            rdata_int = rdata_int >> 24;
+            rdata = rdata_int;
+            if(ben[3:1] == 3'b001) begin // We assume ben is one of: 0001, 0011, 1111
+                addr_int += 32'd4;
+                data_mem_load (addr_int, 4'b0001, rdata_aux);
+                rdata[15:8] = rdata_aux[7:0];
+            end
+            else if(ben[3:1] == 3'b111) begin // We assume ben is one of: 0001, 0011, 1111
+                addr_int += 32'd4;
+                data_mem_load (addr_int, 4'b0111, rdata_aux);
+                rdata[31:8] = rdata_aux[23:0];
+            end
+        end
+    endcase
+endfunction
+
+function void print_data_mem ();
+    logic [31:0] idx, last_idx;
+    logic [31:0] data;
+    // for (void'(data_mem.first(i)); i != null; void'(data_mem.next(i))) begin
+    //     data = {data_mem[i+3], data_mem[i+2], data_mem[i+1], data_mem[i]};
+    //     $display("%t: data_mem[%h] = 0x%h.", $time, i, data);
+    // end
+    
+    // if (data_mem.size() != 0) begin
+    //     $display("%t: data_mem size = %0d.", $time, data_mem.size()/4);
+    //     void'(data_mem.last(last_idx));
+    //     void'(data_mem.first(idx));
+    //     while (1) begin
+    //         // data = data_mem[idx];
+    //         data = {data_mem[idx+3], data_mem[idx+2], data_mem[idx+1], data_mem[idx]};
+    //         $display("%t: data_mem[%h] = 0x%h.", $time, idx, data);
+
+    //         idx += 3;
+    //         if (idx == last_idx)
+    //             break;
+            
+    //         void'(data_mem.next(idx));
+    //     end
+    // end
+    
+    foreach(data_mem[i])
+        $display("%t: data_mem[%h] = 0x%h.", $time, i, data_mem[i]);
+endfunction
+
+function void check_data_mem ();
+    logic [31:0] addr_sh;
+    foreach(xptd_dmem[addr]) begin
+        addr_sh = addr << 2;
+        if (data_mem.exists(addr_sh)) begin
+            if (data_mem[addr_sh] != xptd_dmem[addr]) begin
+                n_mismatches++;
+                $display("%t: ERROR in data mem! Index = %0d. Expected = %h. Actual = %h.", $time, addr, xptd_dmem[addr], data_mem[addr_sh]);
+            end
+        end
+        else begin
+            if (xptd_dmem[addr] != '0) begin
+                n_mismatches++;
+                $display("%t: ERROR in data mem! Index = %0d. Expected = %h. Actual = %h (does not exist).", $time, addr, xptd_dmem[addr], data_mem[addr_sh]);
+            end
+        end
+    end
+endfunction
 
 task print_instr_mem;
     logic [31:0] data;
@@ -332,16 +525,18 @@ task drive_prog (string prog_name, bit check_regs, bit check_mem);
             if (verbose) begin
                 foreach (xptd_dmem[i]) begin
                     if(i == 32) break;
-                    $display("xptd_dmem[%2d] = %h. dmem[%2d] = %h.", i, xptd_dmem[i], i, dmem_clone[i]);
+                    // $display("xptd_dmem[%2d] = %h. dmem[%2d] = %h.", i, xptd_dmem[i], i, dmem_clone[i]);
+                    $display("xptd_dmem[%2d] = %h. data_mem[%2d] = %h.", i, xptd_dmem[i], i, data_mem[i<<2]);
                 end
             end
-            checkit("dmem", xptd_dmem, dmem_clone);
+            // checkit("dmem", xptd_dmem, dmem_clone);
+            check_data_mem ();
         end
         
         if (check_regs) begin
-            if (verbose)
-                foreach (xptd_regs[i])
-                    $display("xptd_regs[%2d] = %h. reg[%2d] = %h.", i, xptd_regs[i], i, regs_clone[i]);
+            // if (verbose)
+            //     foreach (xptd_regs[i])
+            //         $display("xptd_regs[%2d] = %h. reg[%2d] = %h.", i, xptd_regs[i], i, regs_clone[i]);
             checkit("regs", xptd_regs, regs_clone);
         end
 
