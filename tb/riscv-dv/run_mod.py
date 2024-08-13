@@ -192,6 +192,8 @@ def get_iss_cmd(base_cmd, elf, log):
       cmd      : Command for ISS simulation
     """
     cmd = re.sub("\<elf\>", elf, base_cmd)
+    bin = elf[:-2] + ".bin"
+    cmd = re.sub("\<bin\>", bin, cmd)
     cmd += (" &> {}".format(log))
     return cmd
 

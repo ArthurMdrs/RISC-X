@@ -38,8 +38,10 @@ SEED = 1
 INPUT = -input restore.tcl
 
 ELF=$(DV_OUT_DIR)/asm_test/$(DV_SIM_TEST)_0.o
+BIN=$(DV_OUT_DIR)/asm_test/$(DV_SIM_TEST)_0.bin
+SECTION_FILE=$(patsubst %.o,%.section,$(ELF))
 
-XRUN_COMMON_FLAGS := -64bit -sv -uvm -uvmhome $(UVMHOME)
+XRUN_COMMON_FLAGS := -64bit -timescale 1ns/1ps -access +rwc -sv -uvm -uvmhome $(UVMHOME)
 XRUN_COMP_FLAGS := $(XRUN_COMMON_FLAGS) -elaborate -l $(DV_OUT_DIR)/compile.log -xmlibdirpath $(DV_OUT_DIR)
 XRUN_SIM_FLAGS := $(XRUN_COMMON_FLAGS) +define+SIM -svseed $(SEED)
 FILES := -f file_list.f
@@ -73,8 +75,10 @@ elf2hex:
 
 sim-elf: $(DEPS)
 	python3 elf2hex.py $(ELF) $(PROGS_PATH)/out_prog.txt
+	python3 elf2hex.py $(ELF) $(SECTION_FILE) 1
 	xrun -64bit -sv +define+SIM $(SVA) $(SIM_TOP) $(FILES) \
 		 +progs_path=$(PROGS_PATH) +prog=out +text_start=8000_0000 \
+		 +bin=$(BIN) +section=$(SECTION_FILE) \
 		 +check_regs=0 +check_mem=0 +print_trace=1 +verbose=$(VERBOSE) \
 		 -timescale 1ns/1ps -access +rwc -svseed $(SEED)
 
@@ -82,6 +86,7 @@ sim-elf-gui: $(DEPS)
 	python3 elf2hex.py $(ELF) $(PROGS_PATH)/out_prog.txt
 	xrun -64bit -sv +define+SIM $(SVA) $(SIM_TOP) $(FILES) -gui $(INPUT) \
 		 +progs_path=$(PROGS_PATH) +prog=out +text_start=8000_0000 \
+		 +bin=$(BIN) \
 		 +check_regs=0 +check_mem=0 +print_trace=1 +verbose=$(VERBOSE) \
 		 -timescale 1ns/1ps -access +rwc -svseed $(SEED)
 
@@ -156,11 +161,8 @@ cov-full: log2csv cov-collect cov-merge cov-report
 
 ##########################################################################################################################
 
-# clean:
-# 	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log trace* mytest
-
 clean-sim:
-	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log trace* $(DV_OUT_DIR)/*_sim/
+	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log *.diag trace* $(DV_OUT_DIR)/*_sim/
 
 clean-dv:
 	rm -rf $(DV_OUT_DIR)/asm_test/ $(DV_OUT_DIR)/*_sim/

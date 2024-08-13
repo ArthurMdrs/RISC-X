@@ -35,8 +35,8 @@ assign instr_addr = imem_addr - section_text_start;
 assign imem_idx = instr_addr >> 2; // The array is word-addressable, so this shift is needed
 
 // Data memory will be an associative array
-// logic [7:0] data_mem [logic [31:0]];
 logic [31:0] data_mem [logic [31:0]];
+logic [31:0] region_0 [logic [31:0]];
 logic [31:0] dmem_rdata_aux;
 
 wire [31:0] hartid    = 32'h0000_0000;
@@ -128,6 +128,16 @@ int file, status;
 bit fetch_enable;
 bit prog_end;
 
+typedef struct {
+    string       name;
+    logic [31:0] start_addr;
+    logic [31:0] end_addr;
+    logic [31:0] size;
+    int          alignment;
+} section_info_t;
+
+section_info_t sections[$]; // Dynamic array of section information
+
 logic [31:0] regs_clone [32];
 assign regs_clone[1:31] = `CORE.id_stage_inst.register_file_inst.mem;
 assign regs_clone[0] = '0;
@@ -154,7 +164,9 @@ string progs [] = '{"OP", "OP-IMM", "LUI_AUIPC", "ST_LD",
                     "3_bubble_sort", "3_fib", "3_qsort"};
 
 string prog_name = "LUI_AUIPC";
-string progs_path = "../basic_tb/programs";
+string progs_path = "../programs";
+string bin_file = {"/mytest/asm_test/", prog_name, ".bin"};
+string sections_file = {"/mytest/asm_test/", prog_name, ".section"};
 
 // Generate clock
 localparam int PERIOD = 2;
@@ -175,9 +187,6 @@ initial begin
 
     $display("#==========================================================#");
     
-    fetch_enable = 0;
-    reset ();
-    
     if ($value$plusargs("prog=%s", prog_name)) begin
         $display("Got prog from plusargs:\n  %s.", prog_name);
     end
@@ -196,6 +205,24 @@ initial begin
     if ($value$plusargs("verbose=%b", verbose)) begin
         $display("Got verbose from plusargs:\n  %b", verbose);
     end
+    if ($value$plusargs("bin=%s", bin_file)) begin
+        $display("Got bin_file from plusargs:\n  %s.", bin_file);
+    end
+    if ($value$plusargs("section=%s", sections_file)) begin
+        $display("Got sections_file from plusargs:\n  %s.", sections_file);
+    end
+    
+    read_sections(sections_file);
+    // foreach (sections[i])
+    //     $display("Section %s: 0x%h, 0x%h, 0x%h, 2**%0d", sections[i].name, sections[i].start_addr, sections[i].end_addr, sections[i].size, sections[i].alignment);
+    
+    load_memory(bin_file);
+    // $display("Section .region_0 size: 0x%h", region_0.size()*4);
+    // foreach (region_0[i])
+    //     $display("region_0[0x%h] = 0x%h", i, region_0[i]);
+    
+    fetch_enable = 0;
+    reset ();
         
     drive_prog(prog_name, check_regs, check_mem);
     
@@ -203,7 +230,6 @@ initial begin
     $display("%t: Clock cycles: %0d.", $time, cycle_cnt);
     
     // print_data_mem();
-        
 
     $display("#==========================================================#");
     $finish;
@@ -554,6 +580,103 @@ task drive_prog (string prog_name, bit check_regs, bit check_mem);
         end
     end
 endtask
+
+// function to read sections file and populate sections array
+function void read_sections (string sections_file);
+    string line;
+    string name;
+    logic [31:0] start_addr, end_addr, size;
+    int alignment;
+    int fd, code;
+    section_info_t section;
+
+    // Open the file
+    fd = $fopen(sections_file, "r");
+    if (fd == 0) begin
+        $fatal(1, "Failed to open %s.", sections_file);
+    end
+
+    // Skip the first line (header)
+    code = $fgets(line, fd);
+
+    // Read the rest of the lines
+    while (!$feof(fd)) begin
+        // Read section name
+        code = $fscanf(fd, "%s\n", name);
+        if(code == -1)
+            break;
+        
+        // Read line with infos
+        code = $fgets(line, fd);
+        code = $sscanf(line, "%x,%x,%x,%d\n", start_addr, end_addr, size, alignment);
+
+        // Add the section information to the array
+        if (code == 4) begin
+            section.name = name;
+            section.start_addr = start_addr;
+            section.end_addr = end_addr;
+            section.size = size;
+            section.alignment = alignment;
+            sections.push_back(section);
+        end else begin
+            $fatal(1, "Wrong number of data.");
+        end
+    end
+
+    // Close the file
+    $fclose(fd);
+endfunction
+
+// function to load .bin into the memory
+function void load_memory (string bin_file);
+    int fd;
+    logic [31:0] addr, word;
+    int i, n;
+    logic [31:0] align_mask;
+
+    // Open .bin file
+    fd = $fopen(bin_file, "r");
+    if (fd == 0) begin
+        $fatal(1, "Failed to open %s.", bin_file);
+    end
+
+    $display("Number of sections = %0d.", sections.size());
+    
+    // Load data into memory according to the sections information
+    addr = sections[0].start_addr;
+    foreach (sections[i]) begin
+        $display("Addr at start of %s. Addr = 0x%h.", sections[i].name, addr);
+        
+        align_mask = (32'b1 << sections[i].alignment) - 1;
+        // $display("align_mask = %h.", align_mask);
+        
+        if (addr & align_mask != '0) begin
+            $display("addr && align_mask = 0x%h.", addr && align_mask);
+            $display("Found misalignment for section %s. Addr = 0x%h, alignment = %0d.", sections[i].name, sections[i].start_addr, sections[i].alignment);
+        end
+        
+        while (addr <= sections[i].end_addr) begin
+            n = $fread(word, fd);
+            if (n != 4) begin
+                $fatal(1, "Error reading .bin at address 0x%h.", addr);
+            end
+            
+            
+            if (sections[i].name == ".region_0") begin
+                // Account for endianess
+                word = {word[7:0], word[15:8], word[23:16], word[31:24]};
+                // memory[addr] = word;
+                region_0[addr] = word;
+            end 
+            
+            
+            addr += 4;
+        end
+    end
+
+    // Close the file
+    $fclose(fd);
+endfunction
 
 //==============   Tasks and functions - END   ==============//
 

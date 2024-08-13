@@ -47,4 +47,4 @@
   path_var: RISC_X_PATH
   riscv_dv_path: RISCV_DV_PATH
   cmd: >
-    make -C <path_var> sim-elf ELF=<elf>
+    make -C <path_var> sim-elf ELF=<elf> BIN=<bin>
