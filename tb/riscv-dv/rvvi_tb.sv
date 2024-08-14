@@ -212,15 +212,6 @@ initial begin
         $display("Got sections_file from plusargs:\n  %s.", sections_file);
     end
     
-    read_sections(sections_file);
-    // foreach (sections[i])
-    //     $display("Section %s: 0x%h, 0x%h, 0x%h, 2**%0d", sections[i].name, sections[i].start_addr, sections[i].end_addr, sections[i].size, sections[i].alignment);
-    
-    load_memory(bin_file);
-    // $display("Section .region_0 size: 0x%h", region_0.size()*4);
-    // foreach (region_0[i])
-    //     $display("region_0[0x%h] = 0x%h", i, region_0[i]);
-    
     fetch_enable = 0;
     reset ();
         
@@ -385,6 +376,13 @@ function void data_mem_load (logic [31:0] addr, logic [3:0] ben, output logic [3
     addr_int = {addr[31:2], 2'b0}; // We can only access 4-byte aligned addresses
     rdata_int = '0;
     if (data_mem.exists(addr_int)) rdata_int = data_mem[addr_int];
+    // if (addr_int == 32'h8001e868) begin
+    //     $display("THIS HAPPENED");
+    //     if (data_mem.exists(addr_int))
+    //         $display("AND THE ADDR EXISTS %h", data_mem[addr_int]);
+    //     else
+    //         $display("BUT THE ADDR DOES NOT EXIST %h", addr_int);
+    // end
     case (addr[1:0])
         2'b00: begin
             // if(ben[0]) rdata_int[ 7: 0] = wdata[ 7: 0];
@@ -527,6 +525,15 @@ task drive_prog (string prog_name, bit check_regs, bit check_mem);
         reset ();
         fetch_enable = 1;
         prog_end = 0;
+    
+    read_sections(sections_file);
+    // foreach (sections[i])
+    //     $display("Section %s: 0x%h, 0x%h, 0x%h, 2**%0d", sections[i].name, sections[i].start_addr, sections[i].end_addr, sections[i].size, sections[i].alignment);
+    
+    load_memory(bin_file);
+    // $display("Section .region_0 size: 0x%h", region_0.size()*4);
+    // foreach (region_0[i])
+    //     $display("region_0[0x%h] = 0x%h", i, region_0[i]);
         
         // Load instructions into instruction memory
         load_instr_mem(prog_file);
@@ -640,12 +647,12 @@ function void load_memory (string bin_file);
         $fatal(1, "Failed to open %s.", bin_file);
     end
 
-    $display("Number of sections = %0d.", sections.size());
+    // $display("Number of sections = %0d.", sections.size());
     
     // Load data into memory according to the sections information
     addr = sections[0].start_addr;
     foreach (sections[i]) begin
-        $display("Addr at start of %s. Addr = 0x%h.", sections[i].name, addr);
+        // $display("Addr at start of %s. Addr = 0x%h.", sections[i].name, addr);
         
         align_mask = (32'b1 << sections[i].alignment) - 1;
         // $display("align_mask = %h.", align_mask);
@@ -662,10 +669,12 @@ function void load_memory (string bin_file);
             end
             
             
-            if (sections[i].name == ".region_0") begin
+            // if (sections[i].name == ".region_0") begin
+            if (sections[i].name.substr(0,7) == ".region_") begin
                 // Account for endianess
                 word = {word[7:0], word[15:8], word[23:16], word[31:24]};
                 // memory[addr] = word;
+                data_mem[addr] = word;
                 region_0[addr] = word;
             end 
             

@@ -75,7 +75,7 @@ always @ (negedge clk_i) begin
         
         // trace_str = $sformatf("%t | %9d | %h | %-25s | %h | %-14s | %-20s | %b\n", 
         //                       $time, cycles, pc, mnemonic, instr, rd_str, csr_str, trap);
-        trace_str = $sformatf("%9d | %h | %-25s | %h | %-14s | %-20s | %b\n", 
+        trace_str = $sformatf("%9d | %h | %-26s | %h | %-14s | %-20s | %b\n", 
                               cycles, pc, mnemonic, instr, rd_str, csr_str, trap);
         
         $fwrite(trace_fd, trace_str);
@@ -94,8 +94,8 @@ always @(negedge rst_n_i) dlyd_rst = 0;
 function string get_header();
     // get_header = {"        Time |     Cycle | PC       | Assembly                  | Instr    | GPR write      | CSR write        \n",
     //               "---------------------------------------------------------------------------------------------------------------"};
-    get_header = {"    Cycle | PC       | Assembly                  | Instr    |   GPR write    | CSR write            | Trap\n",
-                  "----------------------------------------------------------------------------------------------------------"};
+    get_header = {"    Cycle | PC       | Assembly                   | Instr    |   GPR write    | CSR write            | Trap\n",
+                  "-----------------------------------------------------------------------------------------------------------"};
 endfunction
     
 

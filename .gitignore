@@ -21,6 +21,7 @@ rvviTrace.sv
 join.py
 jg.tcl
 run.py
+base_testlist.yaml
 
 *__pycache__*
 *mytest/

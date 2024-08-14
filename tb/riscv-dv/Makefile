@@ -84,9 +84,10 @@ sim-elf: $(DEPS)
 
 sim-elf-gui: $(DEPS)
 	python3 elf2hex.py $(ELF) $(PROGS_PATH)/out_prog.txt
+	python3 elf2hex.py $(ELF) $(SECTION_FILE) 1
 	xrun -64bit -sv +define+SIM $(SVA) $(SIM_TOP) $(FILES) -gui $(INPUT) \
 		 +progs_path=$(PROGS_PATH) +prog=out +text_start=8000_0000 \
-		 +bin=$(BIN) \
+		 +bin=$(BIN) +section=$(SECTION_FILE) \
 		 +check_regs=0 +check_mem=0 +print_trace=1 +verbose=$(VERBOSE) \
 		 -timescale 1ns/1ps -access +rwc -svseed $(SEED)
 
@@ -151,10 +152,10 @@ cov-collect-spike:
 	python3 cov_mod.py --output $(DV_COV_DIR) --dir $(DV_OUT_DIR)/spike_sim \
 		--iss=spike --simulator xlm --noclean
 
-cov-merge:
+cov-merge: $(COV_TESTS_DIR)
 	@imc -exec cov_merge.tcl
 
-cov-report: $(COV_TESTS_DIR)
+cov-report: $(COV_MERGED_DIR)
 	@imc -exec cov_script.tcl
 
 cov-full: log2csv cov-collect cov-merge cov-report
@@ -162,10 +163,10 @@ cov-full: log2csv cov-collect cov-merge cov-report
 ##########################################################################################################################
 
 clean-sim:
-	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log *.diag trace* $(DV_OUT_DIR)/*_sim/
+	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log *.diag trace* $(DV_OUT_DIR)/*_sim/ $(DV_OUT_DIR)/sim_*.log $(DV_OUT_DIR)/iss_regr.log
 
-clean-dv:
-	rm -rf $(DV_OUT_DIR)/asm_test/ $(DV_OUT_DIR)/*_sim/
+clean-asm:
+	rm -rf $(DV_OUT_DIR)/asm_test/
 
 clean-cov:
 	rm -rf imc.* cov_work/ mdv.log $(DV_COV_DIR) $(COV_REPORT_DIR)
