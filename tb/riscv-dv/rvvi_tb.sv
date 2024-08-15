@@ -4,7 +4,7 @@ localparam int ADDR_WIDTH = 16;
 localparam int MEM_SIZE = 2**ADDR_WIDTH;
 
 localparam ISA_M = 0;
-localparam ISA_C = 0;
+localparam ISA_C = 1;
 localparam ISA_F = 0;
 
 // Primary inputs
@@ -238,12 +238,19 @@ always_comb begin
             $finish;
         end
         else begin
-            imem_rdata = instr_mem[imem_idx];
+            if (imem_addr[1:0] == 2'b00) // 4-byte aligned
+                imem_rdata = instr_mem[imem_idx];
+            else if (imem_addr[1:0] == 2'b10) // 2-byte aligned
+                imem_rdata = {instr_mem[imem_idx+1][15:0], instr_mem[imem_idx][31:16]};
+            else begin
+                $display("%t: Misaligned instruction address! Accessed addr: %h.", $time, imem_addr);
+                $finish;
+            end
         end
     end
 end
 
-// Update data mem associative array
+// Perform writes and reads to/from memory
 always @(negedge clk, negedge rst_n) begin
     if (!rst_n) begin
         data_mem.delete();

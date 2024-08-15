@@ -712,6 +712,8 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error, exp, debug_cmd):
     report = ("{}/iss_regr.log".format(output_dir)).rstrip()
     run_cmd("rm -rf {}".format(report))
     for test in test_list:
+        # report = ("{}/cmp_{}.log".format(output_dir, test['test'])).rstrip()
+        # run_cmd("rm -rf {}".format(report))
         for i in range(0, test['iterations']):
             elf = ("{}/asm_test/{}_{}.o".format(output_dir, test['test'], i))
             logging.info("Comparing ISS sim result {}/{} : {}".format(

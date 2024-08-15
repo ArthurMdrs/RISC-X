@@ -10,10 +10,11 @@ DV_GEN_TEST := riscv_instr_base_test
 DV_NUM_TESTS := 1
 DV_RISCX_TARGET := $(TB_HOME)/riscx_target
 DV_ISS_YAML := $(TB_HOME)/iss.yaml
-DV_SIM_TEST := riscv_arithmetic_basic_test
+DV_ALL_SIM_TESTS := $(shell tr '\n' ',' < full_test_list.txt | sed 's/,$$//')
+DV_SIM_TEST := $(DV_ALL_SIM_TESTS)
 DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) \
 					   --simulator xlm --noclean \
-					   --custom_target $(DV_RISCX_TARGET) --isa rv32i_zicsr_zifencei --mabi ilp32 
+					   --custom_target $(DV_RISCX_TARGET) --isa rv32ic_zicsr_zifencei --mabi ilp32 
 
 MTVEC_ALIGNMENT_OPT := +tvec_alignment=8
 ifeq ($(strip $(MTVEC_ALIGNMENT_OPT)),)
@@ -133,7 +134,10 @@ sim-and-compare:
 DV_COV_DIR := $(DV_OUT_DIR)/cov
 COV_TESTS_DIR := $(DV_COV_DIR)/default
 # export COV_TEST_RUN := $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*' | head -n 1)
-export COV_RUNS = $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
+# export COV_RUNS = $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
+ifneq ("$(wildcard $(COV_TESTS_DIR))","")
+	export COV_RUNS = $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
+endif
 export COV_MERGED_DIR = $(DV_COV_DIR)/merged
 export COV_REPORT_DIR := $(TB_HOME)/cov_report
 RISCX_LOG = $(wildcard $(DV_OUT_DIR)/risc-x_sim/*.log)
@@ -163,7 +167,7 @@ cov-full: log2csv cov-collect cov-merge cov-report
 ##########################################################################################################################
 
 clean-sim:
-	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log *.diag trace* $(DV_OUT_DIR)/*_sim/ $(DV_OUT_DIR)/sim_*.log $(DV_OUT_DIR)/iss_regr.log
+	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log *.diag trace* $(DV_OUT_DIR)/*_sim/ $(DV_OUT_DIR)/*.log
 
 clean-asm:
 	rm -rf $(DV_OUT_DIR)/asm_test/
@@ -174,7 +178,7 @@ clean-cov:
 clean-generator:
 	rm -rf $(DV_OUT_DIR)
 
-clean: clean-sim clean-dv clean-cov clean-generator
+clean: clean-sim clean-asm clean-cov clean-generator
 
 ##########################################################################################################################
 
@@ -189,5 +193,11 @@ spike_full_csv:
 	@for log_file in $(SPIKE_LOG); do \
 		csv_file=$$(echo $$log_file | sed 's/\.log$$/\.csv/') ; \
 		python3 -c "import run; run.process_spike_sim_log('$$log_file', '$$csv_file', 1)"; \
+	done
+
+test:
+	@echo $(DV_ALL_SIM_TESTS)
+	@for x in $(DV_ALL_SIM_TESTS); do \
+		echo $$x ; \
 	done
 	

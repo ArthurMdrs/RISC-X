@@ -114,8 +114,8 @@ always_comb begin
                     
                     reg_alu_wen_o = 1'b1;
                     
-                    rs1_addr_C = 5'd2; //x2
-                    rd_addr_C  = {2'b01, instr_i[4:2]}; //x8 - x15
+                    rs1_addr_C = 5'd2; // x2/sp
+                    rd_addr_C  = {2'b01, instr_i[4:2]}; // x8 - x15
                     
                     // Code points with imm=0 are reserved
                     if (instr_i[12:5] == 8'd0)
@@ -235,7 +235,7 @@ always_comb begin
                         reg_alu_wen_o = 1'b1;
 
                         // Code points with imm=0 are reserved
-                        if ({instr_i[12],instr_i[6:2]} == 6'd0)
+                        if ({instr_i[12],instr_i[6:2]} == 6'd0) // Move this before the if?
                             illegal_instr_o = 1'b1;
                     end else begin // c.lui
                         alu_operation_o  = ALU_ADD;
@@ -248,7 +248,7 @@ always_comb begin
                             reg_alu_wen_o  = 1'b1;
                             
                         // Code points with imm=0 are reserved
-                        if ({instr_i[12],instr_i[6:2]} == 6'd0)
+                        if ({instr_i[12],instr_i[6:2]} == 6'd0) // Move this before the if?
                             illegal_instr_o = 1'b1;
                     end
                 end
@@ -428,7 +428,8 @@ always_comb begin
                             // reg_alu_wen_o  = 1'b1;
                             pc_source_o    = PC_JALR;
 
-                            if (rd_addr_C == 5'd0) 
+                            // if (rd_addr_C == 5'd0)
+                            if (rs1_addr_C == 5'd0)
                                 illegal_instr_o = 1'b1;
                         end
                         else begin // c.mv
