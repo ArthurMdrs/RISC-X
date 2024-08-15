@@ -22,7 +22,7 @@ The target `compile-instr-generator` will compile Google's RISCV-DV instruction 
 
 The target `cov-full` will collect coverage data from the core's log and save it to `mytest/cov/default`. It will merge all runs is that folder, in case there is more than 1, and then it will generate a HTML report with that coverage in the folder `cov_report`.
 
-Replace <test_name> for one of the Google's RISCV-DV base tests (list below). 
+Replace <test_name> for one of the Google's RISCV-DV base tests (list below). If DV_SIM_TEST is not provided, all tests will be executed.
 
 >- riscv_arithmetic_basic_test
 >

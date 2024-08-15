@@ -129,6 +129,10 @@ sim-and-compare:
 	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --so --steps iss_sim,iss_cmp \
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike
 
+spike-sim:
+	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --so --steps iss_sim \
+		--iss_yaml $(DV_ISS_YAML) --iss=spike
+
 ##########################################################################################################################
 
 DV_COV_DIR := $(DV_OUT_DIR)/cov

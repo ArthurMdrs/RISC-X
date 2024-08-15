@@ -137,6 +137,7 @@ typedef struct {
 } section_info_t;
 
 section_info_t sections[$]; // Dynamic array of section information
+// int text_idx; // Index of .text in the sections array
 
 logic [31:0] regs_clone [32];
 assign regs_clone[1:31] = `CORE.id_stage_inst.register_file_inst.mem;
@@ -227,25 +228,36 @@ initial begin
 end
 
 // Check if instruction memory access is valid
+// always_comb begin
+//     imem_rdata = '0;
+//     if (fetch_enable) begin
+//         if (imem_idx > instr_mem.size() && !prog_end) begin
+//             $display("%t: Out of bounds access to instr mem. Terminating...", $time);
+//             $display("%t: Allowed range: %h - %h.", $time, section_text_start, section_text_end);
+//             // $display("%t: Accessed addr: %h.", $time, instr_addr);
+//             $display("%t: Accessed addr: %h.", $time, imem_addr);
+//             $finish;
+//         end
+//         else begin
+//             if (imem_addr[1:0] == 2'b00) // 4-byte aligned
+//                 imem_rdata = instr_mem[imem_idx];
+//             else if (imem_addr[1:0] == 2'b10) // 2-byte aligned
+//                 imem_rdata = {instr_mem[imem_idx+1][15:0], instr_mem[imem_idx][31:16]};
+//             else begin
+//                 $display("%t: Misaligned instruction address! Accessed addr: %h.", $time, imem_addr);
+//                 $finish;
+//             end
+//         end
+//     end
+// end
 always_comb begin
-    imem_rdata = '0;
     if (fetch_enable) begin
-        if (imem_idx > instr_mem.size() && !prog_end) begin
-            $display("%t: Out of bounds access to instr mem. Terminating...", $time);
-            $display("%t: Allowed range: %h - %h.", $time, section_text_start, section_text_end);
-            // $display("%t: Accessed addr: %h.", $time, instr_addr);
-            $display("%t: Accessed addr: %h.", $time, imem_addr);
-            $finish;
+        if (imem_addr[0] == 1'b0) begin
+            data_mem_load (imem_addr, 4'b1111, imem_rdata);
         end
         else begin
-            if (imem_addr[1:0] == 2'b00) // 4-byte aligned
-                imem_rdata = instr_mem[imem_idx];
-            else if (imem_addr[1:0] == 2'b10) // 2-byte aligned
-                imem_rdata = {instr_mem[imem_idx+1][15:0], instr_mem[imem_idx][31:16]};
-            else begin
-                $display("%t: Misaligned instruction address! Accessed addr: %h.", $time, imem_addr);
-                $finish;
-            end
+            $display("%t: Misaligned instruction address! Accessed addr: %h.", $time, imem_addr);
+            $finish;
         end
     end
 end
@@ -258,15 +270,6 @@ always @(negedge clk, negedge rst_n) begin
         if (dmem_wen)
             data_mem_store (dmem_addr, dmem_ben, dmem_wdata);
         data_mem_load (dmem_addr, dmem_ben, dmem_rdata);
-        
-        // data_mem_load (dmem_addr, dmem_ben, dmem_rdata_aux);
-        // if (`CORE.reg_mem_wen_wb || dmem_wen)
-        // if (`CORE.reg_mem_wen_mem)
-        //     if (dmem_rdata_aux != dmem_rdata) begin
-        //         $display("%t: ERROR. Read data_mem[%h] = 0x%h. dmem_rdata = 0x%h.", $time, dmem_addr, dmem_rdata_aux, dmem_rdata);
-        //         $display("%t: ERROR. data_mem[%h] = 0x%h.", $time, {dmem_addr[31:2], 2'b0}, data_mem[dmem_addr]);
-        //         $display("%t: ERROR. data_mem[%h] = 0x%h.", $time, {dmem_addr[31:2], 2'b0}+32'd4, data_mem[dmem_addr]);
-        //     end
     end
 end
 
@@ -317,16 +320,7 @@ task load_instr_mem (string prog_file);
     // print_instr_mem();
 endtask
 
-function void data_mem_store (logic [31:0] addr, logic [3:0] ben, logic [31:0] wdata);
-    // if (ben[0])
-    //     data_mem[addr  ] = wdata[ 7: 0];
-    // if (ben[1])
-    //     data_mem[addr+1] = wdata[15: 8];
-    // if (ben[2])
-    //     data_mem[addr+2] = wdata[23:16];
-    // if (ben[3])
-    //     data_mem[addr+3] = wdata[31:24];
-    
+function automatic void data_mem_store (logic [31:0] addr, logic [3:0] ben, logic [31:0] wdata);
     logic [31:0] addr_int, wdata_int;
     addr_int = {addr[31:2], 2'b0}; // We can only access 4-byte aligned addresses
     wdata_int = '0;
@@ -373,23 +367,11 @@ function void data_mem_store (logic [31:0] addr, logic [3:0] ben, logic [31:0] w
     endcase
 endfunction
 
-function void data_mem_load (logic [31:0] addr, logic [3:0] ben, output logic [31:0] rdata);
-    // rdata[ 7: 0] = data_mem[addr  ];
-    // rdata[15: 8] = data_mem[addr+1];
-    // rdata[23:16] = data_mem[addr+2];
-    // rdata[31:24] = data_mem[addr+3];
-    
+function automatic void data_mem_load (logic [31:0] addr, logic [3:0] ben, output logic [31:0] rdata);
     logic [31:0] addr_int, rdata_int, rdata_aux;
     addr_int = {addr[31:2], 2'b0}; // We can only access 4-byte aligned addresses
     rdata_int = '0;
     if (data_mem.exists(addr_int)) rdata_int = data_mem[addr_int];
-    // if (addr_int == 32'h8001e868) begin
-    //     $display("THIS HAPPENED");
-    //     if (data_mem.exists(addr_int))
-    //         $display("AND THE ADDR EXISTS %h", data_mem[addr_int]);
-    //     else
-    //         $display("BUT THE ADDR DOES NOT EXIST %h", addr_int);
-    // end
     case (addr[1:0])
         2'b00: begin
             // if(ben[0]) rdata_int[ 7: 0] = wdata[ 7: 0];
@@ -414,6 +396,7 @@ function void data_mem_load (logic [31:0] addr, logic [3:0] ben, output logic [3
                 addr_int += 32'd4;
                 data_mem_load (addr_int, 4'b0011, rdata_aux);
                 rdata[31:16] = rdata_aux[15:0];
+                // rdata = {rdata_aux[15:0], rdata[15:0]};
             end
         end
         2'b11: begin
@@ -533,14 +516,15 @@ task drive_prog (string prog_name, bit check_regs, bit check_mem);
         fetch_enable = 1;
         prog_end = 0;
     
-    read_sections(sections_file);
-    // foreach (sections[i])
-    //     $display("Section %s: 0x%h, 0x%h, 0x%h, 2**%0d", sections[i].name, sections[i].start_addr, sections[i].end_addr, sections[i].size, sections[i].alignment);
+        read_sections(sections_file);
+        if (verbose) begin
+            foreach (sections[i])
+                $display("Section %s: 0x%h, 0x%h, 0x%h, 2**%0d", sections[i].name, sections[i].start_addr, sections[i].end_addr, sections[i].size, sections[i].alignment);
+        end
     
-    load_memory(bin_file);
-    // $display("Section .region_0 size: 0x%h", region_0.size()*4);
-    // foreach (region_0[i])
-    //     $display("region_0[0x%h] = 0x%h", i, region_0[i]);
+        load_memory(bin_file);
+        
+        // print_section(".text");
         
         // Load instructions into instruction memory
         load_instr_mem(prog_file);
@@ -684,6 +668,11 @@ function void load_memory (string bin_file);
                 data_mem[addr] = word;
                 region_0[addr] = word;
             end 
+            if (sections[i].name == ".text") begin
+                // Account for endianess
+                word = {word[7:0], word[15:8], word[23:16], word[31:24]};
+                data_mem[addr] = word;
+            end 
             
             
             addr += 4;
@@ -692,6 +681,22 @@ function void load_memory (string bin_file);
 
     // Close the file
     $fclose(fd);
+endfunction
+
+function void print_section (string section, int stop = 100);
+    int k;
+    foreach (sections[i]) begin
+        if (sections[i].name == section) begin
+            $display("%t: Printing section %s of size 0x%h.", $time, section, sections[i].size);
+            k = 0;
+            for (int j = sections[i].start_addr; j <= sections[i].end_addr; j += 4) begin
+                if (k == stop) break;
+                $display("%s[0x%h] = 0x%h", section, j, data_mem[j]);
+                k++;
+            end
+            return;
+        end
+    end
 endfunction
 
 //==============   Tasks and functions - END   ==============//
