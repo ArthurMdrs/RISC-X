@@ -152,6 +152,7 @@ always_comb begin
     end
 end
 
+// Update CSR values with next values
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
         set_initial_mtvec <= '1;

@@ -1,7 +1,6 @@
 module riscv_dv_tb;
 
-localparam int ADDR_WIDTH = 16;
-localparam int MEM_SIZE = 2**ADDR_WIDTH;
+import tb_pkg::*;
 
 localparam ISA_M = 0;
 localparam ISA_C = 1;
@@ -22,22 +21,11 @@ logic  [3:0] dmem_ben;
 logic [31:0] imem_rdata;
 logic [31:0] imem_addr;
 
-// Define instruction memory bounds
+// The start of .text will be the core's first fetch
 int section_text_start = 32'h0000_3000;
-int section_text_end   = 32'h0000_3ffc;
-int section_text_size  = section_text_end - section_text_start;
-
-// Instruction memory will be a dynamic array
-logic [31:0] instr_mem [];
-// Translate real memory address to array index
-logic [31:0] instr_addr, imem_idx;
-assign instr_addr = imem_addr - section_text_start;
-assign imem_idx = instr_addr >> 2; // The array is word-addressable, so this shift is needed
 
 // Data memory will be an associative array
 logic [31:0] data_mem [logic [31:0]];
-logic [31:0] region_0 [logic [31:0]];
-logic [31:0] dmem_rdata_aux;
 
 wire [31:0] hartid    = 32'h0000_0000;
 wire [23:0] mtvec     = 24'h8000_80;
@@ -86,74 +74,22 @@ rvvi_tracer tracer_inst (
     .rvvi ( rvvi )
 );
 
-mem #(
-    .ADDR_WIDTH(ADDR_WIDTH),
-    .DATA_WIDTH(32)
-) mem_inst (
-    .clk,
-    .rst_n,
-    
-    // Port a (data)
-    // .rdata_a (dmem_rdata),
-    // .wdata_a (dmem_wdata),
-    // .addr_a  (dmem_addr[ADDR_WIDTH-1:0]),
-    // .wen_a   (dmem_wen),
-    // .ben_a   (dmem_ben),
-    
-    .rdata_a (),
-    .wdata_a ('0),
-    .addr_a  ('0),
-    .wen_a   ('0),
-    .ben_a   ('0),
-    
-    // Port b (instruction)
-    // .rdata_b (imem_rdata),
-    .rdata_b (),
-    .wdata_b (32'b0),
-    // .addr_b  (imem_addr[ADDR_WIDTH-1:0]),
-    .addr_b  ('0),
-    .wen_b   (1'b0),
-    .ben_b   (4'b0)
-);
-
 //==============   Module instantiations - END   ==============//
 
 //=================   Simulation - BEGIN   =================//
 
 int n_mismatches, cycle_cnt;
-int cnt_x_instr;
 bit verbose = 0;
 bit check_regs = 1, check_mem = 1;
-int file, status;
 bit fetch_enable;
-bit prog_end;
-
-typedef struct {
-    string       name;
-    logic [31:0] start_addr;
-    logic [31:0] end_addr;
-    logic [31:0] size;
-    int          alignment;
-} section_info_t;
 
 section_info_t sections[$]; // Dynamic array of section information
-// int text_idx; // Index of .text in the sections array
 
 logic [31:0] regs_clone [32];
 assign regs_clone[1:31] = `CORE.id_stage_inst.register_file_inst.mem;
 assign regs_clone[0] = '0;
-logic [31:0] dmem_clone [MEM_SIZE/4];
-always_comb 
-    foreach(dmem_clone[i]) begin //dmem_clone[i] = mem_inst.mem[i*4+:4];
-        dmem_clone[i][ 0+:8] = mem_inst.mem[i*4  ];
-        dmem_clone[i][ 8+:8] = mem_inst.mem[i*4+1];
-        dmem_clone[i][16+:8] = mem_inst.mem[i*4+2];
-        dmem_clone[i][24+:8] = mem_inst.mem[i*4+3];
-    end
-logic [31:0] instr_clone;
-assign instr_clone = `CORE.id_stage_inst.instr_id;
 
-logic [31:0] xptd_dmem [MEM_SIZE/4];
+logic [31:0] xptd_dmem [1024];
 logic [31:0] xptd_regs [32];
 
 // The array below contains simple assembly programs found in $(TB_HOME)/../programs
@@ -171,7 +107,7 @@ string sections_file = {"/mytest/asm_test/", prog_name, ".section"};
 
 // Generate clock
 localparam int PERIOD = 2;
-localparam int MAX_CYCLES = 1000000;
+localparam int MAX_CYCLES = 100000;
 initial begin
     clk = 0; 
     repeat(MAX_CYCLES) #(PERIOD/2) clk = ~clk;
@@ -228,28 +164,6 @@ initial begin
 end
 
 // Check if instruction memory access is valid
-// always_comb begin
-//     imem_rdata = '0;
-//     if (fetch_enable) begin
-//         if (imem_idx > instr_mem.size() && !prog_end) begin
-//             $display("%t: Out of bounds access to instr mem. Terminating...", $time);
-//             $display("%t: Allowed range: %h - %h.", $time, section_text_start, section_text_end);
-//             // $display("%t: Accessed addr: %h.", $time, instr_addr);
-//             $display("%t: Accessed addr: %h.", $time, imem_addr);
-//             $finish;
-//         end
-//         else begin
-//             if (imem_addr[1:0] == 2'b00) // 4-byte aligned
-//                 imem_rdata = instr_mem[imem_idx];
-//             else if (imem_addr[1:0] == 2'b10) // 2-byte aligned
-//                 imem_rdata = {instr_mem[imem_idx+1][15:0], instr_mem[imem_idx][31:16]};
-//             else begin
-//                 $display("%t: Misaligned instruction address! Accessed addr: %h.", $time, imem_addr);
-//                 $finish;
-//             end
-//         end
-//     end
-// end
 always_comb begin
     if (fetch_enable) begin
         if (imem_addr[0] == 1'b0) begin
@@ -283,41 +197,6 @@ task reset ();
     @(negedge clk);
     rst_n = 1;
     $display("%t: Reset done.", $time);
-endtask
-
-task load_instr_mem (string prog_file);
-    int num_entries;
-    string line;
-    
-    file = $fopen(prog_file, "r");
-    if (file == 0) begin
-        $display("%t: Error opening file: %s.", $time, prog_file);
-        $finish;
-    end
-    
-    // Count the number of entries
-    num_entries = 0;
-    while (!$feof(file)) begin
-      status = $fgets(line, file);
-      if (status != 0) begin
-        num_entries++;
-      end
-    end
-    
-    // Define instruction memory bounds
-    section_text_size = num_entries*4;
-    section_text_end = section_text_start + section_text_size;
-    if(verbose) begin
-        $display("%t: section_text_size in words = %h.", $time, num_entries);
-        $display("%t: section_text_size in bytes = %h.", $time, section_text_size);
-        $display("%t: Section .text range = [%h, %h].", $time, section_text_start, section_text_end);
-    end
-    
-    // Read instruction memory from file
-    instr_mem = new [num_entries];
-    $readmemh(prog_file, instr_mem);
-    
-    // print_instr_mem();
 endtask
 
 function automatic void data_mem_store (logic [31:0] addr, logic [3:0] ben, logic [31:0] wdata);
@@ -396,7 +275,6 @@ function automatic void data_mem_load (logic [31:0] addr, logic [3:0] ben, outpu
                 addr_int += 32'd4;
                 data_mem_load (addr_int, 4'b0011, rdata_aux);
                 rdata[31:16] = rdata_aux[15:0];
-                // rdata = {rdata_aux[15:0], rdata[15:0]};
             end
         end
         2'b11: begin
@@ -417,30 +295,6 @@ function automatic void data_mem_load (logic [31:0] addr, logic [3:0] ben, outpu
 endfunction
 
 function void print_data_mem ();
-    logic [31:0] idx, last_idx;
-    logic [31:0] data;
-    // for (void'(data_mem.first(i)); i != null; void'(data_mem.next(i))) begin
-    //     data = {data_mem[i+3], data_mem[i+2], data_mem[i+1], data_mem[i]};
-    //     $display("%t: data_mem[%h] = 0x%h.", $time, i, data);
-    // end
-    
-    // if (data_mem.size() != 0) begin
-    //     $display("%t: data_mem size = %0d.", $time, data_mem.size()/4);
-    //     void'(data_mem.last(last_idx));
-    //     void'(data_mem.first(idx));
-    //     while (1) begin
-    //         // data = data_mem[idx];
-    //         data = {data_mem[idx+3], data_mem[idx+2], data_mem[idx+1], data_mem[idx]};
-    //         $display("%t: data_mem[%h] = 0x%h.", $time, idx, data);
-
-    //         idx += 3;
-    //         if (idx == last_idx)
-    //             break;
-            
-    //         void'(data_mem.next(idx));
-    //     end
-    // end
-    
     foreach(data_mem[i])
         $display("%t: data_mem[%h] = 0x%h.", $time, i, data_mem[i]);
 endfunction
@@ -463,17 +317,6 @@ function void check_data_mem ();
         end
     end
 endfunction
-
-task print_instr_mem;
-    logic [31:0] data;
-    for(int i = section_text_start; i <= section_text_end; i += 4) begin
-        data[ 0+:8] = mem_inst.mem[i  ];
-        data[ 8+:8] = mem_inst.mem[i+1];
-        data[16+:8] = mem_inst.mem[i+2];
-        data[24+:8] = mem_inst.mem[i+3];
-        $display("%t: Read 0x%h from memory address %8h.", $time, data, i);
-    end
-endtask
 
 task print_regs;
     foreach(regs_clone[i]) begin
@@ -501,12 +344,12 @@ task checkit (string what_mem, logic [31:0] expected [], logic [31:0] actual [])
 endtask
 
 task drive_prog (string prog_name, bit check_regs, bit check_mem);
-    string prog_file;
+    // string prog_file;
     string dmem_file;
     string regs_file;
     
     if (prog_name != "all") begin
-        prog_file = {progs_path, "/", prog_name, "_prog.txt"};
+        // prog_file = {progs_path, "/", prog_name, "_prog.txt"};
         dmem_file = {progs_path, "/", prog_name, "_data.txt"};
         regs_file = {progs_path, "/", prog_name, "_regs.txt"};
         
@@ -514,27 +357,28 @@ task drive_prog (string prog_name, bit check_regs, bit check_mem);
         $display("%t: Executing program %s.", $time, prog_name);
         reset ();
         fetch_enable = 1;
-        prog_end = 0;
+        // prog_end = 0;
     
         read_sections(sections_file);
         if (verbose) begin
+            $display("Section info: Start Addr   End Addr   Size   Alignment");
             foreach (sections[i])
                 $display("Section %s: 0x%h, 0x%h, 0x%h, 2**%0d", sections[i].name, sections[i].start_addr, sections[i].end_addr, sections[i].size, sections[i].alignment);
         end
     
-        load_memory(bin_file);
+        load_memory(bin_file, sections);
         
         // print_section(".text");
         
         // Load instructions into instruction memory
-        load_instr_mem(prog_file);
+        // load_instr_mem(prog_file);
         
         // Wait for instructions to end
         // An ecall marks the end of the program (RISCV-DV convention)
         while (rvvi.insn[0][0] != 32'h00000073) begin// ecall
             @(negedge clk);
-            if (imem_rdata == 32'h00000073)
-                prog_end = 1;
+            // if (imem_rdata == 32'h00000073)
+            //     prog_end = 1;
         end
         @(negedge clk);
         fetch_enable = 0;
@@ -601,8 +445,9 @@ function void read_sections (string sections_file);
     while (!$feof(fd)) begin
         // Read section name
         code = $fscanf(fd, "%s\n", name);
-        if(code == -1)
+        if(code == -1) begin
             break;
+        end
         
         // Read line with infos
         code = $fgets(line, fd);
@@ -617,7 +462,7 @@ function void read_sections (string sections_file);
             section.alignment = alignment;
             sections.push_back(section);
         end else begin
-            $fatal(1, "Wrong number of data.");
+            $fatal(1, "Wrong number of data items.");
         end
     end
 
@@ -626,10 +471,11 @@ function void read_sections (string sections_file);
 endfunction
 
 // function to load .bin into the memory
-function void load_memory (string bin_file);
+function void load_memory (string bin_file, section_info_t sections[$]);
     int fd;
     logic [31:0] addr, word;
-    int i, n;
+    // int i, n;
+    int n;
     logic [31:0] align_mask;
 
     // Open .bin file
@@ -641,6 +487,7 @@ function void load_memory (string bin_file);
     // $display("Number of sections = %0d.", sections.size());
     
     // Load data into memory according to the sections information
+    // We assume that sections[0] is the first section (lowest start address)
     addr = sections[0].start_addr;
     foreach (sections[i]) begin
         // $display("Addr at start of %s. Addr = 0x%h.", sections[i].name, addr);
@@ -659,21 +506,16 @@ function void load_memory (string bin_file);
                 $fatal(1, "Error reading .bin at address 0x%h.", addr);
             end
             
-            
-            // if (sections[i].name == ".region_0") begin
             if (sections[i].name.substr(0,7) == ".region_") begin
                 // Account for endianess
                 word = {word[7:0], word[15:8], word[23:16], word[31:24]};
-                // memory[addr] = word;
                 data_mem[addr] = word;
-                region_0[addr] = word;
             end 
             if (sections[i].name == ".text") begin
                 // Account for endianess
                 word = {word[7:0], word[15:8], word[23:16], word[31:24]};
                 data_mem[addr] = word;
             end 
-            
             
             addr += 4;
         end

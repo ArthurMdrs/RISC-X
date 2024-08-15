@@ -1,6 +1,3 @@
-
-import core_pkg::*;
-
 class riscv_decoder;
 
     // Constructor

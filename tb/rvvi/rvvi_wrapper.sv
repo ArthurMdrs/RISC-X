@@ -28,6 +28,8 @@ module rvvi_wrapper #(
     rvviTrace rvvi
 );
 
+import core_pkg::*;
+
 // RVFI signals
 `RVFI_WIRES
 

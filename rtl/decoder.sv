@@ -108,14 +108,13 @@ always_comb begin
             unique case (funct3_C)
                 3'b000: begin // c.addi4spn
                     alu_operation_o  = ALU_ADD;
-                    // alu_source_1_o = ALU_SCR1_RS1;
                     alu_source_2_o   = ALU_SCR2_IMM;
                     immediate_type_o = IMM_CIW;
                     
                     reg_alu_wen_o = 1'b1;
                     
                     rs1_addr_C = 5'd2; // x2/sp
-                    rd_addr_C  = {2'b01, instr_i[4:2]}; // x8 - x15
+                    rd_addr_C  = {2'b01, instr_i[4:2]};
                     
                     // Code points with imm=0 are reserved
                     if (instr_i[12:5] == 8'd0)
@@ -167,8 +166,6 @@ always_comb begin
                     immediate_type_o = IMM_CLS;
 
                     mem_wen_o = 1'b1;
-                    // mem_data_type_o = WORD;
-                    // mem_sign_extend_o = 1'b0;
 
                     rs1_addr_C = {2'b01, instr_i[9:7]};
                     rs2_addr_C = {2'b01, instr_i[4:2]};
@@ -193,14 +190,12 @@ always_comb begin
             unique case (funct3_C)
                 3'b000: begin // c.addi
                     alu_operation_o  = ALU_ADD;
-                    // alu_source_1_o = ALU_SCR1_RS1;
                     alu_source_2_o = ALU_SCR2_IMM;
                     immediate_type_o = IMM_CI;
                     
                     reg_alu_wen_o = 1'b1;
 
                     // Code points with imm=0 are hints
-                    // if ({instr_i[12],instr_i[6:2]} != 6'd0)
                 end
                 3'b001: begin // c.jal
                     // ALU calculates PC+2
@@ -222,9 +217,9 @@ always_comb begin
                     alu_source_2_o   = ALU_SCR2_IMM;
                     immediate_type_o = IMM_CI;
                     
-                    // When rd is 0, it's a hint instr
-                    // if (rd_addr_C != 5'd0) // This is not necessary, as writes to x0 do nothing
-                        reg_alu_wen_o = 1'b1;
+                    reg_alu_wen_o = 1'b1;
+                    
+                    // Code points with rd=0 are hints
                 end
                 3'b011: begin
                     if (rd_addr_C == 5'd2) begin // c.addi16sp
@@ -243,13 +238,13 @@ always_comb begin
                         alu_source_2_o   = ALU_SCR2_IMM;
                         immediate_type_o = IMM_CLUI;
                         
-                        // When rd is 0, it's a hint instr
-                        // if (rd_addr_C != 5'd0) // This is not necessary, as writes to x0 do nothing
-                            reg_alu_wen_o  = 1'b1;
+                        reg_alu_wen_o  = 1'b1;
                             
                         // Code points with imm=0 are reserved
                         if ({instr_i[12],instr_i[6:2]} == 6'd0) // Move this before the if?
                             illegal_instr_o = 1'b1;
+                        
+                        // Code points with rd=0 are hints
                     end
                 end
                 3'b100: begin
@@ -333,16 +328,10 @@ always_comb begin
                 3'b101: begin // c.j
                     // ALU is unused
                     // The jump target has a dedicated adder in ID stage
-                    // alu_operation_o  = ALU_ADD;
                     alu_source_1_o   = ALU_SCR1_PC;
-                    // alu_source_2_o   = ALU_SCR2_IMM;
                     immediate_type_o = IMM_CJ;
-                    
-                    // reg_alu_wen_o  = 1'b1;
             
                     pc_source_o  = PC_JAL;
-                    
-                    // rd_addr_C  = instr_i[11:7];
                 end
                 3'b110: begin // c.beqz
                     // ALU does the comparison
@@ -391,12 +380,11 @@ always_comb begin
                     alu_source_2_o   = ALU_SCR2_IMM;
                     immediate_type_o = IMM_CSPL;
                     
-                    // mem_data_type_o  = WORD;
                     reg_mem_wen_o    = 1'b1;
 
                     rs1_addr_C = 5'd2; // x2/sp
-                    // rd_addr_C  = instr_i[11:7];
                     
+                    // Code points with rd=0 are reserved
                     if (rd_addr_C == '0)
                         illegal_instr_o = 1'b1;
                 end
@@ -419,16 +407,12 @@ always_comb begin
                         if (rs2_addr_C == 5'd0) begin // c.jr
                             // ALU is unused
                             // The jump target has a dedicated adder in ID stage
-                        
-                            // alu_operation_o  = ALU_ADD;
                             alu_source_1_o   = ALU_SCR1_PC;
-                            // alu_source_2_o   = ALU_SCR2_4_OR_2;
                             immediate_type_o = IMM_CJR;
                             
-                            // reg_alu_wen_o  = 1'b1;
                             pc_source_o    = PC_JALR;
-
-                            // if (rd_addr_C == 5'd0)
+                            
+                            // Code points with rs1=0 are reserved
                             if (rs1_addr_C == 5'd0)
                                 illegal_instr_o = 1'b1;
                         end
@@ -437,10 +421,6 @@ always_comb begin
                             alu_source_1_o  = ALU_SCR1_ZERO;
                             
                             reg_alu_wen_o   = 1'b1;
-
-                            // rd_addr_C  = instr_i[11:7];
-                            // rs1_addr_C = 5'd0; //zero (x0)
-                            // rs2_addr_C = instr_i[6:2];
                             
                             // Code points with rd=0 are hints
                         end
@@ -461,9 +441,6 @@ always_comb begin
                                 reg_alu_wen_o    = 1'b1;
                                 pc_source_o      = PC_JALR;
 
-
-                                // rs1_addr_C = instr_i[11:7];
-                                // rs2_addr_C = 5'd1;
                                 rd_addr_C = 5'd1; // x1/ra
                             end
                         end
@@ -472,10 +449,6 @@ always_comb begin
                             reg_alu_wen_o   = 1'b1;
                             
                             // Code points with rd=0 are hints
-                            
-                            // rd_addr_C  = instr_i[11:7];
-                            // rs1_addr_C = instr_i[11:7];
-                            // rs2_addr_C = instr_i[6:2];
                         end
                     end
                 end
@@ -484,11 +457,9 @@ always_comb begin
                     alu_source_2_o   = ALU_SCR2_IMM;
                     immediate_type_o = IMM_CSPS;
                     
-                    // mem_data_type_o  = WORD;
                     mem_wen_o        = 1'b1;
 
                     rs1_addr_C = 5'd2; // x2/sp
-                    // rs2_addr_C = instr_i[6:2];
                 end
                 /*3'b111: begin // c.fswsp
                     alu_operation_o  = ALU_ADD;

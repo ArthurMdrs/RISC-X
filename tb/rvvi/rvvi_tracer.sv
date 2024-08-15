@@ -4,6 +4,9 @@ module rvvi_tracer (
     rvviTrace rvvi
 );
 
+import core_pkg::*;
+import tb_pkg::*;
+
 bit print_trace;
 bit dlyd_rst;
 
