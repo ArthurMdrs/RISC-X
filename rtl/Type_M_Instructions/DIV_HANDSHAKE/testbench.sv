@@ -3,26 +3,30 @@
 module testbench();
 
 
-       logic [31:0] num1;
-       logic [31:0] num2;
-       logic [31:0] out1;
-			 logic  [31:0] nclocks;
-			 logic nreset	;
-       logic clock	;
-       logic valid	;
-       logic ready	;
-			 logic done		;
+       logic [31:0] num1		;
+       logic [31:0] num2		;
+       logic [31:0] out1		;
+			 logic [31:0] nclocks	;
+			 logic nreset					;
+       logic clock					;
+       logic in_valid_i			;
+       logic in_ready_i			;
+	     logic out_valid_o		;
+       logic out_ready_o		; 
+			 logic done						;
 				 
 	div divisor(
-				.valid	(	valid		),
-				.ready	(	ready		),
-				.clock	(	clock		),
-				.nreset	(	nreset	),
-				.a			(	num1		),
-				.b			( 	num2	),
-				.c			( 	out1	),
-				.done		(		done	),
-				.nclocks(	nclocks	)
+				.in_valid_i	  (	in_valid_i	),
+				.in_ready_i  	(	in_ready_i	),
+				.out_valid_o	(	out_valid_o	),
+				.out_ready_o	(	out_ready_o	),
+				.clock				(	clock		),
+				.nreset				(	nreset	),
+				.a						(	num1		),
+				.b						( 	num2	),
+				.c						( 	out1	),
+				.done					(		done	),
+				.nclocks			(	nclocks	)
 	);
 	parameter [31:0] N_testes = 1000;
 	logic [31:0] mem [N_testes-1:0];

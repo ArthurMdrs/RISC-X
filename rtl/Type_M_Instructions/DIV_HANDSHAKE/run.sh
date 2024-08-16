@@ -1,1 +1,1 @@
-xrun testbench.sv -access +rw -input restore.tcl
+xrun testbench.sv -gui -access +rw -input waves.tcl 
