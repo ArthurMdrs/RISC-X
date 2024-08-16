@@ -5,38 +5,35 @@
 // ----------------------------------------------------------------------------------------------------
 // RELEASE HISTORY  :
 // DATA                 VERSÃO      AUTOR  				    DESCRÇÃO
-// 2024-08-10           0.01        André Medeiros     	    Versão inicial.
-// ------------------------------------------------------------------------------------------------
+// 2024-08-16           0.01        André Medeiros     	    		    Versão inicial.
+// ----------------------------------------------------------------------------------------------------
 
 module tb_booth_multiplier;
 
     // Declaração dos sinais
-    logic [31:0] a;
-    logic [31:0] b;
-    logic start;
-    logic ready;         // Adiciona o sinal ready
-    logic [63:0] c;
-    logic valid;        // Adiciona o sinal valid
-    logic done;
+    logic clk;                // Sinal de clock
+    logic reset_n;            // Sinal de reset ativo baixo
+    logic [31:0] a;           // 1º Operando de 32 bits
+    logic [31:0] b;           // 2º Operando de 32 bits
+    logic valid_in;           // Sinal valid de entrada
+    logic ready;              // Sinal ready
+    logic [31:0] nclocks;     // Sinal para contar número de clocks
+    logic [63:0] c;           // Resultado da multiplicação, 64 bits
+    logic valid_out;          // Sinal valid de saída
 
-    logic clk;         // Sinal de clock
-    logic reset_n;     // Sinal de reset ativo baixo
-
-    logic monitor_done;
-
-	always #5 clk = ~clk;  // Clock de 10 ns de período (100 MHz)
+    always #5 clk = ~clk;  // Clock de 10 ns de período (100 MHz)
 
     // Instancia o módulo a ser testado
     booth_multiplier_32x32 dut (
+        .clk(clk),
+        .reset_n(reset_n),
         .a(a),
         .b(b),
-        .start(start),
-        .ready(ready),   // Conecta o sinal ready
+        .valid_in(valid_in),
+        .ready(ready),
+        .nclocks(nclocks),
         .c(c),
-        .valid(valid),   // Conecta o sinal valid
-        .done(done),
-        .clk(clk),
-        .reset_n(reset_n)
+        .valid_out(valid_out)
     );
 
     // Procedimento inicial do testbench
@@ -61,23 +58,28 @@ module tb_booth_multiplier;
         clk = 0;
         a = 32'b0;
         b = 32'b0;
-        start = 0;
-        ready = 1; // Inicializa ready como 1 sempre
+        valid_in = 0;
+        ready = 1;              // Inicializa ready sempre como 1 (Multiplicador pronto para iniciar)
+        nclocks = 32'd32;       // Valor para o número esperado de ciclos (Número do maior operando = 32 cíclos)
 
-        reset_n = 0;
-        #100;  // Mantém o reset por um tempo mais longo
-        reset_n = 1;
-
-
-        // Espera um pouco e depois aplica o estímulo
-        #10;
         $display("Executando testes de valor fixo...");
-        a = 32'h0000_0002; // Valor de exemplo para a
-        b = 32'h0000_0004; // Valor de exemplo para b
+        a = 32'h0000_0002; // Valor de exemplo para a = 2
+        b = 32'h0000_0004; // Valor de exemplo para b = 4
+        start_test();
+
+        a = 32'h0000_0002; // Valor de exemplo para a = 2
+        b = 32'h0000_0006; // Valor de exemplo para b = 6
+        start_test();
+
+        a = 32'h0000_0002; // Valor de exemplo para a = 2
+        b = 32'h0000_000A; // Valor de exemplo para b = 10
+        start_test();
+
+        a = 32'h0000_0002; // Valor de exemplo para a = 2
+        b = 32'h0000_0014; // Valor de exemplo para b = 20
         start_test();
 
         // Testes aleatórios
-        #10;
         $display("Executando testes aleatórios...");
         repeat (10) begin
             // Gera valores aleatórios para a e b
@@ -88,7 +90,6 @@ module tb_booth_multiplier;
 
         // Teste para valores máximos
         $display("Executando teste para valores máximos...");
-        #10;
         a = 32'hFFFFFFFF;
         b = 32'hFFFFFFFF;
         start_test();
@@ -110,6 +111,10 @@ module tb_booth_multiplier;
         a = 32'h00000000;
         b = 32'h00000000;
         start_test();
+        
+        a = 32'h00000000;
+        b = 32'h00000001;
+        start_test();
 
         // Finaliza a simulação
         $finish;
@@ -118,23 +123,17 @@ module tb_booth_multiplier;
     // Função para iniciar e aguardar o término do teste
     task start_test();
         begin
-            start = 1;
-            #10;
-            start = 0;
-            wait(valid);
-            wait(done);
-            #50;
+            reset_n = 0;
+            #100;              // Mantém o reset por um tempo mais longo
+            reset_n = 1;
+            valid_in = 1;
+            #10;                // Espera um ciclo de clock
+            valid_in = 0;
+            wait(valid_out);
+            #50;                // Espera que o resultado esteja disponível
+            $display("Time: %0t | a: %d | b: %d | c: %d | valid_in: %b | valid_out: %b | ready: %b | nclocks: %d", 
+                $time, a, b, c, valid_in, valid_out, ready, nclocks);
         end
     endtask
-
-    // Monitoramento dos sinais quando valid é 1
-    always @(posedge clk) begin
-        if (valid && !monitor_done) begin
-            $display("Time: %0t | a: %d | b: %d | c: %d | valid: %b | done: %b", $time, a, b, c, valid, done);
-            monitor_done = 1;
-        end else if (!valid) begin
-            monitor_done = 0;
-        end
-    end
 
 endmodule
