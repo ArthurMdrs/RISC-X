@@ -175,5 +175,10 @@ class mem_model;
             k++;
         end
     endfunction
-
+    
+    // delete memory contents
+    function void delete_mem ();
+        data_mem.delete();
+    endfunction
+    
 endclass
