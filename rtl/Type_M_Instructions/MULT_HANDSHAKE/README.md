@@ -2,18 +2,19 @@
 
 ## Index
 - [Descrição](#Descrição)
-- [Status atual](#Status_atual)
+- [Especificação](#Especificação)
+- [Status](#Status)
 - [Recursos](#Recursos)
 - [Simulação](#Simulação)
-- [Versão estável](#Versão_estável)
+- [Versão](#Versão)
 
 ## Descrição
 
 Multiplicador de 32x32bits utilizando Valid e Ready e a lógica do [algoritmo de multiplicação de Booth](https://en.wikipedia.org/wiki/Booth%27s_multiplication_algorithm).
 
-## Status atual
+## Status
 
-O testbench valida os seguintes testes:
+O testbench valida os seguintes testes de multiplicação 32x32bits:
 ```
 - Valor fixo
 - Valores aleatórios
@@ -27,6 +28,8 @@ O testbench valida os seguintes testes:
 
 ```
 Xcelium Simulator 2024
+
+Simvision 2024
 ```
 
 ## Simulação
@@ -46,6 +49,6 @@ Para mais instruções utilize:
 make help
 ```
 
-## Versão estável
+## Versão
 
 Versão Testbench totalmente operacional
