@@ -32,6 +32,16 @@
 
 - import: <riscv_dv_root>/yaml/base_testlist.yaml
 
+- test: riscv_csr_test
+  description: >
+    Test all CSR instructions on all implemented CSR registers
+  iterations: 1
+  no_iss: 1
+  rtl_test: core_csr_test
+  no_post_compare: 1
+
+
+
 
 - test: riscv_non_compressed_instr_test
   description: >
@@ -41,7 +51,6 @@
   gen_opts: >
     +disable_compressed_instr=1
   rtl_test: core_base_test
-
 
 - test: riscv_hint_instr_test
   description: >

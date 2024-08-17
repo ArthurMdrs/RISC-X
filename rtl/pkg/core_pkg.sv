@@ -409,7 +409,7 @@ typedef struct packed {
     logic tvm;  // Trap Virtual Memory
     logic tw;   // Timeout Wait
     logic tsr;  // Trap SRET
-    logic sd;   // ?
+    logic sd;   // State Dirty
 } mstatus_t;
 
 typedef struct packed {

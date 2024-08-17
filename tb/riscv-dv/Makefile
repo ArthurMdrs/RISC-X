@@ -13,8 +13,10 @@ DV_ISS_YAML := $(TB_HOME)/iss.yaml
 DV_ALL_SIM_TESTS := $(shell tr '\n' ',' < full_test_list.txt | sed 's/,$$//')
 DV_SIM_TEST := $(DV_ALL_SIM_TESTS)
 DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) \
-					   --simulator xlm --noclean \
+					   --simulator xlm --noclean --csr_yaml $(TB_HOME)/csr_description.yaml \
 					   --custom_target $(DV_RISCX_TARGET) --isa rv32ic_zicsr_zifencei --mabi ilp32 
+DV_RUN_CMD := python3 run_mod.py
+DV_COV_CMD := python3 cov_mod.py
 
 MTVEC_ALIGNMENT_OPT := +tvec_alignment=8
 ifeq ($(strip $(MTVEC_ALIGNMENT_OPT)),)
@@ -104,34 +106,38 @@ sim-elf-gui: $(DEPS)
 ##########################################################################################################################
 
 compile-instr-generator:
-	python3 run_mod.py --co --output $(DV_OUT_DIR) \
+	@$(DV_RUN_CMD) --co --output $(DV_OUT_DIR) \
 		--custom_target $(DV_RISCX_TARGET) --simulator xlm
 
 gen-and-compile-asm:
-	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --so --steps gen,gcc_compile $(GENERATOR_SIM_OPTS)
+	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --so --steps gen,gcc_compile $(GENERATOR_SIM_OPTS)
 
 sim-dv:
-	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --steps iss_sim \
+	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --steps iss_sim \
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike
 
 compare:
-	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --steps iss_cmp \
+	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --steps iss_cmp \
 		--iss=risc-x,spike
 
 dv-full: compile-instr-generator gen-and-compile-asm sim-dv compare
 
 # gen-sim-cmp: gen-and-compile-asm sim-dv compare
 gen-sim-cmp:
-	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --so \
+	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --so $(GENERATOR_SIM_OPTS) \
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike
 
 sim-and-compare:
-	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --so --steps iss_sim,iss_cmp \
+	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --so --steps iss_sim,iss_cmp \
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike
 
 spike-sim:
-	python3 run_mod.py $(DV_RUN_COMMON_FLAGS) --so --steps iss_sim \
+	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --so --steps iss_sim \
 		--iss_yaml $(DV_ISS_YAML) --iss=spike
+
+csr-test:
+	@python3 $(RISCV_DV_ROOT)/scripts/gen_csr_test.py --xlen 32 --iterations 1 --out $(DV_OUT_DIR)/asm_test --end_signature_addr 0 --csr_file $(TB_HOME)/csr_description.yaml
+
 
 ##########################################################################################################################
 
@@ -153,11 +159,11 @@ log2csv:
 	done
 
 cov-collect:
-	python3 cov_mod.py --output $(DV_COV_DIR) --dir $(DV_OUT_DIR)/risc-x_sim \
+	@$(DV_COV_CMD) --output $(DV_COV_DIR) --dir $(DV_OUT_DIR)/risc-x_sim \
 		--core=risc-x --simulator xlm --noclean
 
 cov-collect-spike:
-	python3 cov_mod.py --output $(DV_COV_DIR) --dir $(DV_OUT_DIR)/spike_sim \
+	@$(DV_COV_CMD) --output $(DV_COV_DIR) --dir $(DV_OUT_DIR)/spike_sim \
 		--iss=spike --simulator xlm --noclean
 
 cov-merge: $(COV_TESTS_DIR)

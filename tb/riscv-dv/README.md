@@ -78,9 +78,13 @@ Replace <test_name> for one of the Google's RISCV-DV base tests (list below). If
 
 ## Current state
 
-All tests from the list above, up to riscv_no_fence_test, passed.
+All tests from the list above passed, except:
+
+- riscv_ebreak_test: ebreak is still not implemented.
+- riscv_ebreak_debug_mode_test: ebreak and debug mode are still not implemented.
+- riscv_full_interrupt_test: interrupts are still not implemented.
+- riscv_csr_test: still need to make csr_description.yaml.
 
 ## Known issues
 
 - Coverage collection is not working properly for RISC-X.
-- Bugs when running riscv_illegal_instr_test.

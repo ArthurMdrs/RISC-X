@@ -44,48 +44,62 @@ class riscv_decoder;
     // Function to decode LUI instruction
     function string decode_lui(logic [31:0] instruction);
         string rd, imm;
-        // logic [19:0] imm;
+        logic [19:0] imm_bits;
         rd = translate_register(instruction[11:7]);
-        // if (instruction[31])
-        //     imm = $sformatf("-0x%0h", -instruction[31:12]);
-        // else
-        //     imm = $sformatf("0x%0h", instruction[31:12]);
-        // return $sformatf("lui %s, %s", rd, imm);
-        return $sformatf("lui %s, 0x%0h", rd, instruction[31:12]);
-        // return $sformatf("lui x%0d, 0x%0h", instruction[11:7], instruction[31:12]);
+        imm_bits = instruction[31:12];
+        imm = $sformatf("0x%0h", imm_bits);
+        return $sformatf("lui %s, %s", rd, imm);
     endfunction
 
     // Function to decode AUIPC instruction
     function string decode_auipc(logic [31:0] instruction);
         string rd, imm;
+        logic [19:0] imm_bits;
         rd = translate_register(instruction[11:7]);
-        return $sformatf("auipc %s, 0x%0h", rd, instruction[31:12]);
-        // return $sformatf("auipc x%0d, 0x%0h", instruction[11:7], instruction[31:12]);
+        imm_bits = instruction[31:12];
+        imm = $sformatf("0x%0h", imm_bits);
+        return $sformatf("auipc %s, %s", rd, imm);
     endfunction
 
     // Function to decode JAL instruction
     function string decode_jal(logic [31:0] instruction);
         string rd, imm;
+        logic [19:0] imm_bits;
         rd = translate_register(instruction[11:7]);
-        return $sformatf("jal %s, 0x%0h", rd, {instruction[31], instruction[19:12], instruction[20], instruction[30:21]});
-        // return $sformatf("jal x%0d, 0x%0h", instruction[11:7], {instruction[31], instruction[19:12], instruction[20], instruction[30:21]});
+        imm_bits = {instruction[31], instruction[19:12], instruction[20], instruction[30:21]};
+        if (instruction[31])
+            imm = $sformatf("-0x%0h", -imm_bits);
+        else
+            imm = $sformatf("0x%0h", imm_bits);
+        return $sformatf("jal %s, %s", rd, imm);
     endfunction
 
     // Function to decode JALR instruction
     function string decode_jalr(logic [31:0] instruction);
         string rd, rs1, imm;
-        rd  = translate_register(instruction[11:7]);
+        logic [11:0] imm_bits;
+        rd  = translate_register(instruction[11: 7]);
         rs1 = translate_register(instruction[19:15]);
-        return $sformatf("jalr %s, %s, 0x%0h", rd, rs1, instruction[31:20]);
-        // return $sformatf("jalr x%0d, x%0d, 0x%0h", instruction[11:7], instruction[19:15], instruction[31:20]);
+        imm_bits = instruction[31:20];
+        if (instruction[31])
+            imm = $sformatf("-0x%0h", -imm_bits);
+        else
+            imm = $sformatf("0x%0h", imm_bits);
+        return $sformatf("jalr %s, %s, %s", rd, rs1, imm);
     endfunction
 
     // Function to decode BRANCH instructions
     function string decode_branch(logic [31:0] instruction);
         string rs1, rs2, imm;
         string func;
+        logic [12:0] imm_bits;
         rs1 = translate_register(instruction[19:15]);
         rs2 = translate_register(instruction[24:20]);
+        imm_bits = {instruction[31], instruction[7], instruction[30:25], instruction[11:8], 1'b0};
+        if (instruction[31])
+            imm = $sformatf("-0x%0h", -imm_bits);
+        else
+            imm = $sformatf("0x%0h", imm_bits);
         case (instruction[14:12])
             3'b000: func = "beq";
             3'b001: func = "bne";
@@ -95,16 +109,18 @@ class riscv_decoder;
             3'b111: func = "bgeu";
             default: func = "UNKNOWN";
         endcase
-        return $sformatf("%s %s, %s, 0x%0h", func, rs1, rs2, {instruction[31], instruction[7], instruction[30:25], instruction[11:8], 1'b0});
-        // return $sformatf("%s x%0d, x%0d, pc + 0x%0h", func, instruction[19:15], instruction[24:20], {instruction[31], instruction[7], instruction[30:25], instruction[11:8], 1'b0});
+        return $sformatf("%s %s, %s, %s", func, rs1, rs2, imm);
     endfunction
 
     // Function to decode LOAD instructions
     function string decode_load(logic [31:0] instruction);
         string rd, rs1, imm;
         string func;
+        logic [11:0] imm_bits;
         rd  = translate_register(instruction[11:7]);
         rs1 = translate_register(instruction[19:15]);
+        imm_bits = instruction[31:20];
+        imm = $sformatf("0x%0h", imm_bits);
         case (instruction[14:12])
             3'b000: func = "lb";
             3'b001: func = "lh";
@@ -113,24 +129,25 @@ class riscv_decoder;
             3'b101: func = "lhu";
             default: func = "UNKNOWN";
         endcase
-        return $sformatf("%s %s, 0x%0h(%s)", func, rd, instruction[31:20], rs1);
-        // return $sformatf("%s x%0d, 0x%0h(x%0d)", func, instruction[11:7], instruction[31:20], instruction[19:15]);
+        return $sformatf("%s %s, %s(%s)", func, rd, imm, rs1);
     endfunction
 
     // Function to decode STORE instructions
     function string decode_store(logic [31:0] instruction);
         string rs1, rs2, imm;
         string func;
+        logic [11:0] imm_bits;
         rs1 = translate_register(instruction[19:15]);
         rs2 = translate_register(instruction[24:20]);
+        imm_bits = {instruction[31:25], instruction[11:7]};
+        imm = $sformatf("0x%0h", imm_bits);
         case (instruction[14:12])
             3'b000: func = "sb";
             3'b001: func = "sh";
             3'b010: func = "sw";
             default: func = "UNKNOWN";
         endcase
-        return $sformatf("%s %s, 0x%0h(%s)", func, rs2, {instruction[31:25], instruction[11:7]}, rs1);
-        // return $sformatf("%s x%0d, 0x%0h(x%0d)", func, instruction[24:20], {instruction[31:25], instruction[11:7]}, instruction[19:15]);
+        return $sformatf("%s %s, %s(%s)", func, rs2, imm, rs1);
     endfunction
 
     // Function to decode OP-IMM instructions
@@ -142,10 +159,8 @@ class riscv_decoder;
         rs1 = translate_register(instruction[19:15]);
         imm_bits = instruction[31:20];
         if (instruction[31])
-            // imm = $sformatf("-0x%0h", -imm_bits);
             imm = $sformatf("-%0d", -imm_bits);
         else
-            // imm = $sformatf("0x%0h", imm_bits);
             imm = $sformatf("%0d", imm_bits);
         case (instruction[14:12])
             3'b000: func = "addi";
@@ -159,8 +174,6 @@ class riscv_decoder;
             default: func = "UNKNOWN";
         endcase
         return $sformatf("%s %s, %s, %s", func, rd, rs1, imm);
-        // return $sformatf("%s %s, %s, 0x%0h", func, rd, rs1, instruction[31:20]);
-        // return $sformatf("%s x%0d, x%0d, 0x%0h", func, instruction[11:7], instruction[19:15], instruction[31:20]);
     endfunction
 
     // Function to decode OP instructions
@@ -233,30 +246,21 @@ class riscv_decoder;
             
             case (instruction[14:12])
                 3'b001: begin // csrrw
-                    // return $sformatf("csrrw x%0d, %s, x%0d", instruction[11:7], csr_name, instruction[19:15]); 
                     return $sformatf("csrrw %s, %s, %s", rd, csr_name, rs1); 
                 end
                 3'b010: begin // csrrs
-                    // return $sformatf("csrrs x%0d, %s, x%0d", instruction[11:7], csr_name, instruction[19:15]); 
                     return $sformatf("csrrs %s, %s, %s", rd, csr_name, rs1); 
                 end
                 3'b011: begin // csrrc
-                    // return $sformatf("csrrc x%0d, %s, x%0d", instruction[11:7], csr_name, instruction[19:15]); 
                     return $sformatf("csrrc %s, %s, %s", rd, csr_name, rs1); 
                 end
                 3'b101: begin // csrrwi
-                    // return $sformatf("csrrwi x%0d, %s, x%0d", instruction[11:7], csr_name, instruction[19:15]); 
-                    // return $sformatf("csrrwi %s, %s, %s", rd, csr_name, rs1); 
                     return $sformatf("csrrwi %s, %s, 0x%0h", rd, csr_name, instruction[19:15]); 
                 end
                 3'b110: begin // csrrsi
-                    // return $sformatf("csrrsi x%0d, %s, x%0d", instruction[11:7], csr_name, instruction[19:15]); 
-                    // return $sformatf("csrrsi %s, %s, %s", rd, csr_name, rs1); 
                     return $sformatf("csrrsi %s, %s, 0x%0h", rd, csr_name, instruction[19:15]); 
                 end
                 3'b111: begin // csrrci
-                    // return $sformatf("csrrci x%0d, %s, x%0d", instruction[11:7], csr_name, instruction[19:15]); 
-                    // return $sformatf("csrrci %s, %s, %s", rd, csr_name, rs1); 
                     return $sformatf("csrrci %s, %s, 0x%0h", rd, csr_name, instruction[19:15]); 
                 end
                 default: begin

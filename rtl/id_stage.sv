@@ -112,7 +112,7 @@ decoder #(
     .ISA_F ( ISA_F )
 ) decoder_inst (
     // ALU related signals
-	.alu_operation_o  ( alu_operation_id_o ),
+    .alu_operation_o  ( alu_operation_id_o ),
     .alu_source_1_o   ( alu_source_1_id ), 
     .alu_source_2_o   ( alu_source_2_id ), 
     .immediate_type_o ( immediate_type_id ),
@@ -146,8 +146,8 @@ decoder #(
     .illegal_instr_o ( illegal_instr_id_o ),
     
     // Instruction to be decoded
-	.instr_i         ( instr_id ),
-	.is_compressed_i ( is_compressed_id )
+    .instr_i         ( instr_id ),
+    .is_compressed_i ( is_compressed_id )
 );
 
 imm_extender imm_extender_inst (

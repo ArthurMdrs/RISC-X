@@ -4,7 +4,7 @@ module decoder import core_pkg::*; #(
     parameter bit ISA_F = 0
 ) (
     // ALU related signals
-	output alu_operation_t    alu_operation_o,
+    output alu_operation_t    alu_operation_o,
     output alu_source_1_t     alu_source_1_o, 
     output alu_source_2_t     alu_source_2_o, 
     output immediate_source_t immediate_type_o,
@@ -39,8 +39,8 @@ module decoder import core_pkg::*; #(
     output logic illegal_instr_o,
     
     // Instruction to be decoded
-	input  logic [31:0] instr_i,
-	input  logic        is_compressed_i
+    input  logic [31:0] instr_i,
+    input  logic        is_compressed_i
 );
 
 logic [6:0] funct7;
@@ -290,37 +290,42 @@ always_comb begin
                             rd_addr_C  = {2'b01, instr_i[9:7]};
                         end
                         2'b11: begin
-                            unique case (instr_i[6:5])
-                                2'b00: begin // c.sub
-                                    alu_operation_o = ALU_SUB;
-                                    reg_alu_wen_o = 1'b1;
-                                    rs1_addr_C = {2'b01, instr_i[9:7]};
-                                    rs2_addr_C = {2'b01, instr_i[4:2]};
-                                    rd_addr_C  = {2'b01, instr_i[9:7]};
-                                end
-                                2'b01: begin // c.xor
-                                    alu_operation_o = ALU_XOR;
-                                    reg_alu_wen_o = 1'b1;
-                                    rs1_addr_C = {2'b01, instr_i[9:7]};
-                                    rs2_addr_C = {2'b01, instr_i[4:2]};
-                                    rd_addr_C  = {2'b01, instr_i[9:7]};
-                                end
-                                2'b10: begin // c.or
-                                    alu_operation_o = ALU_OR;
-                                    reg_alu_wen_o = 1'b1;
-                                    rs1_addr_C = {2'b01, instr_i[9:7]};
-                                    rs2_addr_C = {2'b01, instr_i[4:2]};
-                                    rd_addr_C  = {2'b01, instr_i[9:7]};
-                                end
-                                2'b11: begin // c.and
-                                    alu_operation_o = ALU_AND;
-                                    reg_alu_wen_o = 1'b1;
-                                    rs1_addr_C = {2'b01, instr_i[9:7]};
-                                    rs2_addr_C = {2'b01, instr_i[4:2]};
-                                    rd_addr_C  = {2'b01, instr_i[9:7]};
-                                end
-                                default: illegal_instr_o = 1'b1;
-                            endcase
+                            if (instr_i[12]) begin
+                                illegal_instr_o = 1'b1;
+                            end
+                            else begin
+                                unique case (instr_i[6:5])
+                                    2'b00: begin // c.sub
+                                        alu_operation_o = ALU_SUB;
+                                        reg_alu_wen_o = 1'b1;
+                                        rs1_addr_C = {2'b01, instr_i[9:7]};
+                                        rs2_addr_C = {2'b01, instr_i[4:2]};
+                                        rd_addr_C  = {2'b01, instr_i[9:7]};
+                                    end
+                                    2'b01: begin // c.xor
+                                        alu_operation_o = ALU_XOR;
+                                        reg_alu_wen_o = 1'b1;
+                                        rs1_addr_C = {2'b01, instr_i[9:7]};
+                                        rs2_addr_C = {2'b01, instr_i[4:2]};
+                                        rd_addr_C  = {2'b01, instr_i[9:7]};
+                                    end
+                                    2'b10: begin // c.or
+                                        alu_operation_o = ALU_OR;
+                                        reg_alu_wen_o = 1'b1;
+                                        rs1_addr_C = {2'b01, instr_i[9:7]};
+                                        rs2_addr_C = {2'b01, instr_i[4:2]};
+                                        rd_addr_C  = {2'b01, instr_i[9:7]};
+                                    end
+                                    2'b11: begin // c.and
+                                        alu_operation_o = ALU_AND;
+                                        reg_alu_wen_o = 1'b1;
+                                        rs1_addr_C = {2'b01, instr_i[9:7]};
+                                        rs2_addr_C = {2'b01, instr_i[4:2]};
+                                        rd_addr_C  = {2'b01, instr_i[9:7]};
+                                    end
+                                    default: illegal_instr_o = 1'b1;
+                                endcase
+                            end
                         end
                         default: illegal_instr_o = 1'b1;
                     endcase

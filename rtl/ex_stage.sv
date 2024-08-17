@@ -138,10 +138,10 @@ end
 alu #(
     .DWIDTH ( 32 )
 ) alu_inst (
-	.res_o       ( alu_result_ex ), 
-	.op1_i       ( alu_operand_1_ex ),
-	.op2_i       ( alu_operand_2_ex ),
-	.operation_i ( alu_operation_ex )
+    .res_o       ( alu_result_ex ), 
+    .op1_i       ( alu_operand_1_ex ),
+    .op2_i       ( alu_operand_2_ex ),
+    .operation_i ( alu_operation_ex )
 );
 
 // Pass CSR rdata through ALU result in case of CSR reads

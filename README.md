@@ -1,27 +1,17 @@
 
 # RISC-X
 
----
+This is an academic project to develop a RISC-V core. Its characteristics are:
 
-## TYPE-C instructions
+- 32-bit;
+- In-order;
+- 5 pipeline stages;
+- Implemented ISA extensions: Zicsr, C.
 
-    Esta branch é focada em adicionar as instruções do tipo C no processador.
+What's in plan for the future:
 
-
-### What is Type-C instructions
-
-    As instruções Tipo-C consistem em instruções comprimidas, ou seja, 
-    possuem um tamanho de bits reduzido.
-
-    O processador é baseado em 32 bits, por sua vez, as instruções Tipo-C 
-    possuem 16 bits de comprimento.
-
-
-## Desenvolvedores
-
-    Tulio Tavares   (tulio.tavares@ee.ufcg.edu.br)
-    Victor Hugo     (victor.klein@ee.ufcg.edu.br)
-
-
-
-by Túlio
+- Interrupts;
+- Extensions M and F;
+- Debug mode;
+- AXI bus;
+- SoC.

@@ -16,6 +16,8 @@ limitations under the License.
 Regression script for RISC-V random instruction generator
 """
 
+# pyright: reportMissingImports=false, reportUndefinedVariable=false
+
 import argparse
 import os
 import random
@@ -462,6 +464,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
             if not re.search('mabi', cmd):
                 cmd += (" -mabi={}".format(mabi))
             logging.info("Compiling {}".format(asm))
+            # print(cmd)
             run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
             # Convert the ELF to plain binary, used in RTL sim
             logging.info("Converting to {}".format(binary))
