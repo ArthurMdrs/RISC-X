@@ -97,6 +97,13 @@ typedef enum logic [1:0] {
     CSR_CLEAR
 } csr_operation_t;
 
+typedef enum logic [1:0] {
+    IDLE,
+    REQUESTING, 
+    WAITING, 
+    DUMPING
+} OBI_state_t;
+
 // OpCodes
 
 localparam logic [6:0] OPCODE_OP     = 7'b011_0011; // 7'h33
