@@ -7,6 +7,8 @@ The following environment variables must be set:
 - UVMHOME: Root of UVM library (not necessary?)
 - RISCV_DV_ROOT: Root of Google's RISCV-DV repository
 - RISCV_GCC: path to your RISC-V gcc executable (ex: /opt/riscv/bin/riscv32-unknown-linux-gnu-gcc)
+- RISCV_OBJDUMP: path to your RISC-V objcopy executable (ex: /opt/riscv/bin/riscv32-unknown-linux-gnu-objcopy) DEPRECATED
+- RISCV_OBJCOPY: path to your RISC-V objcopy executable (ex: /opt/riscv/bin/riscv32-unknown-linux-gnu-objcopy)
 - SPIKE_PATH: path to your Spike directory (ex: /opt/riscv/bin)
 
 Currently, only Cadence's tools are supported (xrun for simulation and IMC for coverage).

@@ -25,6 +25,9 @@ import re
 import sys
 import logging
 
+riscv_dv_root = os.environ.get('RISCV_DV_ROOT')
+sys.path.append(f'{riscv_dv_root}')
+
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 # from scripts.riscx_log_to_trace_csv import *

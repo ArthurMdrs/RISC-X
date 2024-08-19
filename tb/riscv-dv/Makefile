@@ -158,9 +158,7 @@ DV_COV_DIR := $(DV_OUT_DIR)/cov
 COV_TESTS_DIR := $(DV_COV_DIR)/default
 # export COV_TEST_RUN := $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*' | head -n 1)
 # export COV_RUNS = $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
-ifneq ("$(wildcard $(COV_TESTS_DIR))","")
-	export COV_RUNS = $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
-endif
+export COV_RUNS = $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
 export COV_MERGED_DIR = $(DV_COV_DIR)/merged
 export COV_REPORT_DIR := $(TB_HOME)/cov_report
 RISCX_LOG = $(wildcard $(DV_OUT_DIR)/risc-x_sim/*.log)

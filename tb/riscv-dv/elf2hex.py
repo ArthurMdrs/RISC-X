@@ -3,14 +3,14 @@ from sys import argv
 import os
 import re
 # from pathlib import Path
-
-riscv_prefix = "riscv32-unknown-linux-gnu-"
+    
+objdump_cmd = os.environ.get('RISCV_OBJDUMP')
 
 def elf2hex(elf_file, out_file):
     print(f"Converting {elf_file} to {out_file}.")
     
     # Run the objdump command and capture the output
-    result = subprocess.run([f'{riscv_prefix}objdump', '-d', elf_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run([f'{objdump_cmd}', '-d', elf_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Check for errors
     if result.returncode != 0:
@@ -40,7 +40,7 @@ def get_sections_info(elf_file, out_file):
     print(f"Saving to {out_file}.")
     
     # Run the objdump command and capture the output
-    result = subprocess.run([f'{riscv_prefix}objdump', "-h", elf_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run([f'{objdump_cmd}', "-h", elf_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Check for errors
     if result.returncode != 0:
