@@ -21,4 +21,6 @@ target1:
     addi ra, zero, 1
     sw ra, 48(zero)
     sw gp, 52(zero)
+    
+    ecall
 	

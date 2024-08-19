@@ -82,3 +82,5 @@ main:
     sw x29, 116(x0)
     sw x30, 120(x0)
     sw x31, 124(x0)
+    
+    ecall

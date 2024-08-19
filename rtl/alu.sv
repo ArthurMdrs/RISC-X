@@ -1,9 +1,9 @@
 module alu import core_pkg::*; #(
     parameter int DWIDTH = 8
 ) (
-	output logic [DWIDTH-1:0] res_o,
-	input  logic [DWIDTH-1:0] op1_i,
-	input  logic [DWIDTH-1:0] op2_i,
+    output logic [DWIDTH-1:0] res_o,
+    input  logic [DWIDTH-1:0] op1_i,
+    input  logic [DWIDTH-1:0] op2_i,
     input  alu_operation_t    operation_i
 );
 
