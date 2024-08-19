@@ -135,7 +135,8 @@ class mem_model;
             
             while (addr <= sections[i].end_addr) begin
                 n = $fread(word, fd);
-                if (n != 4) begin
+                if (n != 4 && n != 2) begin
+                    $display("n = %0d.", n);
                     $fatal(1, "Error reading .bin at address 0x%h.", addr);
                 end
                 

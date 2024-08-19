@@ -488,10 +488,11 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
       setting_dir : Generator setting directory
       debug_cmd   : Produce the debug cmd log without running
     """
-    if not asm_test.endswith(".S"):
+    if not (asm_test.endswith(".S") or asm_test.endswith(".s")):
         logging.error("{} is not an assembly .S file".format(asm_test))
         return
-    cwd = os.path.dirname(os.path.realpath(__file__))
+    # cwd = os.path.dirname(os.path.realpath(__file__))
+    cwd = os.environ.get('RISCV_DV_ROOT')
     asm_test = os.path.expanduser(asm_test)
     report = ("{}/iss_regr.log".format(output_dir)).rstrip()
     asm = re.sub(r"^.*\/", "", asm_test)

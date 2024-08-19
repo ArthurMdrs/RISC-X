@@ -67,8 +67,9 @@ gui: $(DEPS)
 $(RVFI_HOME)/rvfi_macros.vh: 
 	@curl -L -o $(RVFI_HOME)/rvfi_macros.vh https://raw.githubusercontent.com/ArthurMdrs/riscv-formal/cv32e40p_v1.8.2/checks/original_checks/rvfi_macros.vh
 
+RVVI_COMMIT := 20240403.0
 $(RVVI_HOME)/rvviTrace.sv:
-	@curl -L -o $(RVVI_HOME)/rvviTrace.sv https://raw.githubusercontent.com/riscv-verification/RVVI/main/source/host/rvvi/rvviTrace.sv
+	@curl -L -o $(RVVI_HOME)/rvviTrace.sv https://raw.githubusercontent.com/riscv-verification/RVVI/$(RVVI_COMMIT)/source/host/rvvi/rvviTrace.sv
 
 rars:
 	python3 run_rars.py $(PROGS_PATH) $(PROG)
@@ -122,7 +123,6 @@ compare:
 
 dv-full: compile-instr-generator gen-and-compile-asm sim-dv compare
 
-# gen-sim-cmp: gen-and-compile-asm sim-dv compare
 gen-sim-cmp:
 	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --so $(GENERATOR_SIM_OPTS) \
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike
@@ -138,6 +138,19 @@ spike-sim:
 csr-test:
 	@python3 $(RISCV_DV_ROOT)/scripts/gen_csr_test.py --xlen 32 --iterations 1 --out $(DV_OUT_DIR)/asm_test --end_signature_addr 0 --csr_file $(TB_HOME)/csr_description.yaml
 
+# c-test does NOT work yet
+c-test:
+	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm --noclean --debug debug.log \
+		--custom_target $(DV_RISCX_TARGET) --isa rv32ic_zicsr_zifencei --mabi ilp32 \
+		--so --steps iss_sim,iss_cmp --iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike \
+		--c_test /home/pedro.medeiros/Tools/riscv-formal-VeeR/cores/risc-x/RISC-X/tb/programs/mytest.c
+
+# asm-test does NOT work yet
+asm-test:
+	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm \
+		--custom_target $(DV_RISCX_TARGET) --isa rv32ic_zicsr_zifencei --mabi ilp32 \
+		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike --gcc_opts="-I$(PROGS_PATH)" \
+		--asm_test $(PROGS_PATH)/1_basic.s
 
 ##########################################################################################################################
 
@@ -191,12 +204,7 @@ clean-generator:
 clean: clean-sim clean-asm clean-cov clean-generator
 
 ##########################################################################################################################
-
-# export aux := $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
-# test:
-# 	@for x in $(aux); do \
-# 		echo $$x ; \
-# 	done
+# From this point everything is just for testing, do not use these 
 
 SPIKE_LOG := $(wildcard $(DV_OUT_DIR)/spike_sim/*.log)
 spike_full_csv:

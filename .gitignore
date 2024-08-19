@@ -12,6 +12,9 @@ restore.tcl
 restore.tcl.svcf
 *.svwf
 
+*.o
+*.bin
+
 ignore*
 
 rvfi_macros.vh
