@@ -76,3 +76,5 @@ sub x13, x13, x14
 lw x12, 0(x13)
 jal x15, loop3
 loop3:
+    
+    ecall

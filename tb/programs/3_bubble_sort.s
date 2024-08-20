@@ -31,3 +31,5 @@ swap:
         sw x8, 4(x6)
         jal x10, back
 end:
+    
+    ecall

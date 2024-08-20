@@ -52,3 +52,5 @@ main:
 
     branch6:
     nop
+    
+    ecall

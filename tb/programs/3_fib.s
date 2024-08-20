@@ -12,3 +12,6 @@ loop:
         addi x4, x4, 1
         addi x5, x5, 8
         blt x4, x1, loop
+    
+    nop
+    ecall

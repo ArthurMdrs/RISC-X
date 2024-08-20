@@ -1,0 +1,45 @@
+
+#
+# Mnemonic Maps
+#
+mmap new  -reuse -name {Boolean as Logic} -radix %b -contents {{%c=FALSE -edgepriority 1 -shape low}
+{%c=TRUE -edgepriority 1 -shape high}}
+mmap new  -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor orange -label REG:%x -linecolor yellow -shape bus}
+{%x=1F -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=2C -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=* -label %x -linecolor gray -shape bus}}
+
+array unset createdGroup
+array set createdGroup {}
+set id [waveform add -signals [subst  {
+	{[format {top.dut.a[31:0]}]}
+	} ]]
+waveform format $id -radix %d
+set id [waveform add -signals [subst  {
+	{[format {top.dut.b[31:0]}]}
+	} ]]
+waveform format $id -radix %d
+set id [waveform add -signals [subst  {
+	{[format {top.dut.c[31:0]}]}
+	} ]]
+waveform format $id -radix %d
+set id [waveform add -signals [subst  {
+	{[format {top.dut.clock}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.dut.done}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.dut.nclocks[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.dut.nreset}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.dut.ready}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.dut.valid}]}
+	} ]]
+
+waveform xview limits 383.501954ns 557.821026ns

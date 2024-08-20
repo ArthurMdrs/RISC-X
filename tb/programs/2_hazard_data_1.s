@@ -10,3 +10,5 @@ add x7, x4, x5
 add x8, x7, x6
 lw x9, 0(x0)
 add x10, x9, x8
+    
+    ecall
