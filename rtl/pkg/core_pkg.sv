@@ -121,6 +121,20 @@ localparam logic [6:0] OPCODE_LUI    = 7'b011_0111; // 7'h37
 localparam logic [6:0] OPCODE_AUIPC  = 7'b001_0111; // 7'h17
 localparam logic [6:0] OPCODE_SYSTEM = 7'b111_0011; // 7'h73
 
+
+///////OpCodes FPU//////// begin
+
+localparam logic [6:0] OPCODE_F_R       = 7'b1010011; // 7'h53
+localparam logic [6:0] OPCODE_F_MADD    = 7'b1000011; // 7'h43
+localparam logic [6:0] OPCODE_F_MSUB    = 7'b1000111; // 7'h47
+localparam logic [6:0] OPCODE_F_NMSUB   = 7'b1001011; // 7'h4B
+localparam logic [6:0] OPCODE_F_NMADD   = 7'b1001111; // 7'h4F
+localparam logic [6:0] OPCODE_F_FSW     = 7'b0100111; // 7'h27
+localparam logic [6:0] OPCODE_F_FLW     = 7'b0000111; // 7'h07
+
+//////end F///////////////
+
+
 // Type RVC opcode:
 
 // localparam logic [6:0] OPCODE_RVC_0 = 7'bxxx_xx00; // First Quadrant
@@ -416,6 +430,8 @@ typedef struct packed {
     logic sbe;  // Supervisor mode endianess control
     logic mbe;  // Machine mode endianess control
 } mstatush_t;
+
+
 
 // Define possible causes for CSR mcause
 localparam EXC_CAUSE_INSTR_ADDR_MISAL = 5'h00;

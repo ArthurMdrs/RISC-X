@@ -41,6 +41,20 @@ module decoder import core_pkg::*; #(
     // Instruction to be decoded
     input  logic [31:0] instr_i,
     input  logic        is_compressed_i
+
+
+    ////////FPU/////////////////
+    output logic [2:0] roundmode_e,
+    output logic fpu_op_mod,
+    output logic rs1_isF_o,
+    output logic rs2_isF_o,
+    output logic rd_isF_o,
+    output logic rs3_is_used_o,
+    output logic [4:0] rs3_addr_F_o
+
+    //output logic [31:0]  fpu_dst_fmt_o,   // fpu destination format
+    //output logic [31:0]  fpu_src_fmt_o,   // fpu source format
+    //output logic [31:0] fpu_int_fmt_o
 );
 
 logic [6:0] funct7;
@@ -74,6 +88,8 @@ assign rs1_addr_o = (is_compressed_int) ? (rs1_addr_C) : (instr_i[19:15]);
 assign rs2_addr_o = (is_compressed_int) ? (rs2_addr_C) : (instr_i[24:20]);
 assign rd_addr_o  = (is_compressed_int) ? (rd_addr_C ) : (instr_i[11: 7]);
 
+
+
 always_comb begin
     alu_operation_o  = ALU_ADD;
     alu_source_1_o   = ALU_SCR1_RS1;
@@ -100,6 +116,116 @@ always_comb begin
     rs1_addr_C = instr_i[11:7];
     rs2_addr_C = instr_i[ 6:2];
     rd_addr_C  = instr_i[11:7];
+
+    //F
+    rs3_addr_F_o = instr_i[31:27];
+    roundmode_e = instr_i [14:12];
+    fpu_op_mod = 1'b0;
+
+    ///////F_Decode/////////begin////
+    if (ISA_F ) begin
+        rs1_isF_o = 1'b1;
+        rd_isF_o = 1'b1;
+        rs2_isF_o = 1'b1;
+        unique case (opcode)
+        OPCODE_F_R:begin
+            unique case (funct7)
+                7'b0000000: fpu_op = ADD;
+                7'b0000100: begin
+                    fpu_op = ADD;
+                    fpu_op_mod = 1'b1;
+                end
+                7'b0001000: fpu_op = MUL;
+                7'b0001100: fpu_op = DIV;
+                7'b0101100: fpu_op = SQRT;
+                7'b0010000: begin
+                    unique case (funct3)
+                    3'b000:begin
+                        fpu_op = SGNJ ;
+                        roundmode_e = RNE;
+                        
+                    end
+                    3'b001:begin
+                        fpu_op = SGNJ ;
+                        roundmode_e = RTZ;
+                        
+                    end
+                    3'b010:begin
+                        fpu_op = SGNJ ;
+                        roundmode_e = RDN;
+                        
+                    end
+                endcase
+                end
+                7'b0010100: begin
+                    fpu_op = MINMAX;
+                unique case (funct3)
+                    3'b000: roundmode_e = RNE;
+                    3'b001: roundmode_e = RTZ;
+                endcase
+                end
+                7'b1100000: begin
+                    fpu_op = F2I;
+                    unique case (rs2_F)
+                        5'b00000: fpu_op_mod = 1'b0;
+                        5'b00001: fpu_op_mod = 1'b1;
+                    
+                    endcase
+                end
+                7'b1101000: begin
+                    fpu_op = I2F;
+                    unique case (rs2_F)
+                        5'b00000: fpu_op_mod = 1'b0;
+                        5'b00001: fpu_op_mod = 1'b1;
+                    
+                    endcase
+                end
+                7'b1010000: begin
+                    fpu_op = CMP;
+                    unique case (funct3)
+                        3'b000: roundmode_e = RNE;
+                        3'b001: roundmode_e = RTZ;
+                        3'b001: roundmode_e = RDN;
+
+                    endcase
+                end
+                7'b1110000: begin
+                    unique case (funct3)
+                    3'b000:begin
+                        fpu_op = SGNJ;
+                        fpu_op_mod = 1'b1;
+                        roundmode_e = 3'b011;
+                        rd_isF_o = 1'b0;
+                        
+                    end
+                    3'b001:begin
+                        fpu_op = CLASSIFY;
+                        roundmode_e = 3'b000;
+
+                    end
+                    endcase
+                end
+                7'b1111000:begin
+                    fpu_op = SGNJ;
+                    fpu_op_mod = 1'b0;
+                    roundmode_e = 3'b011;
+                    rs1_isF_o = 1'b0;
+                    
+                end
+
+
+            endcase
+        end
+        OPCODE_F_MADD: begin
+            
+        end
+        endcase
+
+
+    end
+
+    //////F_Decode///////end///////
+
     
     if (is_compressed_int) begin 
 
