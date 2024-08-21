@@ -46,13 +46,14 @@ module decoder import core_pkg::*; #(
     ////////FPU/////////////////
     output logic [2:0] roundmode_e,
     output logic fpu_op_mod,
+    output logic [3:0]fpu_op,
     output logic rs1_isF_o,
     output logic rs2_isF_o,
     output logic rd_isF_o,
     output logic rs3_is_used_o,
     output logic [4:0] rs3_addr_F_o,
     output logic [4:0] is_store_o,
-    output logic is_immediate_F
+    //output logic is_immediate_F
 
     //output logic [31:0]  fpu_dst_fmt_o,   // fpu destination format
     //output logic [31:0]  fpu_src_fmt_o,   // fpu source format
@@ -123,16 +124,21 @@ always_comb begin
     rs3_addr_F_o = instr_i[31:27];
     roundmode_e = instr_i [14:12];
     fpu_op_mod = 1'b0;
-    is_immediate_F = 1'b0;
+    //is_immediate_F = 1'b0;
+    rs1_isF_o = 1'b0;
+    rd_isF_o = 1'b0;
+    rs2_isF_o = 1'b0;
 
     ///////F_Decode/////////begin////
-    if (ISA_F ) begin
-        rs1_isF_o = 1'b1;
-        rd_isF_o = 1'b1;
-        rs2_isF_o = 1'b1;
-        unique case (opcode)
-        OPCODE_F_R:begin
+    
+        
+    unique case (opcode)
+    OPCODE_F_R:begin
+        if (ISA_F ) begin
             reg_alu_wen_o = 1'b1;
+            rs1_isF_o = 1'b1;
+            rd_isF_o = 1'b1;
+            rs2_isF_o = 1'b1;
             unique case (funct7)
                 7'b0000000: fpu_op = ADD;
                 7'b0000100: begin
@@ -141,7 +147,11 @@ always_comb begin
                 end
                 7'b0001000: fpu_op = MUL;
                 7'b0001100: fpu_op = DIV;
-                7'b0101100: fpu_op = SQRT;
+                7'b0101100: begin
+                    fpu_op = SQRT;
+                    if (instr_i[24:20] != 5'b00000) illegal_instr_o = 1'b1;
+                        
+                end
                 7'b0010000: begin
                     unique case (funct3)
                     3'b000:begin
@@ -175,7 +185,7 @@ always_comb begin
                     unique case (rs2_F)
                         5'b00000: fpu_op_mod = 1'b0;
                         5'b00001: fpu_op_mod = 1'b1;
-                        
+                        default: illegal_instr_o = 1'b1;
                     
                     endcase
                 end
@@ -184,18 +194,16 @@ always_comb begin
                     unique case (rs2_F)
                         5'b00000: fpu_op_mod = 1'b0;
                         5'b00001: fpu_op_mod = 1'b1;
-                    
+                        default: illegal_instr_o = 1'b1;
                     endcase
                 end
                 7'b1010000: begin
                     fpu_op = CMP;
-                    reg_alu_wen_o = 1'b1;
-                    
                     unique case (funct3)
-                    3'b000: roundmode_e = RNE;
-                    3'b010: roundmode_e = RDN;
-                    3'b001: roundmode_e = RTZ;
-
+                        3'b000: roundmode_e = RNE;
+                        3'b010: roundmode_e = RDN;
+                        3'b001: roundmode_e = RTZ;
+                        default: illegal_instr_o = 1'b1;
                     endcase
                 end
                 7'b1110000: begin
@@ -205,13 +213,16 @@ always_comb begin
                         fpu_op_mod = 1'b1;
                         roundmode_e = 3'b011;
                         rd_isF_o = 1'b0;
+                        if(instr_i[24:20] != 5'b00000) illegal_instr_o = 1'b1;
                         
                     end
                     3'b001:begin
                         fpu_op = CLASSIFY;
                         roundmode_e = 3'b000;
+                        if(instr_i[24:20] != 5'b00000) illegal_instr_o = 1'b1;
 
                     end
+                    default: illegal_instr_o = 1'b1;
                     endcase
                 end
                 7'b1111000:begin
@@ -219,35 +230,49 @@ always_comb begin
                     fpu_op_mod = 1'b0;
                     roundmode_e = 3'b011;
                     rs1_isF_o = 1'b0;
+                    if(instr_i[24:20] != 5'b00000) illegal_instr_o = 1'b1;
                     
                 end
                 default: illegal_instr_o = 1'b1;
-
+        
             endcase
-        end
-        OPCODE_F_MADD: begin
+        end else illegal_instr_o = 1'b1;
+    end
+    OPCODE_F_MADD: begin
+        if (ISA_F ) begin
+            reg_alu_wen_o = 1'b1;
             rs3_is_used_o = 1'b1;
             fpu_op = FMADD;
+        end else illegal_instr_o = 1'b1;
 
-        end
-        OPCODE_F_MSUB: begin
+    end
+    OPCODE_F_MSUB: begin
+        if (ISA_F ) begin
+            reg_alu_wen_o = 1'b1;
             rs3_is_used_o = 1'b1;
             fpu_op = FMADD;
             fpu_op_mod = 1'b1;
-
-        end
-        OPCODE_F_NMSUB: begin
+        
+        end else illegal_instr_o = 1'b1;
+    end
+    OPCODE_F_NMSUB: begin
+        if (ISA_F ) begin
+            reg_alu_wen_o = 1'b1;
             rs3_is_used_o = 1'b1;
             fpu_op = FNMSUB;
-        end
-        OPCODE_F_NMADD: begin
+        end else illegal_instr_o = 1'b1;
+    end
+    OPCODE_F_NMADD: begin
+        if (ISA_F ) begin
+            reg_alu_wen_o = 1'b1;
             rs3_is_used_o = 1'b1;
             fpu_op = FNMSUB;
             fpu_op_mod = 1'b1;
-
-        end
-        OPCODE_F_FSW: begin
-            
+        end else illegal_instr_o = 1'b1;
+    end
+    OPCODE_F_FSW: begin
+        if (ISA_F ) begin
+            reg_alu_wen_o = 1'b0;
             is_immediate_F = 1'b1;
             fpu_op = ALU_ADD;
             
@@ -255,10 +280,12 @@ always_comb begin
             immediate_type_o = IMM_S;
             mem_data_type_o = WORD;
             mem_wen_o = 1'b1;
-
-
-        end
-        OPCODE_F_FLW: begin
+            rs2_isF_o = 1'b1;
+        end else illegal_instr_o = 1'b1;
+    end
+    OPCODE_F_FLW: begin
+        if (ISA_F ) begin
+            reg_alu_wen_o = 1'b1;
             is_immediate_F = 1'b1;
             fpu_op = ALU_ADD;
 
@@ -266,15 +293,16 @@ always_comb begin
             immediate_type_o = IMM_I;
             mem_data_type_o = WORD;
             reg_mem_wen_o = 1'b1;
-        default: illegal_instr_o = 1'b1;
-            
-        end
-        endcase
+            rd_isF_o = 1'b1;
+        end else illegal_instr_o = 1'b1;
+        
+    end
+    endcase
 
 
 
     
-    end
+    
 
     //////F_Decode///////end///////
 
@@ -668,6 +696,7 @@ always_comb begin
         /////////////////////////////////////////////
         /////////////        ALU        /////////////
         /////////////////////////////////////////////
+        
         OPCODE_OP: begin
             if (!(funct7 inside {7'h00, 7'h20}))
                 illegal_instr_o = 1'b1;
