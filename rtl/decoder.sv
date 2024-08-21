@@ -51,7 +51,8 @@ module decoder import core_pkg::*; #(
     output logic rd_isF_o,
     output logic rs3_is_used_o,
     output logic [4:0] rs3_addr_F_o,
-    output logic [4:0] is_store_o
+    output logic [4:0] is_store_o,
+    output logic is_immediate_F
 
     //output logic [31:0]  fpu_dst_fmt_o,   // fpu destination format
     //output logic [31:0]  fpu_src_fmt_o,   // fpu source format
@@ -122,6 +123,7 @@ always_comb begin
     rs3_addr_F_o = instr_i[31:27];
     roundmode_e = instr_i [14:12];
     fpu_op_mod = 1'b0;
+    is_immediate_F = 1'b0;
 
     ///////F_Decode/////////begin////
     if (ISA_F ) begin
@@ -130,6 +132,7 @@ always_comb begin
         rs2_isF_o = 1'b1;
         unique case (opcode)
         OPCODE_F_R:begin
+            reg_alu_wen_o = 1'b1;
             unique case (funct7)
                 7'b0000000: fpu_op = ADD;
                 7'b0000100: begin
@@ -156,6 +159,7 @@ always_comb begin
                         roundmode_e = RDN;
                         
                     end
+                    default: illegal_instr_o = 1'b1;
                 endcase
                 end
                 7'b0010100: begin
@@ -163,6 +167,7 @@ always_comb begin
                 unique case (funct3)
                     3'b000: roundmode_e = RNE;
                     3'b001: roundmode_e = RTZ;
+                    default: illegal_instr_o = 1'b1;
                 endcase
                 end
                 7'b1100000: begin
@@ -170,6 +175,7 @@ always_comb begin
                     unique case (rs2_F)
                         5'b00000: fpu_op_mod = 1'b0;
                         5'b00001: fpu_op_mod = 1'b1;
+                        
                     
                     endcase
                 end
@@ -183,10 +189,12 @@ always_comb begin
                 end
                 7'b1010000: begin
                     fpu_op = CMP;
+                    reg_alu_wen_o = 1'b1;
+                    
                     unique case (funct3)
-                        3'b000: roundmode_e = RNE;
-                        3'b001: roundmode_e = RTZ;
-                        3'b001: roundmode_e = RDN;
+                    3'b000: roundmode_e = RNE;
+                    3'b010: roundmode_e = RDN;
+                    3'b001: roundmode_e = RTZ;
 
                     endcase
                 end
@@ -213,7 +221,7 @@ always_comb begin
                     rs1_isF_o = 1'b0;
                     
                 end
-
+                default: illegal_instr_o = 1'b1;
 
             endcase
         end
@@ -239,9 +247,26 @@ always_comb begin
 
         end
         OPCODE_F_FSW: begin
-            fpu_op = 
+            
+            is_immediate_F = 1'b1;
+            fpu_op = ALU_ADD;
+            
+            alu_source_2_o   = ALU_SCR2_IMM;
+            immediate_type_o = IMM_S;
+            mem_data_type_o = WORD;
+            mem_wen_o = 1'b1;
+
+
         end
         OPCODE_F_FLW: begin
+            is_immediate_F = 1'b1;
+            fpu_op = ALU_ADD;
+
+            alu_source_2_o   = ALU_SCR2_IMM;
+            immediate_type_o = IMM_I;
+            mem_data_type_o = WORD;
+            reg_mem_wen_o = 1'b1;
+        default: illegal_instr_o = 1'b1;
             
         end
         endcase
