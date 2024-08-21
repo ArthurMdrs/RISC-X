@@ -40,7 +40,7 @@ module decoder import core_pkg::*; #(
     
     // Instruction to be decoded
     input  logic [31:0] instr_i,
-    input  logic        is_compressed_i
+    input  logic        is_compressed_i,
 
 
     ////////FPU/////////////////
@@ -50,7 +50,8 @@ module decoder import core_pkg::*; #(
     output logic rs2_isF_o,
     output logic rd_isF_o,
     output logic rs3_is_used_o,
-    output logic [4:0] rs3_addr_F_o
+    output logic [4:0] rs3_addr_F_o,
+    output logic [4:0] is_store_o
 
     //output logic [31:0]  fpu_dst_fmt_o,   // fpu destination format
     //output logic [31:0]  fpu_src_fmt_o,   // fpu source format
@@ -217,6 +218,30 @@ always_comb begin
             endcase
         end
         OPCODE_F_MADD: begin
+            rs3_is_used_o = 1'b1;
+            fpu_op = FMADD;
+
+        end
+        OPCODE_F_MSUB: begin
+            rs3_is_used_o = 1'b1;
+            fpu_op = FMADD;
+            fpu_op_mod = 1'b1;
+
+        end
+        OPCODE_F_NMSUB: begin
+            rs3_is_used_o = 1'b1;
+            fpu_op = FNMSUB;
+        end
+        OPCODE_F_NMADD: begin
+            rs3_is_used_o = 1'b1;
+            fpu_op = FNMSUB;
+            fpu_op_mod = 1'b1;
+
+        end
+        OPCODE_F_FSW: begin
+            fpu_op = 
+        end
+        OPCODE_F_FLW: begin
             
         end
         endcase
