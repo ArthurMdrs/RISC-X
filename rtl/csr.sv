@@ -25,6 +25,13 @@ module csr import core_pkg::*; #(
     input  logic [31:0] pc_id_i,
     input  logic [31:0] pc_ex_i,
     input  logic [ 4:0] exception_cause_i
+
+    // Adicionei aqui
+    // Floating point registers
+    input logic [4:0] fflags_i,
+    input logic fflag_we_i,
+    input logic fregs_we_i,
+    output logic [2:0] frm_o,
 );
 
 logic [31:0] csr_wdata_actual;
@@ -67,6 +74,12 @@ logic [31:0] mscratch, mscratch_n;
 // Machine Interrupt Enable Register
 logic [31:0] mie, mie_n;
 
+// Adicionei aqui
+// FPU Registers
+logic [4:0] fflags, fflags_n;
+logic [2:0] frm, frm_n;
+logic fcsr_update; 
+
 // Define read operation
 always_comb begin
     case (csr_addr_i)
@@ -88,20 +101,31 @@ always_comb begin
         CSR_MCAUSE: csr_rdata_o = mcause;
         CSR_MSCRATCH: csr_rdata_o = mscratch;
         
+        // Adicionei aqui
+        CSR_FFLAGS: csr_rdata_o = (ISA_F) ? {27'b0, fflags}:'0;
+        CSR_FRM: csr_rdata_o = (ISA_F) ? {29'b0, frm}:'0;
+        CSR_FCSR: csr_rdata_o = (ISA_F) ? {24'b0, frm, fflags}:'0;
+
         default: csr_rdata_o = '0;
     endcase
 end
 
 // Define next values of CSRs
 always_comb begin
-    mstatus_n = mstatus;
-    mie_n = mie;
-    mtvec_n = (set_initial_mtvec) ? ({mtvec_i, 8'b0}) : (mtvec);
-    mepc_n = mepc;
+    mstatus_n     = mstatus;
+    mie_n         = mie;
+    mtvec_n       = (set_initial_mtvec) ? ({mtvec_i, 8'b0}) : (mtvec);
+    mepc_n        = mepc;
     mcause_intr_n = mcause[31];
     mcause_code_n = mcause[4:0];
-    mscratch_n = mscratch;
+    mscratch_n    = mscratch;
+    // Adicionei aqui
+    fflags_n      = fflags;
+    frm_n         = frm;
     
+    if(ISA_F) if(fflag_we_i) flags_n = fflags_i | fflags;
+
+
     if (csr_wen) begin
         case (csr_addr_i)
             CSR_MSTATUS: begin
@@ -140,6 +164,14 @@ always_comb begin
             CSR_MSCRATCH: begin
                 mscratch_n = csr_wdata_actual;
             end
+            //Adicionei aqui
+            CSR_FFLAGS: if(csr_we_int) fflags_n = (ISA_F) ? csr_wdata_actual[4:0]:'0;
+            CSR_FRM: if(csr_we_int) fflags_n = (ISA_F) ? csr_wdata_actual[2:0]:'0;
+            CSR_FCSR: begin
+                fflags_n = (ISA_F == 1) ? csr_wdata_actual[4:0] : '0;
+                frm_n    = (ISA_F == 1) ? csr_wdata_actual[6:4] : '0;
+            end
+
         endcase
     end
     
@@ -166,8 +198,12 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         // mcause[31] <= '0;
         mcause[4:0] <= '0;
         mscratch <= '0;
+        fflags <= '0;
+        frm <= '0;
     end
     else begin
+        fflags <= fflags_n;
+        frm <= frm_n;
         set_initial_mtvec <= '0;
         mstatus <= mstatus_n;
         mie  <= mie_n;
