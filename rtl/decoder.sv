@@ -30,6 +30,7 @@ module decoder import core_pkg::*; #(
     
     // CSR related signals
     output logic           csr_access_o,
+    output logic           csr_status_o, // Adicionado
     output csr_operation_t csr_op_o,
     
     // Indicate MRET
@@ -52,6 +53,8 @@ module decoder import core_pkg::*; #(
     output logic rs3_is_used_o,
     output logic [4:0] rs3_addr_F_o,
     output logic [4:0] is_store_o
+
+    //input logic fs_off_i;
 
     //output logic [31:0]  fpu_dst_fmt_o,   // fpu destination format
     //output logic [31:0]  fpu_src_fmt_o,   // fpu source format
@@ -124,6 +127,8 @@ always_comb begin
     fpu_op_mod = 1'b0;
 
     ///////F_Decode/////////begin////
+
+
     if (ISA_F ) begin
         rs1_isF_o = 1'b1;
         rd_isF_o = 1'b1;
@@ -888,6 +893,19 @@ always_comb begin
                     CSR_MCAUSE,
                     CSR_MSCRATCH: ;
                     
+                    // Floating point
+                    CSR_FFLAGS: 
+                        if(!ISA_F /*|| fs_off_i*/) illegal_instr_o = 1'b1;
+                    CSR_FRM,
+                        CSR_FCSR:
+                            if(!ISA_F /*|| fs_off_i*/) begin
+                                illegal_instr_o = 1'b1;
+                            end
+                            else begin
+                                if(csr_op_i != CSR_READ) csr_status_o = 1'b1;
+                            end
+                     
+
                     default: illegal_instr_o = 1'b1;
                 endcase
             end

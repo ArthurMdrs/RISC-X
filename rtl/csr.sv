@@ -32,6 +32,7 @@ module csr import core_pkg::*; #(
     input logic fflag_we_i,
     input logic fregs_we_i,
     output logic [2:0] frm_o,
+
 );
 
 logic [31:0] csr_wdata_actual;
@@ -75,10 +76,10 @@ logic [31:0] mscratch, mscratch_n;
 logic [31:0] mie, mie_n;
 
 // Adicionei aqui
+
 // FPU Registers
 logic [4:0] fflags, fflags_n;
 logic [2:0] frm, frm_n;
-logic fcsr_update; 
 
 // Define read operation
 always_comb begin
@@ -119,9 +120,12 @@ always_comb begin
     mcause_intr_n = mcause[31];
     mcause_code_n = mcause[4:0];
     mscratch_n    = mscratch;
+
     // Adicionei aqui
-    fflags_n      = fflags;
-    frm_n         = frm;
+    if(ISA_F) begin
+        fflags_n = fflags;
+        frm_n    = frm;
+    end
     
     if(ISA_F) if(fflag_we_i) flags_n = fflags_i | fflags;
 
@@ -164,12 +168,13 @@ always_comb begin
             CSR_MSCRATCH: begin
                 mscratch_n = csr_wdata_actual;
             end
+
             //Adicionei aqui
-            CSR_FFLAGS: if(csr_we_int) fflags_n = (ISA_F) ? csr_wdata_actual[4:0]:'0;
-            CSR_FRM: if(csr_we_int) fflags_n = (ISA_F) ? csr_wdata_actual[2:0]:'0;
+            CSR_FFLAGS: fflags_n = (ISA_F) ? csr_wdata_actual[4:0]:'0; 
+            CSR_FRM: fflags_n = (ISA_F) ? csr_wdata_actual[2:0]:'0;
             CSR_FCSR: begin
-                fflags_n = (ISA_F == 1) ? csr_wdata_actual[4:0] : '0;
-                frm_n    = (ISA_F == 1) ? csr_wdata_actual[6:4] : '0;
+                fflags_n = (ISA_F) ? csr_wdata_actual[4:0] : '0;
+                frm_n    = (ISA_F) ? csr_wdata_actual[6:4] : '0;
             end
 
         endcase
@@ -198,12 +203,14 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         // mcause[31] <= '0;
         mcause[4:0] <= '0;
         mscratch <= '0;
-        fflags <= '0;
-        frm <= '0;
+
+        // Adicionei aqui
+        if(ISA_F) begin
+            fflags <= '0;
+            frm <= '0;
+        end
     end
     else begin
-        fflags <= fflags_n;
-        frm <= frm_n;
         set_initial_mtvec <= '0;
         mstatus <= mstatus_n;
         mie  <= mie_n;
@@ -212,6 +219,12 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         // mcause[31] <= mcause_intr_n;
         mcause[4:0] <= mcause_code_n;
         mscratch <= mscratch_n;
+
+        // Adicionei aqui
+        if(ISA_F) begin
+            fflags <= fflags_n;
+            frm <= frm_n;
+        end
     end
 end
 
