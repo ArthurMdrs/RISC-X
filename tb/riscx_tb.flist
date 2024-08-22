@@ -1,0 +1,12 @@
+
++incdir+${RISCX_UVM_SRC}
+
+// OBI UVC
++incdir+${RISCX_UVM_SRC}/obi
+${RISCX_UVM_SRC}/obi/obi_pkg.sv
+${RISCX_UVM_SRC}/obi/obi_if.sv
+
+// Testbench files
++incdir+${RISCX_UVM_SRC}/riscx_env
+${TB_HOME}/rtl/stub.sv
+${TB_HOME}/tb_top.sv
