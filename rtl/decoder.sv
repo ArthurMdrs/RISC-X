@@ -47,13 +47,13 @@ module decoder import core_pkg::*; #(
     ////////FPU/////////////////
     output logic [2:0] roundmode_e,
     output logic fpu_op_mod,
-    output logic [3:0]fpu_op,
+    output logic [3:0] fpu_op,
     output logic rs1_isF_o,
     output logic rs2_isF_o,
     output logic rd_isF_o,
     output logic rs3_is_used_o,
-    output logic [4:0] rs3_addr_F_o,
-    output logic [4:0] is_store_o,
+    output logic [4:0] rs3_addr_F_o
+    // output logic [4:0] is_store_o
     //output logic is_immediate_F
 
     //input logic fs_off_i;
@@ -133,16 +133,6 @@ always_comb begin
     rs2_isF_o = 1'b0;
 
     ///////F_Decode/////////begin////
-<<<<<<< HEAD
-
-
-    if (ISA_F ) begin
-        rs1_isF_o = 1'b1;
-        rd_isF_o = 1'b1;
-        rs2_isF_o = 1'b1;
-        unique case (opcode)
-        OPCODE_F_R:begin
-=======
     
         
     unique case (opcode)
@@ -152,9 +142,8 @@ always_comb begin
             rs1_isF_o = 1'b1;
             rd_isF_o = 1'b1;
             rs2_isF_o = 1'b1;
->>>>>>> bcbfb44a18021d7e6b45f1e0f1433b5019d05050
             unique case (funct7)
-                7'b0000000: fpu_op = ADD;
+                7'b0000000: fpu_op = fpnew_pkg::operation_e'(ADD);
                 7'b0000100: begin
                     fpu_op = ADD;
                     fpu_op_mod = 1'b1;
