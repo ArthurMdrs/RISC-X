@@ -18,7 +18,7 @@ class obi_drv #(int XLEN=32, int ALEN=32) extends uvm_driver #(obi_tr#(.XLEN(XLE
 
     function void build_phase (uvm_phase phase);
         super.build_phase(phase);
-        if(obi_vif_config::get(this, "", "vif", vif))
+        if(uvm_config_db#(obi_vif)::get(this, "", "vif", vif))
             `uvm_info("OBI DRIVER", "Virtual interface was successfully set!", UVM_MEDIUM)
         else
             `uvm_error("OBI DRIVER", "No interface was set!")

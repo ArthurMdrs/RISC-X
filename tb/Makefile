@@ -43,6 +43,7 @@ FILE_LIST := riscx_tb.flist
 SIM_TOP := -top tb_top
 UVM_HOME := CDNS-1.2
 UVM_VERBOSITY := UVM_HIGH
+UVM_TEST := random_test
 PLUS_ARG := +progs_path=$(PROGS_PATH)
 ifneq ($(strip $(PROG)),)
 	PLUS_ARG += +prog=$(PROG)
@@ -50,8 +51,8 @@ endif
 ifeq ($(strip $(VERBOSE)), 1)
 	PLUS_ARG += +verbose=1
 endif
-XRUN_COMMON_FLAGS := -64bit -timescale 1ns/1ps -access +rwc -sv \
-					 -uvm -uvmhome $(UVM_HOME) +UVM_NO_RELNOTES +UVM_VERBOSITY=$(UVM_VERBOSITY)
+XRUN_COMMON_FLAGS := -64bit -timescale 1ns/1ps -access +rwc -sv -uvm \
+					 -uvmhome $(UVM_HOME) +UVM_NO_RELNOTES +UVM_VERBOSITY=$(UVM_VERBOSITY) +UVM_TESTNAME=$(UVM_TEST) 
 XRUN_COMP_FLAGS := $(XRUN_COMMON_FLAGS) \
 				   -elaborate -l $(DV_OUT_DIR)/compile.log -xmlibdirpath $(DV_OUT_DIR)
 XRUN_SIM_FLAGS := $(XRUN_COMMON_FLAGS) \

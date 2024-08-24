@@ -1,7 +1,7 @@
 class riscx_base_vseq extends uvm_sequence;
 
-    obi_cfg   cfg;
-    obi_cntxt cntxt;
+    // obi_cfg   cfg;
+    // obi_cntxt cntxt;
 
     `uvm_object_utils(riscx_base_vseq)
     `uvm_declare_p_sequencer(riscx_vseqr)
@@ -10,10 +10,10 @@ class riscx_base_vseq extends uvm_sequence;
         super.new(name);
     endfunction: new
 
-    task pre_start();
-        cfg   = p_sequencer.cfg;
-        cntxt = p_sequencer.cntxt;
-    endtask: pre_start
+    // task pre_start();
+    //     cfg   = p_sequencer.cfg;
+    //     cntxt = p_sequencer.cntxt;
+    // endtask: pre_start
 
     task pre_body();
         uvm_phase phase = get_starting_phase();
@@ -41,6 +41,8 @@ class riscx_random_vseq extends riscx_base_vseq;
         super.new(name);
     endfunction: new
     
+    // If a sequence is called via a `uvm_do variant, then it is defined as a 
+    // subsequence and it's pre/post_body() methods are not executed
     virtual task body();
         `uvm_do_on(obi_seq1, p_sequencer.instr_obi_seqr);
     endtask: body

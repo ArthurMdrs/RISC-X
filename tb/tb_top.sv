@@ -47,7 +47,7 @@ module tb_top;
         // rserver = uvm_report_server::get_server();
 
         // Virtual interfaces send to VIPs - begin
-            obi_vif_config::set(null, "uvm_test_top", "vif", if_obi);
+            uvm_config_db#(virtual interface obi_if)::set(null, "uvm_test_top", "vif", if_obi);
         // Virtual interfaces send to VIPs - end
 
         run_test("random_test");

@@ -18,7 +18,7 @@ class base_test extends uvm_test;
     function void build_phase (uvm_phase phase);
         super.build_phase(phase);
         
-        if(obi_vif_config::get(this, "", "vif", instr_obi_vif))
+        if(uvm_config_db#(obi_vif)::get(this, "", "vif", instr_obi_vif))
             `uvm_info("BASE TEST", "Virtual interface for Instr OBI was successfully set!", UVM_MEDIUM)
         else
             `uvm_error("BASE TEST", "No interface for Instr OBI was set!")
@@ -64,8 +64,31 @@ class random_test extends base_test;
         
         super.build_phase(phase);
 
-        // Random sequences config - begin
+        // Sequences config - begin
         uvm_config_wrapper::set(this, "riscx_env_inst.instr_obi_agent.sequencer.run_phase", "default_sequence", obi_random_seq::get_type());
+        // Sequences config - end
+        
+    endfunction: build_phase
+
+endclass: random_test
+
+//==============================================================//
+
+class vseqr_test extends base_test;
+
+    `uvm_component_utils(vseqr_test)
+
+    function new(string name, uvm_component parent);
+        super.new(name, parent);
+    endfunction: new
+
+    function void build_phase(uvm_phase phase);
+        set_type_override_by_type (obi_tr#(.XLEN(XLEN),.ALEN(ALEN))::get_type(), obi_no_wait_tr::get_type());
+        
+        super.build_phase(phase);
+
+        // Random sequences config - begin
+        uvm_config_wrapper::set(this, "riscx_env_inst.vsequencer.run_phase", "default_sequence", riscx_random_vseq::get_type());
         // Random sequences config - end
         
     endfunction: build_phase
@@ -83,6 +106,7 @@ class random_test extends base_test;
     //     instr_obi_cntxt.mem.print_mem();
     // endtask: run_phase
 
-endclass: random_test
+endclass: vseqr_test
 
 //==============================================================//
+

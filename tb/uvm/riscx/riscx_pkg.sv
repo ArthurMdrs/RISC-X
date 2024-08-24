@@ -5,9 +5,8 @@ package riscx_pkg;
     
     import obi_pkg::*;
 
-    typedef uvm_config_db#(virtual interface obi_if) obi_vif_config;
-    typedef virtual interface obi_if obi_vif;
-
+    `include "riscx_vseqr.sv"
+    `include "riscx_vseq_lib.sv"
     `include "riscx_env.sv"
     
     `include "tests.sv"

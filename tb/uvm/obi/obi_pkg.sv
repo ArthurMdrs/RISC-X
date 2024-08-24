@@ -7,7 +7,6 @@ package obi_pkg;
     
     import obi_tdefs_pkg::*;
 
-    typedef uvm_config_db#(virtual interface obi_if) obi_vif_config;
     typedef virtual interface obi_if obi_vif;
 
     `include "obi_cntxt.sv"
