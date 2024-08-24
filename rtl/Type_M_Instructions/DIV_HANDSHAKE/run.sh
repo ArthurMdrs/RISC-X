@@ -1,1 +1,1 @@
-xrun testbench.sv -gui -access +rw -input waves.tcl 
+xrun div_test.sv -gui  -access +rw -input waves.tcl 

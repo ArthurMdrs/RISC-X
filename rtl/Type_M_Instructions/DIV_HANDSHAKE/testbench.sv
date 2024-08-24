@@ -6,34 +6,39 @@ module testbench();
        logic [31:0] num1		;
        logic [31:0] num2		;
        logic [31:0] out1		;
-			 logic [31:0] nclocks	;
-			 logic nreset					;
-       logic clock					;
+       logic [31:0] nclocks		;
+       logic nreset			;
+       logic clock			;
        logic in_valid_i			;
        logic in_ready_i			;
-	     logic out_valid_o		;
+       logic out_valid_o		;
        logic out_ready_o		; 
-			 logic done						;
+       logic done						;
 				 
-	div divisor(
-				.in_valid_i	  (	in_valid_i	),
-				.in_ready_i  	(	in_ready_i	),
+      
+       
+       div divisor(
+				.clock		(	clock		),
+				.nreset		(	nreset		),
+				.a		(	num1		),
+				.b		( 	num2		),
+				.c		( 	out1		),
+				.nclocks	(	nclocks		),
+				.in_valid_i	(	in_valid_i	),
+				.out_ready_i	(	out_ready_i	),
+				.in_ready_o	(	in_ready_o	),
 				.out_valid_o	(	out_valid_o	),
-				.out_ready_o	(	out_ready_o	),
-				.clock				(	clock		),
-				.nreset				(	nreset	),
-				.a						(	num1		),
-				.b						( 	num2	),
-				.c						( 	out1	),
-				.done					(		done	),
-				.nclocks			(	nclocks	)
+				.done		( 	done		)
 	);
+
+
+
 	parameter [31:0] N_testes = 1000;
 	logic [31:0] mem [N_testes-1:0];
 	logic [$clog2(N_testes)+1:0] next_test; 		
 	logic [31:0] counter_done,pass;
        initial begin  	
-									clock 	<= 0	;
+			clock 	<= 0	;
        		        nreset 	<= 0	;
 		      #2			nreset 	<= 1	;
 		      
@@ -73,11 +78,11 @@ module testbench();
        always_comb case(state)
 				 0:begin
 						next  = 1;
-						valid = 0;
+						in_valid_i = 0;
 					end
 				1:begin
-					valid = 1;
-					next = ready;
+					in_valid_i = 1;
+					next = out_ready_o;
 					end
        endcase
   endmodule 
