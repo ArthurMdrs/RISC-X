@@ -9,7 +9,7 @@ class obi_mon #(int XLEN=32, int ALEN=32) extends uvm_monitor;
     `uvm_component_utils_end
 
     obi_vif vif;
-    obi_tr tr;
+    // obi_tr tr;
     int num_tr_col;
 
     uvm_analysis_port #(obi_tr) item_collected_port;
@@ -37,36 +37,111 @@ class obi_mon #(int XLEN=32, int ALEN=32) extends uvm_monitor;
         end     
     endfunction: build_phase
 
+    // virtual task run_phase (uvm_phase phase);
+    //     super.run_phase(phase);
+    //     @(negedge vif.rst_n);
+    //     @(posedge vif.rst_n);
+
+    //     `uvm_info("OBI MONITOR", "Reset dropped", UVM_MEDIUM)
+
+    //     forever begin
+    //         tr = obi_tr#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("tr", this);
+
+    //         // concurrent blocks for transaction collection and transaction recording
+    //         fork
+    //             // collect transaction
+    //             begin
+    //                 // collect transaction from interface
+    //                 vif.collect_tr(tr);
+    //             end
+
+    //             // Start transaction recording at start of transaction (vif.monstart triggered from interface.collect_tr())
+    //             begin
+    //                 @(posedge vif.monstart) void'(begin_tr(tr, "OBI_MONITOR_Tr"));
+    //             end
+    //         join
+
+    //         end_tr(tr);
+    //         `uvm_info("OBI MONITOR", $sformatf("Transaction Collected:\n%s", tr.convert2string()), UVM_LOW)
+    //         item_collected_port.write(tr);
+    //         num_tr_col++;
+    //     end
+    // endtask : run_phase
+
     virtual task run_phase (uvm_phase phase);
         super.run_phase(phase);
-        @(negedge vif.rst_n);
-        @(posedge vif.rst_n);
-
-        `uvm_info("OBI MONITOR", "Reset dropped", UVM_MEDIUM)
-
-        forever begin
-            tr = obi_tr#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("tr", this);
-
-            // concurrent blocks for transaction collection and transaction recording
-            fork
-                // collect transaction
-                begin
-                    // collect transaction from interface
-                    vif.collect_tr(tr);
+        
+        fork
+            observe_reset();
+            
+            begin : addr_ch
+                forever begin
+                    case (cntxt.rst_state)
+                        // OBI_RST_STATE_PRE_RESET : addr_ch_pre_reset ();
+                        // OBI_RST_STATE_IN_RESET  : addr_ch_in_reset  ();
+                        OBI_RST_STATE_PRE_RESET : @(posedge vif.clk);
+                        OBI_RST_STATE_IN_RESET  : @(posedge vif.clk);
+                        OBI_RST_STATE_POST_RESET: addr_ch_post_reset_mon();
+                    endcase
                 end
-
-                // Start transaction recording at start of transaction (vif.monstart triggered from interface.collect_tr())
-                begin
-                    @(posedge vif.monstart) void'(begin_tr(tr, "OBI_MONITOR_Tr"));
+            end : addr_ch
+            
+            begin : resp_ch
+                forever begin
+                    case (cntxt.rst_state)
+                        OBI_RST_STATE_PRE_RESET : @(posedge vif.clk);
+                        OBI_RST_STATE_IN_RESET  : @(posedge vif.clk);
+                        OBI_RST_STATE_POST_RESET: resp_ch_post_reset_mon();
+                    endcase
                 end
-            join
-
-            end_tr(tr);
-            `uvm_info("OBI MONITOR", $sformatf("Transaction Collected:\n%s", tr.convert2string()), UVM_LOW)
-            item_collected_port.write(tr);
-            num_tr_col++;
-        end
+            end : resp_ch
+        join // Is there a reason to make this join_none?
     endtask : run_phase
+
+    task observe_reset();
+        forever begin
+            wait (vif.rst_n === 0);
+            cntxt.rst_state = OBI_RST_STATE_IN_RESET;
+            `uvm_info("OBI MONITOR", $sformatf("Currently in reset state."), UVM_NONE)
+            wait (vif.rst_n === 1);
+            cntxt.rst_state = OBI_RST_STATE_POST_RESET;
+            `uvm_info("OBI MONITOR", $sformatf("Currently in post reset state."), UVM_NONE)
+        end
+    endtask : observe_reset
+
+    task addr_ch_post_reset_mon();
+        obi_tr tr;
+        // `uvm_info("OBI MONITOR", "We are in addr_ch_post_reset_mon", UVM_LOW)
+        tr = obi_tr#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("tr", this);
+        vif.addr_ch_collect_tr(tr);
+        // addr_ch_collect_tr(tr);
+        `uvm_info("OBI MONITOR", $sformatf("Transaction Collected in Address Channel:\n%s", tr.sprint()), UVM_MEDIUM)
+    endtask : addr_ch_post_reset_mon
+
+    task resp_ch_post_reset_mon();
+        obi_tr tr;
+        // `uvm_info("OBI MONITOR", "We are in resp_ch_post_reset_mon", UVM_LOW)
+        // tr = obi_tr#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("tr", this);
+        vif.resp_ch_collect_tr(tr);
+        `uvm_info("OBI MONITOR", $sformatf("Transaction Collected in Response Channel:\n%s", tr.sprint()), UVM_MEDIUM)
+    endtask : resp_ch_post_reset_mon
+
+    // task addr_ch_collect_tr(output obi_tr tr);
+    //     tr = obi_tr#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("tr", this);
+        
+    //     while (!(vif.req && vif.gnt)) begin
+    //         @(posedge vif.clk);
+    //     end
+        
+    //     tr.addr = vif.addr;
+    //     tr.we = vif.we;
+    //     tr.be = vif.be;
+    //     tr.wdata = vif.wdata;
+    // endtask : addr_ch_collect_tr
+
+    // task observe_reset();
+        
+    // endtask : observe_reset
 
     function void start_of_simulation_phase (uvm_phase phase);
         super.start_of_simulation_phase(phase);

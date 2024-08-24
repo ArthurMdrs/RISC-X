@@ -13,6 +13,7 @@ class obi_agent #(int XLEN=32, int ALEN=32) extends uvm_agent;
         `uvm_field_enum(obi_cov_enable_enum, cov_control, UVM_ALL_ON)
     `uvm_component_utils_end
 
+    obi_vif     vif;
     obi_mon     monitor;
     obi_drv     driver;
     obi_seqr    sequencer;
@@ -28,14 +29,24 @@ class obi_agent #(int XLEN=32, int ALEN=32) extends uvm_agent;
     function void build_phase (uvm_phase phase);
         super.build_phase(phase);
         
+        if(uvm_config_db#(obi_vif)::get(this, "", "vif", vif))
+            `uvm_info("OBI AGENT", "Virtual interface was successfully set!", UVM_MEDIUM)
+        else
+            `uvm_error("OBI AGENT", "No interface was set!")
+        
+        uvm_config_db#(obi_vif)::set(this, "*", "vif", vif);
+        
         void'(uvm_config_db#(obi_cfg)::get(this, "", "cfg", cfg));
         if (cfg == null) begin
-            `uvm_error("OBI SEQUENCER", "Config handle is null.")
+            `uvm_error("OBI AGENT", "Config handle is null.")
         end      
         void'(uvm_config_db#(obi_cntxt)::get(this, "", "cntxt", cntxt));
         if (cntxt == null) begin
-            `uvm_fatal("OBI SEQUENCER", "Context handle is null.")
+            `uvm_fatal("OBI AGENT", "Context handle is null.")
         end
+        
+        uvm_config_db#(obi_cfg  )::set(this, "*", "cfg"  , cfg  );
+        uvm_config_db#(obi_cntxt)::set(this, "*", "cntxt", cntxt);
 
         monitor       = obi_mon#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("monitor", this);
         if (is_active == UVM_ACTIVE) begin

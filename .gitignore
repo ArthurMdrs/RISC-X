@@ -12,6 +12,7 @@ restore.tcl
 restore.tcl.svcf
 *.svwf
 *.vcd
+*.dump
 
 *.o
 *.bin

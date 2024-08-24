@@ -3,11 +3,7 @@ module tb_top;
     import uvm_pkg::*;
     `include "uvm_macros.svh"
 
-    // VIP imports - begin
-        import obi_pkg::*;
-    // VIP imports - end
-    
-    `include "tests.sv"
+    import riscx_pkg::*;
 
     bit clk, rst_n;
     bit run_clock;
@@ -15,6 +11,7 @@ module tb_top;
     // Interfaces instances - begin
         obi_if if_obi(.clk(clk), .rst_n(rst_n));
     // Interfaces instances - end
+    assign if_obi.rready = 1'b1;
 
     stub dut(
         .clk(clk),
@@ -50,7 +47,7 @@ module tb_top;
         // rserver = uvm_report_server::get_server();
 
         // Virtual interfaces send to VIPs - begin
-            obi_vif_config::set(null, "uvm_test_top.agent_obi.*", "vif", if_obi);
+            obi_vif_config::set(null, "uvm_test_top", "vif", if_obi);
         // Virtual interfaces send to VIPs - end
 
         run_test("random_test");

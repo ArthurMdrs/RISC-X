@@ -1,4 +1,4 @@
-class obi_drv #(int XLEN=32, int ALEN=32) extends uvm_driver #(obi_tr);
+class obi_drv #(int XLEN=32, int ALEN=32) extends uvm_driver #(obi_tr#(.XLEN(XLEN),.ALEN(ALEN)));
 
     obi_cfg   cfg;
     obi_cntxt cntxt;
@@ -33,13 +33,67 @@ class obi_drv #(int XLEN=32, int ALEN=32) extends uvm_driver #(obi_tr);
         end      
     endfunction: build_phase
 
+    // virtual task run_phase (uvm_phase phase);
+    //     super.run_phase(phase);
+    //     fork
+    //         get_and_drive();
+    //         reset_signals();
+    //     join
+    // endtask: run_phase
+
     virtual task run_phase (uvm_phase phase);
         super.run_phase(phase);
-        fork
-            get_and_drive();
-            reset_signals();
-        join
+        
+        forever begin
+            bit tr_started = 0;
+            if (cntxt.rst_state == OBI_RST_STATE_POST_RESET) begin
+                seq_item_port.get_next_item(req);
+                `uvm_info("OBI DRIVER", $sformatf("Sending transaction:\n%s", req.sprint()), UVM_HIGH)
+                tr_started = 1;
+                void'(begin_tr(req, "OBI_DRIVER_Tr"));
+            end
+        
+            fork
+                begin : addr_ch
+                    case (cntxt.rst_state)
+                        OBI_RST_STATE_PRE_RESET : @(posedge vif.clk);
+                        OBI_RST_STATE_IN_RESET  : @(posedge vif.clk);
+                        OBI_RST_STATE_POST_RESET: addr_ch_post_reset_drv(req);
+                    endcase
+                end : addr_ch
+                
+                begin : resp_ch
+                    case (cntxt.rst_state)
+                        OBI_RST_STATE_PRE_RESET : @(posedge vif.clk);
+                        OBI_RST_STATE_IN_RESET  : @(posedge vif.clk);
+                        OBI_RST_STATE_POST_RESET: resp_ch_post_reset_drv(req);
+                    endcase
+                end : resp_ch
+            join // Is there a reason to make this join_none?
+            
+            if (tr_started) begin
+                seq_item_port.item_done();
+                end_tr(req); 
+            end
+        end
     endtask: run_phase
+
+    task addr_ch_post_reset_drv(obi_tr tr);
+        // int wait_gnt_cycles;
+        // wait_gnt_cycles = tr.wait_gnt_cycles;
+        // vif.gnt = 1'b0;
+        // // repeat (tr.wait_gnt_cycles) begin
+        // //     @(posedge vif.clk);
+        // // end
+        // while(!)
+        // vif.gnt = 1'b1;
+        // @(posedge vif.clk);
+        vif.addr_ch_drive_tr(tr);
+    endtask : addr_ch_post_reset_drv
+
+    task resp_ch_post_reset_drv(obi_tr tr);
+        vif.resp_ch_drive_tr(tr);
+    endtask : resp_ch_post_reset_drv
 
     task get_and_drive();
         @(negedge vif.rst_n);
@@ -72,12 +126,12 @@ class obi_drv #(int XLEN=32, int ALEN=32) extends uvm_driver #(obi_tr);
         end
     endtask : get_and_drive
 
-    task reset_signals();
-        forever begin
-            vif.obi_reset();
-            `uvm_info("OBI DRIVER", "Reset done", UVM_NONE)
-        end
-    endtask : reset_signals
+    // task reset_signals();
+    //     forever begin
+    //         vif.obi_reset();
+    //         `uvm_info("OBI DRIVER", "Reset done", UVM_NONE)
+    //     end
+    // endtask : reset_signals
 
     function void start_of_simulation_phase (uvm_phase phase);
         super.start_of_simulation_phase(phase);

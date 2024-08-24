@@ -41,7 +41,8 @@ INPUT := -input restore.tcl
 FILES := -f file_list.f
 FILE_LIST := riscx_tb.flist
 SIM_TOP := -top tb_top
-UVM_VERBOSITY := UVM_LOW
+UVM_HOME := CDNS-1.2
+UVM_VERBOSITY := UVM_HIGH
 PLUS_ARG := +progs_path=$(PROGS_PATH)
 ifneq ($(strip $(PROG)),)
 	PLUS_ARG += +prog=$(PROG)
@@ -72,3 +73,25 @@ run: sim
 
 sim:
 	xrun $(XRUN_SIM_FLAGS) -f $(FILE_LIST)
+
+gui:
+	xrun $(XRUN_SIM_FLAGS) -f $(FILE_LIST) -gui -input restore.tcl
+
+
+##########################################################################################################################
+
+
+clean-sim:
+	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log *.diag trace* \
+		*.vcd *.dump $(DV_OUT_DIR)/*_sim/ $(DV_OUT_DIR)/*.log
+
+clean-asm:
+	rm -rf $(DV_OUT_DIR)/asm_test/
+
+clean-cov:
+	rm -rf imc.* cov_work/ mdv.log $(DV_COV_DIR) $(COV_REPORT_DIR)
+
+clean-generator:
+	rm -rf $(DV_OUT_DIR)
+
+clean: clean-sim clean-asm clean-cov clean-generator

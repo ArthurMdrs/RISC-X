@@ -1,4 +1,4 @@
-package obi_typedefs_pkg;
+package obi_tdefs_pkg;
     
     typedef enum bit {
         COV_ENABLE , 
@@ -11,4 +11,4 @@ package obi_typedefs_pkg;
         OBI_RST_STATE_POST_RESET
     } obi_reset_state_enum;
 
-endpackage: obi_typedefs_pkg
+endpackage: obi_tdefs_pkg

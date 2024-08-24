@@ -106,7 +106,7 @@ module stub (input clk, input rst_n,
     always @(posedge clk) begin
         if (state == WAIT_RVALID && rvalid_i) begin
             $display("***************************");
-            $display("[DUT INFO]");
+            $display("[DUT INFO %t]", $time);
             $display("addr_o = 0x%h", addr_o);
             $display("we_o = %b", we_o);
             $display("be_o = 0x%h", be_o);

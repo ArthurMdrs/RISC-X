@@ -1,5 +1,3 @@
-`include "obi_typedefs_pkg.sv"
-
 package obi_pkg;
 
     import uvm_pkg::*;
@@ -7,7 +5,7 @@ package obi_pkg;
 
     `include "riscx_mem_model.sv"
     
-    import obi_typedefs_pkg::*;
+    import obi_tdefs_pkg::*;
 
     typedef uvm_config_db#(virtual interface obi_if) obi_vif_config;
     typedef virtual interface obi_if obi_vif;
