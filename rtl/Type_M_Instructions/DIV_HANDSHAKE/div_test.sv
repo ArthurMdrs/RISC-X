@@ -1,16 +1,16 @@
 `include "./div.sv"
 module tb();
-		parameter [31:0] numero_de_testes = 2;
-		logic 			clock		;
-		logic 			nreset		;
-		logic 			in_valid_i	;
-		logic 			in_ready_o	;
-		logic   [31:0]	a			;
-		logic 	[31:0]	b			;
-		logic 	[31:0]	c			;
-		logic 			out_valid_o	;
-		logic			out_ready_i	;
-		logic 	[31:0]	nclocks		;
+		parameter [31:0] numero_de_testes = 20;
+		logic 					clock		;
+		logic 					nreset		;
+		logic 					in_valid_i	;
+		logic 					in_ready_o	;
+		logic   signed   [31:0] a    		;
+		logic 	signed	[31:0]  b			;
+		logic 	signed	[31:0]  c			;
+		logic 					out_valid_o	;
+		logic					out_ready_i	;
+		logic 	[31:0]			nclocks		;
 		div divisor(
 		
 				.clock		(	clock		),	
@@ -45,7 +45,7 @@ module tb();
 				counter1 	<= 		0	;
 				counter2 	<= 		0	;
 				temp  		<= $urandom_range(10,1);
-				a 			<=		100	;
+				a 			<=		-100	;
 				b 			<=		5	;
 
 			end
@@ -60,6 +60,7 @@ module tb();
 						counter1 	<= 	0					;
 						counter2 	<= counter2 + 1			;
 						temp  		<= $urandom_range(10,1)	;
+						$display("%d %d %d\n",a,b,c);
 					end
 				end
 				else
