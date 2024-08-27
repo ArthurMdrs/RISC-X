@@ -56,8 +56,8 @@ module decoder  #(
     output logic rs2_isF_o,
     output logic rd_isF_o,
     output logic rs3_is_used_o,
-    output logic [4:0] rs3_addr_F_o,
-    output logic [4:0] is_store_o
+    output logic [4:0] rs3_addr_F_o
+    //output logic [4:0] is_store_o
     //output logic is_immediate_F
 
     //input logic fs_off_i;
@@ -129,7 +129,7 @@ always_comb begin
 
     //F
     rs3_addr_F_o = instr_i[31:27];
-    roundmode_e = instr_i [14:12];
+    roundmode_e  = instr_i [14:12];
     fpu_op_mod = 1'b0;
     //is_immediate_F = 1'b0;
     rs1_isF_o = 1'b0;
@@ -146,22 +146,28 @@ always_comb begin
         unique case(opcode)
             OPCODE_F_R:begin
                 unique case (funct7)
+                    // FP - ADD 
                     7'b0000000: fpu_op = ADD;
 
+                    // FP - SUB
                     7'b0000100: begin
                         fpu_op = ADD;
                         fpu_op_mod = 1'b1;
                     end
 
+                    // FP - MULT
                     7'b0001000: fpu_op = MUL;
 
+                    // FP - DIV
                     7'b0001100: fpu_op = DIV;
 
+                    // FP - SQRT
                     7'b0101100: begin
                         fpu_op = SQRT;
                         if (instr_i[24:20] != 5'b00000) illegal_instr_o = 1'b1;
                     end
 
+                    // FP - SIGN INJECTION
                     7'b0010000: begin
                         unique case (funct3)
                             3'b000:begin
@@ -182,6 +188,7 @@ always_comb begin
                         endcase
                     end
 
+                    // MAX-MIN
                     7'b0010100: begin
                         fpu_op = MINMAX;
                         unique case (funct3)
@@ -191,6 +198,7 @@ always_comb begin
                         endcase
                     end
 
+                    // FP TO INT
                     7'b1100000: begin
                         fpu_op = F2I;
                         unique case (instr_i[24:20])
@@ -200,6 +208,7 @@ always_comb begin
                         endcase
                     end
 
+                    // INT TO FP
                     7'b1101000: begin
                         fpu_op = I2F;
                         unique case (instr_i[24:20])
@@ -209,6 +218,7 @@ always_comb begin
                         endcase
                     end
 
+                    // CMP
                     7'b1010000: begin
                         fpu_op = CMP;
                         unique case (funct3)
@@ -219,6 +229,7 @@ always_comb begin
                         endcase
                     end
 
+                    // Move and Class
                     7'b1110000: begin
                         unique case (funct3)
                             3'b000:begin
@@ -238,6 +249,7 @@ always_comb begin
                         endcase
                     end
 
+                    // GPR to FPR Move
                     7'b1111000:begin
                         fpu_op = SGNJ;
                         fpu_op_mod = 1'b0;
