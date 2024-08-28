@@ -17,74 +17,69 @@
 //     - nas linhas [47] e [87 : 108] temos lógica ainda indefinida
 // quero ainda discutir a linha [124]
 
-module OBI_controler #(
+module OBI_controler_if #(
     parameter WIDTH = 32
 ) (
 
-    input clk,                  // CLOCK DO CORE
-    input rst_n,                // RESET NA BORDA NEGATIVA
+    
+    input logic                 clk,
+    input logic                 rst_n,
 
-    // PINOS DO CORE
-    input addr_c_i,             // ENDEREÇO
-    input we_c_i,               // ESCREVE OU LÊ?
-    input wdata_c_i,            // DADO QUE VAI SER ESCRTIO
-    input mem_data_type_i,      // TIPO DE DADO
-    input req_c_i               // REQUISIÇÃO DE NOVA OPERAÇÃO
+    // Transaction request interface
+    input   logic               core_valid_i,
+    output  logic               core_ready_o,
+    input  logic [WIDTH-1:0]    core_addr_i,
+    input  logic                core_we_i,
+    //input  data_type_t          mem_data_type_i, --> core_be
+    input logic [WIDTH-1:0]     core_wdata_i,
 
-    // PINOS DA MEMORIA
-    input gnt_m_i,              // ESTÁ PRONTA PARA UM OPERAÇÃO
-    input rvalid_m_i,           // O DADO REQUISITADO ESTÁ PRONTO
-    input rdata_m_i,            // DADO QUE FOI LIDO
+    // Transaction response interface
+    output logic                resp_valid_o,  // Note: Consumer is assumed to be 'ready' whenever resp_valid_o = 1
+    output logic [WIDTH-1:0]    resp_rdata_o,
+    output logic                resp_err_o,
 
-    // PINOS DE CONTROLE DO OBI - DESTINADOS A MEMÓRIA
-    output req_m_o,             // INDICA QUE TEM UMA OPERAÇÃO A SER FEITA
-    output addr_m_o,            // ENDEREÇO VÁLIDO PARA A OPERAÇÃO
-    output we_m_o,              // INDICA SE A OPERAÇÃO É DE ESCRITA OU LEITURA
-    output be_m_o,              // INDICA QUAIS BYTES SERÃO LIDOS
-    output wdata_m_o,           // DADO QUE VAI SER ENVIADO A MEMÓRIA
-
-    // PINOS SOB CONTROLE DO OBI - DESTINADOS AO CORE
-    output rdata_c_o,           // DADO PRONTO PARA SER ACESSADO
-    output rvalid_c_o           // OPERAÇÃO DE LEITURA/ESCRITA CONCLUÍDA
+    // OBI interface
+    output logic                obi_req_o,
+    input  logic                obi_gnt_i,
+    output logic [WIDTH-1:0]    obi_addr_o,
+    output logic                obi_we_o,
+    output logic [ 3:0]         obi_be_o,
+    output logic [WIDTH-1:0]    obi_wdata_o,
+    //output logic [ 5:0]         obi_atop_o,
+    input  logic [WIDTH-1:0]    obi_rdata_i,
+    input  logic                obi_rvalid_i
+    //input  logic                obi_err_i
 
 );
 
-    OBI_state_t state, next_state;     
+    OBI_state_t                 state, next_state;     
 
-    logic [31:0]        addr_nxt, wdata_nxt;
-    immediate_source_t  mem_data_type_nxt;
-    logic               we_nxt;
 
+    // Transaction response interface
+    output logic                resp_valid_o,  // Note: Consumer is assumed to be 'ready' whenever resp_valid_o = 1
+    output logic [WIDTH-1:0]    resp_rdata_o,
+    output logic                resp_err_o,
     always_ff(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
-            addr_nxt            = 0;
-            we_nxt              = 0;
-            mem_data_type_nxt   = 0;
-            wdata_nxt           = 0;
+            obi_addr_o          = 32'b0;
+            obi_we_o            = 0;
+            obi_be_o            = 4'b0;
+            obi_wdata_o         = 32'b0;
             state               = IDLE;
         end
         else begin
             case (state)
                 IDLE: begin
-                    if (req_c_i) begin       // se não tiver nenhuma operação na fila e o core solicitar uma,
-                                                        // ele salva os dados e vai para o próximo passo
-                        addr_nxt            = addr_c_i;
-                        we_nxt              = we_c_i;
-                        wdata_nxt           = wdata_c_i;
-                        mem_data_type_nxt   = mem_data_type_i;
-
+                    if (core_valid_i) begin                          // se não tiver nenhuma operação na fila e o core solicitar uma,
                         state = next_state;    
                     end
                 end
                 REQUESTING: begin
-                    if (gnt_m_i && req_c_i)
+                    if (obi_gnt_i && obi_req_o)
                         state = next_state;
-                    
-                    if(~req_c_i)
-                        state = IDLE;
                 end
                 WAITING: begin
-                    if (rvalid)
+                    if (obi_rvalid_i)
                         state = next_state;
                 end
                 DUMPING: begin
@@ -97,60 +92,61 @@ module OBI_controler #(
     always_comb begin
         case(state)
             IDLE:       begin
-                next_state = REQUESTING;
-                req_m_o = 0;
-                //i_valid = 1;
-                rvalid_c_o = 0;
+                next_state      = REQUESTING;
+                obi_req_o       = 0;
+                obi_rvalid_i    = 0;
             end
-            REQUESTING: begin
-                next_state = WAITING;
-                req_m_o     = 1;
-                //i_valid = 0;
-                rvalid_c_o = 0;
 
+            REQUESTING: begin
                 // é necessário revisão/discussão a respeito do endereçamento da memória
-                case(mem_data_type_nxt)
-                    WORD:           be = 4'b1111;
+                /* ------- VAI PARA O CORE -------
+
+                unique case(mem_data_type_i)
+                    WORD:  obi_be_o = 4'b1111;
                     HALF_WORD: begin
-                        if (addr_nxt[4] == 1)
-                                    be = 4'b1100;
-                        else
-                                    be = 4'b0011;
-                    end
-                    BYTE: begin
-                        case (addr_nxt[4:3])
-                        2'd3:       be = 4'b1000;
-                        2'd2:       be = 4'b0100;
-                        2'd1:       be = 4'b0010;
-                        2'd0:       be = 4'b0001;
-                        default:    be = 0;
+                        unique case(core_addr_i[4:3])
+                            2'd3: obi_be_o = 4'b1000; // ESTÁ CERTO ISSO? DISCUTIR COM VH E COM PEDRO
+                            2'd2: obi_be_o = 4'b1100;
+                            2'd1: obi_be_o = 4'b0110;
+                            2'd0: obi_be_o = 4'b0011;
                         endcase
                     end
-                    default:        be = 0;
+                    BYTE: begin
+                        unique case (core_addr_i[4:3])
+                        2'd3:       obi_be_o = 4'b1000;
+                        2'd2:       obi_be_o = 4'b0100;
+                        2'd1:       obi_be_o = 4'b0010;
+                        2'd0:       obi_be_o = 4'b0001;
+                        default:    obi_be_o = 0;
+                        endcase
+                    end
+                    default:        obi_be_o = 0;
                 endcase
+                */
 
-                //addr  = {addr_nxt[31:5], 5'b0);  
-                addr    = addr_nxt;
-                we      = we_nxt;
-                wdata   = wdata_nxt;
+                next_state      = WAITING;
+                obi_req_o       = 1;
+                obi_rvalid_i    = 0;
+                obi_addr_o      = {core_addr_i[31:2],2'b0};
+                obi_we_o        = core_we_i;
+                obi_wdata_o     = core_wdata_i;
+               
             end
             WAITING:    begin
-                next_state = DUMPING;
-                req_m_o     = 0;
-                //i_valid = 0;
-                rvalid_c_o = 0;
+                next_state      = DUMPING;
+                obi_req_o       = 0;
+                obi_rvalid_i    = 0;
             end
             DUMPING:    begin
-                next_state = IDLE;
-                req_m_o     = 0;
-                //i_valid = 0;
-                rvalid_c_o = 1;
+                next_state      = IDLE;
+                obi_req_o       = 0;
+                obi_rvalid_i    = 1;
 
                 if (we_nxt) // podemos colocar ou não essa condição
-                    data_out = rdata;
+                    data_out    = rdata;
             end
             default: 
-                next_state = IDLE;
+                next_state      = IDLE;
         endcase
     end
 
