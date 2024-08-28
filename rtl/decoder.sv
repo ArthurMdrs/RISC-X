@@ -34,7 +34,6 @@ module decoder  #(
     // CSR related signals
     output logic           csr_access_o,
     output csr_operation_t csr_op_o,
-    input  csr_operation_t csr_op_i,
     
     // Indicate MRET
     output logic is_mret_o,
@@ -123,7 +122,8 @@ always_comb begin
 
     //F
     rs3_addr_F_o = instr_i[31:27];
-    roundmode_e  = instr_i [14:12];
+    roundmode_e  = instr_i[14:12];
+    fpu_op = fpnew_pkg::SGNJ;
     fpu_op_mod = 1'b0;
     //is_immediate_F = 1'b0;
     rs1_isF_o = 1'b0;
