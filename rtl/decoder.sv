@@ -1,7 +1,10 @@
-module decoder import core_pkg::*; #(
+import core_pkg::*;
+import fpnew_pkg::*;
+
+module decoder  #(
     parameter bit ISA_M = 0,
     parameter bit ISA_C = 0,
-    parameter bit ISA_F = 0
+    parameter bit ISA_F = 1
 ) (
     // ALU related signals
     output alu_operation_t    alu_operation_o,
@@ -31,6 +34,7 @@ module decoder import core_pkg::*; #(
     // CSR related signals
     output logic           csr_access_o,
     output csr_operation_t csr_op_o,
+    input  csr_operation_t csr_op_i,
     
     // Indicate MRET
     output logic is_mret_o,
@@ -119,8 +123,7 @@ always_comb begin
 
     //F
     rs3_addr_F_o = instr_i[31:27];
-    roundmode_e = instr_i[14:12];
-    fpu_op = fpnew_pkg::SGNJ;
+    roundmode_e  = instr_i [14:12];
     fpu_op_mod = 1'b0;
     //is_immediate_F = 1'b0;
     rs1_isF_o = 1'b0;

@@ -122,8 +122,9 @@ localparam logic [6:0] OPCODE_AUIPC  = 7'b001_0111; // 7'h17
 localparam logic [6:0] OPCODE_SYSTEM = 7'b111_0011; // 7'h73
 
 
-///////OpCodes FPU//////// begin
+///////FPU////////
 
+///OPCODES///
 localparam logic [6:0] OPCODE_F_R       = 7'b1010011; // 7'h53
 localparam logic [6:0] OPCODE_F_MADD    = 7'b1000011; // 7'h43
 localparam logic [6:0] OPCODE_F_MSUB    = 7'b1000111; // 7'h47
@@ -132,7 +133,16 @@ localparam logic [6:0] OPCODE_F_NMADD   = 7'b1001111; // 7'h4F
 localparam logic [6:0] OPCODE_F_FSW     = 7'b0100111; // 7'h27
 localparam logic [6:0] OPCODE_F_FLW     = 7'b0000111; // 7'h07
 
-//////end F///////////////
+///ROUND MODE///
+//localparam logic [2:0] RNE = 3'b000;
+//localparam logic [2:0] RTZ = 3'b001;
+//localparam logic [2:0] RDN = 3'b010;
+//localparam logic [2:0] RUP = 3'b011;
+//localparam logic [2:0] RMM = 3'b100;
+//localparam logic [2:0] ROD = 3'b101;
+//localparam logic [2:0] DYN = 3'b111;
+
+///////FPU////////
 
 
 // Type RVC opcode:
