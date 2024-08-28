@@ -35,7 +35,8 @@ class riscx_random_vseq extends riscx_base_vseq;
 
     `uvm_object_utils(riscx_random_vseq)
     
-    obi_random_seq obi_seq1;
+    obi_load_mem_seq obi_load_mem_seq_inst;
+    obi_random_seq   obi_random_seq_inst;
 
     function new(string name="riscx_random_vseq");
         super.new(name);
@@ -44,7 +45,8 @@ class riscx_random_vseq extends riscx_base_vseq;
     // If a sequence is called via a `uvm_do variant, then it is defined as a 
     // subsequence and it's pre/post_body() methods are not executed
     virtual task body();
-        `uvm_do_on(obi_seq1, p_sequencer.instr_obi_seqr);
+        `uvm_do_on(obi_load_mem_seq_inst, p_sequencer.instr_obi_seqr);
+        `uvm_do_on(obi_random_seq_inst  , p_sequencer.instr_obi_seqr);
     endtask: body
 
 endclass: riscx_random_vseq

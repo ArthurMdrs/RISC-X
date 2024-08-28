@@ -73,7 +73,7 @@ DEPS := $(RVVI_HOME)/rvviTrace.sv $(RVFI_HOME)/rvfi_macros.vh
 run: sim
 
 sim:
-	xrun $(XRUN_SIM_FLAGS) -f $(FILE_LIST)
+	xrun $(XRUN_SIM_FLAGS) -f $(FILE_LIST) $(XRUN_OPTS)
 
 gui:
 	xrun $(XRUN_SIM_FLAGS) -f $(FILE_LIST) -gui -input restore.tcl

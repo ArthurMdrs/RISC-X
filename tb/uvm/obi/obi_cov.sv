@@ -18,16 +18,12 @@ class obi_cov #(int XLEN=32, int ALEN=32) extends uvm_subscriber #(obi_tr#(.XLEN
         // option.at_least = 3;
         // option.auto_bin_max = 256;
         // option.cross_auto_bin_max = 256;
-        cp_wait_gnt_cycles: coverpoint cov_transaction.wait_gnt_cycles;
-        cp_wait_rvalid_cycles: coverpoint cov_transaction.wait_rvalid_cycles;
-        // cp_req: coverpoint cov_transaction.req;
-        // cp_gnt: coverpoint cov_transaction.gnt;
+        cp_gnt_latency: coverpoint cov_transaction.gnt_latency;
+        cp_rvalid_latency: coverpoint cov_transaction.rvalid_latency;
         cp_addr: coverpoint cov_transaction.addr;
         cp_we: coverpoint cov_transaction.we;
         cp_be: coverpoint cov_transaction.be;
         cp_wdata: coverpoint cov_transaction.wdata;
-        // cp_rvalid: coverpoint cov_transaction.rvalid;
-        // cp_rready: coverpoint cov_transaction.rready;
         cp_rdata: coverpoint cov_transaction.rdata;
     endgroup : obi_covergroup
 

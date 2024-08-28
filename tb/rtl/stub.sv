@@ -71,7 +71,8 @@ module stub (input clk, input rst_n,
     always_ff @(posedge clk or negedge rst_n) begin
         if(~rst_n) begin
             req_o <= '0;
-            addr_o <= '0;
+            // addr_o <= '0;
+            addr_o <= 32'h8000_0000;
             we_o <= '0;
             be_o <= '0;
             wdata_o <= '0;
@@ -80,10 +81,13 @@ module stub (input clk, input rst_n,
             case (state_n)
                 IDLE: begin
                     req_o <= 1;
-                    addr_o <= $urandom();
-                    we_o <= $urandom();
-                    be_o <= $urandom();
+                    // addr_o <= $urandom();
+                    // we_o <= $urandom();
+                    // be_o <= $urandom();
                     wdata_o <= $urandom();
+                    addr_o <= addr_o + 32'h2;
+                    we_o   <= 1'b0;
+                    be_o <= 4'b0011;
                 end
                 WAIT_GNT: begin
                     req_o <= 1;

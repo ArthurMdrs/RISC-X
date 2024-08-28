@@ -83,7 +83,7 @@ class vseqr_test extends base_test;
     endfunction: new
 
     function void build_phase(uvm_phase phase);
-        set_type_override_by_type (obi_tr#(.XLEN(XLEN),.ALEN(ALEN))::get_type(), obi_no_wait_tr::get_type());
+        // set_type_override_by_type (obi_tr#(.XLEN(XLEN),.ALEN(ALEN))::get_type(), obi_no_wait_tr::get_type());
         
         super.build_phase(phase);
 
@@ -101,9 +101,9 @@ class vseqr_test extends base_test;
     //     // instr_obi_cntxt.mem.write(32'h8000_0002, 8'h29);
     //     // instr_obi_cntxt.mem.write(32'h8000_0003, 8'h18);
     //     // instr_obi_cntxt.mem.write(32'h8000_0b9e, 8'hff);
-    //     // instr_obi_cntxt.mem.load_memory("/home/pedro.medeiros/Tools/RISC-X/tb/uvm/riscx_env/riscv_arithmetic_basic_test_0.bin");
-        
-    //     instr_obi_cntxt.mem.print_mem();
+    //     `uvm_info("BASE TEST", $sformatf("Loading memory.\nBin file: %s", riscx_env_inst.instr_obi_cfg.mem_bin_file), UVM_MEDIUM)
+    //     riscx_env_inst.instr_obi_cntxt.mem.load_memory(riscx_env_inst.instr_obi_cfg.mem_bin_file, riscx_env_inst.instr_obi_cfg.mem_start_addr);
+    //     riscx_env_inst.instr_obi_cntxt.mem.print_mem();
     // endtask: run_phase
 
 endclass: vseqr_test

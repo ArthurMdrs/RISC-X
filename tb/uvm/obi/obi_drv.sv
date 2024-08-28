@@ -33,105 +33,57 @@ class obi_drv #(int XLEN=32, int ALEN=32) extends uvm_driver #(obi_tr#(.XLEN(XLE
         end      
     endfunction: build_phase
 
-    // virtual task run_phase (uvm_phase phase);
-    //     super.run_phase(phase);
-    //     fork
-    //         get_and_drive();
-    //         reset_signals();
-    //     join
-    // endtask: run_phase
-
     virtual task run_phase (uvm_phase phase);
         super.run_phase(phase);
         
-        forever begin
-            bit tr_started = 0;
-            if (cntxt.rst_state == OBI_RST_STATE_POST_RESET) begin
-                seq_item_port.get_next_item(req);
-                `uvm_info("OBI DRIVER", $sformatf("Sending transaction:\n%s", req.sprint()), UVM_HIGH)
-                tr_started = 1;
-                void'(begin_tr(req, "OBI_DRIVER_Tr"));
-            end
-        
-            fork
-                begin : addr_ch
-                    case (cntxt.rst_state)
-                        OBI_RST_STATE_PRE_RESET : @(posedge vif.clk);
-                        OBI_RST_STATE_IN_RESET  : @(posedge vif.clk);
-                        OBI_RST_STATE_POST_RESET: addr_ch_post_reset_drv(req);
-                    endcase
-                end : addr_ch
-                
-                begin : resp_ch
-                    case (cntxt.rst_state)
-                        OBI_RST_STATE_PRE_RESET : @(posedge vif.clk);
-                        OBI_RST_STATE_IN_RESET  : @(posedge vif.clk);
-                        OBI_RST_STATE_POST_RESET: resp_ch_post_reset_drv(req);
-                    endcase
-                end : resp_ch
-            join // Is there a reason to make this join_none?
+        fork
+            forever begin : addr_ch
+                case (cntxt.rst_state)
+                    OBI_RST_STATE_PRE_RESET : vif.wait_clk();
+                    OBI_RST_STATE_IN_RESET  : addr_ch_reset_sigs();
+                    OBI_RST_STATE_POST_RESET: addr_ch_post_reset_drv();
+                endcase
+            end : addr_ch
             
-            if (tr_started) begin
-                seq_item_port.item_done();
-                end_tr(req); 
-            end
-        end
+            forever begin : resp_ch
+                case (cntxt.rst_state)
+                    OBI_RST_STATE_PRE_RESET : vif.wait_clk();
+                    OBI_RST_STATE_IN_RESET  : resp_ch_reset_sigs();
+                    OBI_RST_STATE_POST_RESET: resp_ch_post_reset_drv();
+                endcase
+            end : resp_ch
+        join // Is there a reason to make this join_none?
     endtask: run_phase
 
-    task addr_ch_post_reset_drv(obi_tr tr);
-        // int wait_gnt_cycles;
-        // wait_gnt_cycles = tr.wait_gnt_cycles;
-        // vif.gnt = 1'b0;
-        // // repeat (tr.wait_gnt_cycles) begin
-        // //     @(posedge vif.clk);
-        // // end
-        // while(!)
-        // vif.gnt = 1'b1;
-        // @(posedge vif.clk);
-        vif.addr_ch_drive_tr(tr);
+    task addr_ch_post_reset_drv();
+        string msg;
+        int unsigned gnt_latency;
+        // seq_item_port.get_next_item(req);
+        // msg = $sformatf("Driving address channel.\ngnt latency = %0d\nid = %0d", req.gnt_latency, req.id);
+        gnt_latency = cfg.get_rnd_gnt_latency();
+        msg = $sformatf("Driving address channel. gnt latency = %0d", gnt_latency);
+        `uvm_info("OBI DRIVER", msg, UVM_HIGH)
+        vif.addr_ch_drive_tr(gnt_latency);
     endtask : addr_ch_post_reset_drv
 
-    task resp_ch_post_reset_drv(obi_tr tr);
-        vif.resp_ch_drive_tr(tr);
+    task resp_ch_post_reset_drv();
+        seq_item_port.get_next_item(req);
+        void'(begin_tr(req, "OBI_DRIVER_TR"));
+        vif.resp_ch_drive_tr(req);
+        seq_item_port.item_done();
+        end_tr(req); 
+        num_sent++;
     endtask : resp_ch_post_reset_drv
 
-    task get_and_drive();
-        @(negedge vif.rst_n);
-        @(posedge vif.rst_n);
+    task addr_ch_reset_sigs();
+        vif.addr_ch_reset_sigs();
+        vif.wait_clk();
+    endtask : addr_ch_reset_sigs
 
-        `uvm_info("OBI DRIVER", "Reset dropped", UVM_MEDIUM)
-
-        forever begin
-            // Get new item from the sequencer
-            seq_item_port.get_next_item(req);
-            `uvm_info("OBI DRIVER", $sformatf("Sending transaction:%s", req.convert2string()), UVM_MEDIUM)
-
-            // concurrent blocks for transaction driving and transaction recording
-            fork
-                // send transaction
-                begin
-                    // send transaction via interface
-                    vif.send_to_dut(req);
-                end
-
-                // Start transaction recording at start of transaction (vif.drvstart triggered from interface.send_to_dut())
-                begin
-                    @(posedge vif.drvstart) void'(begin_tr(req, "OBI_DRIVER_Tr"));
-                end
-            join
-
-            end_tr(req);
-            num_sent++;
-            seq_item_port.item_done();
-        end
-    endtask : get_and_drive
-
-    // task reset_signals();
-    //     forever begin
-    //         vif.obi_reset();
-    //         `uvm_info("OBI DRIVER", "Reset done", UVM_NONE)
-    //     end
-    // endtask : reset_signals
+    task resp_ch_reset_sigs();
+        vif.resp_ch_reset_sigs();
+        vif.wait_clk();
+    endtask : resp_ch_reset_sigs
 
     function void start_of_simulation_phase (uvm_phase phase);
         super.start_of_simulation_phase(phase);

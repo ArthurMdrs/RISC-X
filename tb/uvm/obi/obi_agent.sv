@@ -51,7 +51,7 @@ class obi_agent #(int XLEN=32, int ALEN=32) extends uvm_agent;
         monitor       = obi_mon#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("monitor", this);
         if (is_active == UVM_ACTIVE) begin
             sequencer = obi_seqr#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("sequencer", this);
-            driver    = obi_drv#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("driver", this);
+            driver    = obi_drv #(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("driver", this);
         end
 
         if (cov_control == COV_ENABLE) begin
@@ -70,6 +70,8 @@ class obi_agent #(int XLEN=32, int ALEN=32) extends uvm_agent;
         
         if (is_active == UVM_ACTIVE) begin
             driver.seq_item_port.connect(sequencer.seq_item_export);
+            // `uvm_info("OBI AGENT", "Connecting fifo." , UVM_LOW)
+            monitor.to_seqr_port.connect(sequencer.mon_tr_fifo.analysis_export);
         end
 
         if (cov_control == COV_ENABLE) begin

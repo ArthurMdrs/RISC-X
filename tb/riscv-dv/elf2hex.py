@@ -4,7 +4,7 @@ import os
 import re
 # from pathlib import Path
     
-objdump_cmd = os.environ.get('RISCV_OBJDUMP')
+objdump_cmd = os.environ.get('RISCV_OBJDUMP', 'ERROR')
 
 def elf2hex(elf_file, out_file):
     print(f"Converting {elf_file} to {out_file}.")
@@ -93,6 +93,8 @@ def main():
             function_sel = int(argv[3])
         else:
             assert False, "Too many arguments!"
+    
+    assert objdump_cmd != "ERROR", "Environment variable RISCV_OBJDUMP is not defined!"
     
     if os.path.isfile(out_file):
         print("Output file already exists. Deleting...")

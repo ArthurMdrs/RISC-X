@@ -26,14 +26,17 @@ class riscx_env extends uvm_env;
         super.build_phase(phase);
         
         if(uvm_config_db#(obi_vif)::get(this, "", "instr_obi_vif", instr_obi_vif))
-            `uvm_info("ENV", "Virtual interface for Instr OBI was successfully set!", UVM_MEDIUM)
+            `uvm_info("RISC-X ENV", "Virtual interface for Instr OBI was successfully set!", UVM_MEDIUM)
         else
-            `uvm_error("ENV", "No interface for Instr OBI was set!")
+            `uvm_error("RISC-X ENV", "No interface for Instr OBI was set!")
         
         uvm_config_db#(obi_vif)::set(this, "instr_obi_agent", "vif", instr_obi_vif);
         
         instr_obi_cfg   = obi_cfg  #(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("instr_obi_cfg"  );
         instr_obi_cntxt = obi_cntxt#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("instr_obi_cntxt");
+        
+        instr_obi_cfg.gnt_latency_min = 0;
+        instr_obi_cfg.gnt_latency_max = 10;
         
         uvm_config_db#(obi_cfg  )::set(this, "instr_obi_agent", "cfg"  , instr_obi_cfg  );
         uvm_config_db#(obi_cntxt)::set(this, "instr_obi_agent", "cntxt", instr_obi_cntxt);
