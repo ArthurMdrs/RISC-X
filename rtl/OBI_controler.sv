@@ -26,12 +26,12 @@ module OBI_controler_if #(
     input logic                 rst_n,
 
     // Transaction request interface
-    input   logic               core_valid_i,
-    output  logic               core_ready_o,
+    input  logic                core_valid_i,
+    output logic                core_ready_o,
     input  logic [WIDTH-1:0]    core_addr_i,
     input  logic                core_we_i,
-    //input  data_type_t          mem_data_type_i, --> core_be
-    input logic [WIDTH-1:0]     core_wdata_i,
+    input  logic [3:0]          core_be_i,
+    input  logic [WIDTH-1:0]    core_wdata_i,
 
     // Transaction response interface
     output logic                resp_valid_o,  // Note: Consumer is assumed to be 'ready' whenever resp_valid_o = 1
@@ -45,20 +45,26 @@ module OBI_controler_if #(
     output logic                obi_we_o,
     output logic [ 3:0]         obi_be_o,
     output logic [WIDTH-1:0]    obi_wdata_o,
-    //output logic [ 5:0]         obi_atop_o,
+    output logic [ 5:0]         obi_atop_o,
     input  logic [WIDTH-1:0]    obi_rdata_i,
     input  logic                obi_rvalid_i
-    //input  logic                obi_err_i
+    input  logic                obi_err_i
 
 );
 
     OBI_state_t                 state, next_state;     
 
+    // Internal Registers (TODO)
+    
+        // core to mem
+            logic [WIDTH-1:0]    addr_aux_i;
+            logic                we_aux_i;
+            logic [3:0]          be_aux_i;
+            logic [WIDTH-1:0]    wdata_aux_i;
 
-    // Transaction response interface
-    output logic                resp_valid_o,  // Note: Consumer is assumed to be 'ready' whenever resp_valid_o = 1
-    output logic [WIDTH-1:0]    resp_rdata_o,
-    output logic                resp_err_o,
+        // mem to core
+            input  logic [WIDTH-1:0]    obi_rdata_i;
+
     always_ff(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             obi_addr_o          = 32'b0;
@@ -69,19 +75,47 @@ module OBI_controler_if #(
         end
         else begin
             case (state)
+
+                /*
+                IDLE: Aguarda o sinal do core que indica que o sinal de endereço e dado a ser enviado
+                é válido, quando isso ocorrer os dados serão guardados em registradores e o obi_req_o 
+                deve subir. Após tudo isso o bloco vai para próximo estado.
+                */
+
                 IDLE: begin
-                    if (core_valid_i) begin                          // se não tiver nenhuma operação na fila e o core solicitar uma,
+                    if (core_valid_i) begin
                         state = next_state;    
                     end
                 end
+                
+                /*
+                REQUESTING: Com o request já em nível alto, teremos que aguardar o handshake acontecer,
+                ou seja, aguardar o obi_gnt_i ser igual a 1 no mesmo momento em que o obi_req_o é igual
+                a 1, nesse momento devemos passar todos os dados para a memória, e passar para o proximo
+                estado.
+                */
                 REQUESTING: begin
                     if (obi_gnt_i && obi_req_o)
                         state = next_state;
                 end
+
+                /*
+                WAITING: Enviados Todos os dados para a memória devemos aguardar sua resposta, desse modo, 
+                nesse estado, vamos apenas aguardar o sinal obi_rvalid_i, para que possamos coletar os dados
+                guardálos em registradores e passar para o requisitante, no caso, o core. Após isso 
+                passaremos para o próximo estado.
+                */
+            
                 WAITING: begin
                     if (obi_rvalid_i)
                         state = next_state;
                 end
+
+                /*
+                DUMPING: Estado auxiliar para permanecer com os valores por mais de um ciclo de clock até que o
+                hanshake entre o core e a memória seja satisfeito, assegurando que o dado requisitado chegue ao core.
+                */
+
                 DUMPING: begin
                         state = next_state;
                 end
@@ -93,7 +127,12 @@ module OBI_controler_if #(
         case(state)
             IDLE:       begin
                 next_state      = REQUESTING;
-                obi_req_o       = 0;
+                if (core_valid_i) begin
+                    obi_req_o  = 1;
+                end
+                else begin
+                    obi_req_o = 0;
+                end
                 obi_rvalid_i    = 0;
             end
 
