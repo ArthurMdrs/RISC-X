@@ -24,14 +24,14 @@ module csr import core_pkg::*; #(
     input  logic        save_pc_ex_i, // Save EX PC to mepc
     input  logic [31:0] pc_id_i,
     input  logic [31:0] pc_ex_i,
-    input  logic [ 4:0] exception_cause_i
+    input  logic [ 4:0] exception_cause_i,
 
     // Adicionei aqui
     // Floating point registers
     input logic [4:0] fflags_i,
     input logic fflag_we_i,
     input logic fregs_we_i,
-    output logic [2:0] frm_o,
+    output logic [2:0] frm_o
 
 );
 
@@ -127,7 +127,7 @@ always_comb begin
         frm_n    = frm;
     end
     
-    if(ISA_F) if(fflag_we_i) flags_n = fflags_i | fflags;
+    if(ISA_F) if(fflag_we_i) fflags_n = fflags_i | fflags;
 
 
     if (csr_wen) begin

@@ -1,0 +1,3 @@
+[submodule "rtl/cvfpu"]
+	path = rtl/cvfpu
+	url = https://github.com/openhwgroup/cvfpu.git
