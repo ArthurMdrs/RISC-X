@@ -53,12 +53,42 @@ localparam fpnew_pkg::fpu_implementation_t FPU_IMPLEMENTATION = '{
 };
 
 // Select the division/square root unit
-localparam fpnew_pkg::divsqrt_unit_t DIV_SQRT_SEL = THMULTI;
+localparam fpnew_pkg::divsqrt_unit_t DIV_SQRT_SEL = TH32;
 
 // Parameters used in vectorial operations (NOT SUPPORTED)
 localparam TRUE_SIMD_CLASS  = 0;
 localparam ENABLE_SIMD_MASK = 0;
 
+//---------------
+// Decoder ports
+//---------------
+
+logic [31:0] inst;
+logic [2:0] roundmode_wire;
+logic fpu_op_mod_wire;
+logic rs1_isF_wire;
+logic rs2_isF_wire;
+logic rd_isF_wire;
+logic rs3_is_used_wire;
+logic [4:0] rs3_addr_F_wire;
+logic [4:0] is_store_wire;
+logic [3:0] fpu_op_wire;
+
+//---------------
+// Decoder instance
+//---------------
+
+decoder decoder(
+    .instr_i(inst), // Entrada
+    .is_compressed_i(0), // Entrada
+    .roundmode_o(roundmode_wire), // Foi
+    .fpu_op_mod_o(fpu_op_mod_wire), // Foi
+    .rs1_isF_o(rs1_isF_wire), // Não usa
+    .rs2_isF_o(rs2_isF_wire), // Não usa
+    .rd_isF_o(rd_isF_wire), // Não usa
+    .rs3_is_used_o(rs3_is_used_wire), // Não usa
+    .fpu_op_o(fpu_op_wire), // Foi
+    .rs3_addr_F_o(rs3_addr_F_wire)); // Não usa
 
 //---------------
 // FPU ports
@@ -106,9 +136,9 @@ fpnew_top #(
     .rst_ni         (rst_ni),
     // Input signals
     .operands_i     (apu_operands_i),
-    .rnd_mode_i     (fp_rnd_mode),
-    .op_i           (fpu_op),
-    .op_mod_i       (fpu_op_mod),
+    .rnd_mode_i     (roundmode_wire), // Decoder
+    .op_i           (fpu_op_wire), // Decoder
+    .op_mod_i       (fpu_op_mod_wire), // Decoder
     .src_fmt_i      (fpu_src_fmt),
     .dst_fmt_i      (fpu_dst_fmt),
     .int_fmt_i      (fpu_int_fmt),
@@ -139,10 +169,10 @@ fpnew_top #(
 assign fpu_vec_op = 1'b0;
 
 // Set the operation to multiplication, for now
-assign fpu_op = ADDS;
+// assign fpu_op = ADDS;
 
 // Select the operation modifier
-assign fpu_op_mod = 1'b0;
+// assign fpu_op_mod = 1'b0;
 
 // Select formats
 assign fpu_int_fmt = INT32; // We only have 32-bit integers
@@ -150,7 +180,7 @@ assign fpu_src_fmt = FP32;  // We only support single-precision floats
 assign fpu_dst_fmt = FP32;  // We only support single-precision floats
 
 // Select rounding mode
-assign fp_rnd_mode = RNE;
+// assign fp_rnd_mode = RNE;
 
 
 //---------------------
@@ -165,7 +195,7 @@ initial begin
 end
 
 logic [31:0] num_a[0:9] = {
-    32'hC048F5C3, // -3.14 em IEEE-754
+    32'h4091EB85, // 4.56 em IEEE-754
     32'h402CCCCD, // 2.71 em IEEE-754
     32'hBF9D70A4, // -1.23 em IEEE-754
     32'h411FD70A, // 9.99 em IEEE-754
@@ -178,7 +208,7 @@ logic [31:0] num_a[0:9] = {
 };
 
 logic [31:0] num_b[0:9] = {
-    32'h3F81EB85, // 1.01 em IEEE-754
+    32'hC048F5C3, // -3.14 em IEEE-754
     32'hC0AD70A4, // -4.32 em IEEE-754
     32'h406E6666, // 3.45 em IEEE-754
     32'hC1C7C28F, // -9.87 em IEEE-754
@@ -191,7 +221,7 @@ logic [31:0] num_b[0:9] = {
 };
 
 logic [31:0] num_c[0:9] = {
-    32'h4091EB85, // 4.56 em IEEE-754
+    32'h3F81EB85, // 1.01 em IEEE-754
     32'hC0D90FDB, // -6.78 em IEEE-754
     32'h401D70A4, // 2.34 em IEEE-754
     32'hC1133333, // -8.90 em IEEE-754
@@ -203,33 +233,71 @@ logic [31:0] num_c[0:9] = {
     32'hC091EB85  // -4.56 em IEEE-754
 };
 
+logic [31:0] instructions [0:23] = {
+     32'bXXXXX00XXXXXXXXXXXXXXXXXX1000011, // FMADD.S
+     32'bXXXXX00XXXXXXXXXXXXXXXXXX1000111, // FMSUB.S
+     32'bXXXXX00XXXXXXXXXXXXXXXXXX1001011, // FNMSUB.S
+     32'bXXXXX00XXXXXXXXXXXXXXXXXX1001111, // FNMADD.S
+     32'b0000000XXXXXXXXXXXXXXXXXX1010011, // FADD.S
+     32'b0000100XXXXXXXXXXXXXXXXXX1010011, // FSUB.S
+     32'b0001000XXXXXXXXXXXXXXXXXX1010011, // FMUL.S
+     32'b0001100XXXXXXXXXX000XXXXX1010011, // FDIV.S
+     32'b010110000000XXXXX000XXXXX1010011, // FSQRT.S
+     32'b0010000XXXXXXXXXX000XXXXX1010011, // FSGNJ.S
+     32'b0010000XXXXXXXXXX001XXXXX1010011, // FSGNJN.S
+     32'b0010000XXXXXXXXXX010XXXXX1010011, // FSGNJX.S
+     32'b0010100XXXXXXXXXX000XXXXX1010011, // FMIN.S
+     32'b0010100XXXXXXXXXX001XXXXX1010011, // FMAX.S
+     32'b110000000000XXXXXXXXXXXXX1010011, // FCVT.W.S
+     32'b110000000001XXXXXXXXXXXXX1010011, // FCVT.WU.S
+     32'b111000000000XXXXX000XXXXX1010011, // FMV.X.W
+     32'b101000000000XXXXX010XXXXX1010011, // FEQ.S
+     32'b101000000000XXXXX001XXXXX1010011, // FLT.S
+     32'b101000000000XXXXX000XXXXX1010011, // FLE.S
+     32'b111000000000XXXXX001XXXXX1010011, // FCLASS.S
+     32'b110100000000XXXXX000XXXXX1010011, // FCVT.S.W
+     32'b110100000001XXXXX000XXXXX1010011, // FCVT.S.WU
+     32'b111100000000XXXXX000XXXXX1010011  // FMV.W.X
+};
 
 
-//Main simulation block
-initial begin 
+initial begin
     real res_fp;
 
-    rst_ni = 1'b0;
-    apu_req_i = 1'b0;
-    @(negedge clk_i) rst_ni = 1'b1;
+    apu_operands_i[0] = num_a[0];
+    apu_operands_i[1] = num_b[0];
+    apu_operands_i[2] = num_c[0];
 
-    for(int i = 0; i<11; i++) begin
-        apu_operands_i[0] = num_a[i];
-        apu_operands_i[1] = num_b[i];
-        apu_operands_i[2] = num_c[i];
+    rst_ni = 0;
+    #10;
+    rst_ni = 1;
+    @(negedge clk_i);
+    apu_req_i = 1;
 
-        apu_req_i = 1'b1;
-        wait(apu_gnt_o);
+    for(int i = 0; i<24; i++) begin
+
         @(negedge clk_i);
-        apu_req_i = 1'b0;
 
+        inst = instructions[i];
+        @(negedge clk_i);
+        apu_req_i = 0;
+        //wait(apu_gnt_o);
+
+        
         wait(apu_rvalid_o);
-        $display("result is 0x%h", apu_rdata_o);
+        @(negedge clk_i);
+        apu_req_i = 1;
+
+        $display("%t Inst: %b", $time, inst);
+        $display("%t result is 0x%h", $time, apu_rdata_o);
         res_fp = logic_to_real(apu_rdata_o);
-        $display("result is %f", res_fp);
+        $display("%t result is %f", $time, res_fp);
+        $display("-----------------------------------------------------------");
+
 
     end
 
+    #10;
     $finish;
 
 end
@@ -253,486 +321,3 @@ function real logic_to_real(input logic [31:0] bits);
 endfunction
 
 endmodule
-
-
-
-
-/*
-    logic [31:0] num_a[9:0] = {
-        32'h409b_d70a,
-        32'h5af2_b03c,
-        32'hc2e8_9a47,
-        32'h7d1c_6bfe,
-        32'h3e47_8a1b,
-        32'hd950_47cd,
-        32'hab2f_3c8e,
-        32'h8f74_1b25,
-        32'haa65_b12e,
-        32'hfc93_06d4
-    };
-
-    logic [31:0] num_b[9:0] = {
-        32'h1f4b_c78d,
-        32'h82a3_d15e,
-        32'h96e7_52b4,
-        32'h57d4_6c8f,
-        32'h3a1b_8d67,
-        32'hd2c8_f3e5,
-        32'hb9a1_7c4f,
-        32'h48f2_b301,
-        32'hac39_04d8,
-        32'h6be5_921a
-    };
-
-//Main simulation block
-initial begin 
-    real res_fp;
-
-    rst_ni = 1'b0;
-    apu_req_i = 1'b0;
-    @(negedge clk_i) rst_ni = 1'b1;
-
-    for(int i = 0; i<11; i++) begin
-        apu_operands_i[0] = num_a[i];
-        apu_operands_i[1] = num_b[i];
-
-        apu_req_i = 1'b1;
-        wait(apu_gnt_o);
-        @(negedge clk_i);
-        apu_req_i = 1'b0;
-
-        wait(apu_rvalid_o);
-        $display("result is 0x%h", apu_rdata_o);
-        res_fp = logic_to_real(apu_rdata_o);
-        $display("result is %f", res_fp);
-
-    end
-
-    $finish;
-
-end
-*/
-
-
-//Codigo para visualizar os valores de num_a, num_b e num_c em float
-/*
-initial begin
-    real res1, res2, res3;
-    for(int i = 0; i<10; i++) begin
-        
-        res1 = logic_to_real(num_a[i]);
-        res2 = logic_to_real(num_b[i]); 
-        res3 = logic_to_real(num_c[i]); 
-        $display("a is %f", res1);
-        $display("b is %f", res2);
-        $display("c is %f\n", res3);
-    end
-    $finish;
-end
-*/
-
-
-//Main simulation block
-/*
-initial begin 
-
-    real res_fp;
-
-    rst         apu_operands_i[0] = num_a[i];
-                apu_operands_i[1] = num_b[i];
-                apu_operands_i[2] = num_c[i];
-
-                apu_req_i = 1'b1;
-                wait(apu_gnt_o);
-                @(negedge clk_i);
-                apu_req_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-    endeq_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-        else begin
-            $display("Fused multiply-subtract");
-            for(int i = 0; i<11; i++) begin
-                @(negedge clk_i);
-                apu_operands_i[0] = num_a[i];
-                apu_operands_i[1] = num_b[i];
-                apu_operands_i[2] = num_c[i];
-
-                apu_req_i = 1'b1;
-                wait(apu_gnt_o);
-                @(negedge clk_i);
-                apu_req_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-    end
-
-    //-----------
-    //FAZER O ADD
-    //MAIS IMPORTANTE, CADÊ O ADD?
-    //-----------
-
-    if(fpu_op == ADDS) begin //ADDS 
-        if(fpu_op_mod == 0) begin
-            $display("Addition");
-            for(int i = 0; i<11; i++) begin
-                @(negedge clk_i);
-                apu_operands_i[1] = num_b[i];
-                apu_operands_i[2] = num_c[i];
-
-                apu_req_i = 1'b1;
-                wait(apu_gnt_o);
-                @(negedge clk_i);
-                apu_req_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-        else begin
-            $display("Subtraction");
-            for(int i = 0; i<11; i++) begin
-                @(negedge clk_i);
-                apu_operands_i[1] = num_b[i];
-                apu_operands_i[2] = num_c[i];
-
-                apu_req_i = 1'b1;
-                wait(apu_gnt_o);
-                @(negedge clk_i);
-                apu_req_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-    end
-
-    if(fpu_op == MUL) begin //MUL
-        $display("Multiplication");
-        for(int i = 0; i<11; i++) begin
-            @(negedge clk_i);
-            apu_operands_i[0] = num_a[i];
-            apu_operands_i[1] = num_b[i];
-
-            apu_req_i = 1'b1;
-            wait(apu_gnt_o);
-            @(negedge clk_i);
-            apu_req_i = 1'b0;
-
-            wait(apu_rvalid_o);
-            $display("result in hex is 0x%h", apu_rdata_o);
-            res_fp = logic_to_real(apu_rdata_o);
-            $display("result in float is %f\n", res_fp);
-        end
-    end
-
-    if(fpu_op == DIV) begin //DIV
-        $display("Division");
-        for(int i = 0; i<11; i++) begin
-            @(negedge clk_i);
-            apu_operands_i[0] = num_a[i];
-            apu_operands_i[1] = num_b[i];
-
-            apu_req_i = 1'b1;
-            wait(apu_gnt_o);
-            @(negedge clk_i);
-            apu_req_i = 1'b0;
-
-            wait(apu_rvalid_o);
-            $display("result in hex is 0x%h", apu_rdata_o);
-            res_fp = logic_to_real(apu_rdata_o);
-            $display("result in float is %f\n", res_fp);
-        end
-    end
-
-    if(fpu_op == SQRT) begin //SQRT
-        $display("Square root");
-        for(int i = 0; i<11; i++) begin
-            @(negedge clk_i);
-            apu_operands_i[0] = num_a[i];
-            apu_operands_i[1] = num_b[i];
-            apu_operands_i[2] = num_c[i];
-
-            apu_req_i = 1'b1;
-            wait(apu_gnt_o);
-            @(negedge clk_i);
-            apu_req_i = 1'b0;
-
-            wait(apu_rvalid_o);
-            $display("result in hex is 0x%h", apu_rdata_o);
-            res_fp = logic_to_real(apu_rdata_o);
-            $display("result in float is %f\n", res_fp);
-        end
-    end
-    //-----------
-    //FAZER O SGNJ
-    //FAZER O MINMAX
-    //FAZER O CMP
-    //-----------
-
-    //---------
-    //EXEMPLO
-    //---------
-    for(int i = 0; i<11; i++) begin
-        @(negedge clk_i);
-        apu_operands_i[1] = num_a[i];
-        apu_operands_i[2] = num_b[i];
-
-        apu_req_i = 1'b1;
-        wait(apu_gnt_o);
-        @(negedge clk_i);
-        apu_req_i = 1'b0;
-
-        wait(apu_rvalid_o);
-        $display("result in hex is 0x%h", apu_rdata_o);
-        res_fp = logic_to_real(apu_rdata_o);
-        $display("result in float is %f\n", res_fp);
-
-    end
-
-    $finish;
-
-end
-ni = 1'b0;
-    apu_req_i = 1'b0;
-    @(negedge clk_i) rst_ni = 1'b1;
-    if(fpu_op == FMADD) begin //FMADD
-        if(fpu_op_mod == 0) begin
-            $display("Fused multiply-add");
-            for(int i = 0; i<11; i++) begin
-                @(negedge clk_i);
-                apu_operands_i[0] = num_a[i];
-                apu_operands_i[1] = num_b[i];
-                apu_operands_i[2] = num_c[i];
-
-                apu_req_i = 1'b1;
-                wait(apu_gnt_o);
-                @(negedge clk_i);
-                apu_req_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-        else begin
-            $display("Fused multiply-sub");
-            for(int i = 0; i<11; i++) begin
-                @(negedge clk_i);
-                apu_operands_i[0] = num_a[i];
-                apu_operands_i[1] = num_b[i];
-                apu_operands_i[2] = num_c[i];
-
-                apu_req_i = 1'b1;
-                wait(apu_gnt_o);
-                @(negedge clk_i);
-                apu_req_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-    end
-
-    if(fpu_op == FNMSUB) begin //FNMSUB
-        if(fpu_op_mod == 0) begin
-            $display("Fused multiply-subtract");
-            for(int i = 0; i<11; i++) begin
-                @(negedge clk_i);
-                apu_operands_i[0] = num_a[i];
-                apu_operands_i[1] = num_b[i];
-                apu_operands_i[2] = num_c[i];
-
-                apu_req_i = 1'b1;
-                wait(apu_gnt_o);
-                @(negedge clk_i);
-                apu_req_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-    endeq_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-        else begin
-            $display("Fused multiply-subtract");
-            for(int i = 0; i<11; i++) begin
-                @(negedge clk_i);
-                apu_operands_i[0] = num_a[i];
-                apu_operands_i[1] = num_b[i];
-                apu_operands_i[2] = num_c[i];
-
-                apu_req_i = 1'b1;
-                wait(apu_gnt_o);
-                @(negedge clk_i);
-                apu_req_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-    end
-
-    //-----------
-    //FAZER O ADD
-    //MAIS IMPORTANTE, CADÊ O ADD?
-    //-----------
-
-    if(fpu_op == ADDS) begin //ADDS 
-        if(fpu_op_mod == 0) begin
-            $display("Addition");
-            for(int i = 0; i<11; i++) begin
-                @(negedge clk_i);
-                apu_operands_i[1] = num_b[i];
-                apu_operands_i[2] = num_c[i];
-
-                apu_req_i = 1'b1;
-                wait(apu_gnt_o);
-                @(negedge clk_i);
-                apu_req_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-        else begin
-            $display("Subtraction");
-            for(int i = 0; i<11; i++) begin
-                @(negedge clk_i);
-                apu_operands_i[1] = num_b[i];
-                apu_operands_i[2] = num_c[i];
-
-                apu_req_i = 1'b1;
-                wait(apu_gnt_o);
-                @(negedge clk_i);
-                apu_req_i = 1'b0;
-
-                wait(apu_rvalid_o);
-                $display("result in hex is 0x%h", apu_rdata_o);
-                res_fp = logic_to_real(apu_rdata_o);
-                $display("result in float is %f\n", res_fp);
-            end
-        end
-    end
-
-    if(fpu_op == MUL) begin //MUL
-        $display("Multiplication");
-        for(int i = 0; i<11; i++) begin
-            @(negedge clk_i);
-            apu_operands_i[0] = num_a[i];
-            apu_operands_i[1] = num_b[i];
-
-            apu_req_i = 1'b1;
-            wait(apu_gnt_o);
-            @(negedge clk_i);
-            apu_req_i = 1'b0;
-
-            wait(apu_rvalid_o);
-            $display("result in hex is 0x%h", apu_rdata_o);
-            res_fp = logic_to_real(apu_rdata_o);
-            $display("result in float is %f\n", res_fp);
-        end
-    end
-
-    if(fpu_op == DIV) begin //DIV
-        $display("Division");
-        for(int i = 0; i<11; i++) begin
-            @(negedge clk_i);
-            apu_operands_i[0] = num_a[i];
-            apu_operands_i[1] = num_b[i];
-
-            apu_req_i = 1'b1;
-            wait(apu_gnt_o);
-            @(negedge clk_i);
-            apu_req_i = 1'b0;
-
-            wait(apu_rvalid_o);
-            $display("result in hex is 0x%h", apu_rdata_o);
-            res_fp = logic_to_real(apu_rdata_o);
-            $display("result in float is %f\n", res_fp);
-        end
-    end
-
-    if(fpu_op == SQRT) begin //SQRT
-        $display("Square root");
-        for(int i = 0; i<11; i++) begin
-            @(negedge clk_i);
-            apu_operands_i[0] = num_a[i];
-            apu_operands_i[1] = num_b[i];
-            apu_operands_i[2] = num_c[i];
-
-            apu_req_i = 1'b1;
-            wait(apu_gnt_o);
-            @(negedge clk_i);
-            apu_req_i = 1'b0;
-
-            wait(apu_rvalid_o);
-            $display("result in hex is 0x%h", apu_rdata_o);
-            res_fp = logic_to_real(apu_rdata_o);
-            $display("result in float is %f\n", res_fp);
-        end
-    end
-    //-----------
-    //FAZER O SGNJ
-    //FAZER O MINMAX
-    //FAZER O CMP
-    //-----------
-
-    //---------
-    //EXEMPLO
-    //---------
-    for(int i = 0; i<11; i++) begin
-        @(negedge clk_i);
-        apu_operands_i[1] = num_a[i];
-        apu_operands_i[2] = num_b[i];
-
-        apu_req_i = 1'b1;
-        wait(apu_gnt_o);
-        @(negedge clk_i);
-        apu_req_i = 1'b0;
-
-        wait(apu_rvalid_o);
-        $display("result in hex is 0x%h", apu_rdata_o);
-        res_fp = logic_to_real(apu_rdata_o);
-        $display("result in float is %f\n", res_fp);
-
-    end
-
-    $finish;
-
-end
-*/
