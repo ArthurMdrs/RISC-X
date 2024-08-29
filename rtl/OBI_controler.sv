@@ -86,9 +86,15 @@ module OBI_controler_if #(
                 */
 
                 IDLE: begin
-                    if (core_valid_i) begin
-                        state = next_state;    
-                    end
+                    addr_aux_i       = core_addr_i;
+                    we_aux_i         = core_we_i;
+                    be_aux_i         = core_be_i;
+                    wdata_aux_i      = core_wdata_i;
+                    
+                    if (obi_gnt_i)
+                        state = WAITING;
+                    else if (core_valid_i)
+                        state = next_state;   
                 end
                 
                 /*
@@ -98,10 +104,8 @@ module OBI_controler_if #(
                 estado.
                 */
                 REQUESTING: begin
-                    if (obi_gnt_i && core_valid_i)
+                    if (obi_gnt_i)
                         state = next_state;
-                    if(~core_valid_i)
-                        state = IDLE;
                 end
 
                 /*
@@ -112,6 +116,7 @@ module OBI_controler_if #(
                 */
             
                 WAITING: begin
+                    rdata_aux_i     = obi_rdata_i;
                     if (obi_rvalid_i)
                         state = next_state;
                 end
@@ -133,16 +138,13 @@ module OBI_controler_if #(
             IDLE:       begin
                 next_state      = REQUESTING;
                 if (core_valid_i) begin
-
-                    obi_addr_o      = {addr_aux_i[31:2],2'b0};
-                    obi_we_o        = we_aux_i;
-                    obi_be_o        = be_aux_i
-                    obi_wdata_o     = wdata_aux_i;  
-                    addr_aux_i      = core_addr_i;
-                    we_aux_i        = core_we_i;
-                    be_aux_i        = core_be_i;
-                    wdata_aux_i     = core_wdata_i;
-                    obi_req_o       = 1;
+                    
+                    //obi_addr_o     = {core_addr_i[31:2],2'b0};
+                    obi_addr_o       = core_addr_i;
+                    obi_we_o         = core_we_i;
+                    obi_be_o         = core_be_i;
+                    obi_wdata_o      = core_wdata_i;
+                    obi_req_o        = 1;
                     
                 end
                 else begin
@@ -156,7 +158,8 @@ module OBI_controler_if #(
                 next_state      = WAITING;
                 obi_req_o       = 1;
                 
-                obi_addr_o      = {addr_aux_i[31:2],2'b0};
+                //obi_addr_o      = {addr_aux_i[31:2],2'b0};
+                obi_addr_o      = addr_aux_i;
                 obi_we_o        = we_aux_i;
                 obi_be_o        = be_aux_i
                 obi_wdata_o     = wdata_aux_i;
@@ -167,7 +170,6 @@ module OBI_controler_if #(
                 obi_req_o       = 0;
                 if (obi_rvalid_i) begin
                     resp_rdata_o    = obi_rdata_i;
-                    rdata_aux_i     = obi_rdata_i;
                 end
             end
             DUMPING:    begin  // resp_valid_o
