@@ -98,8 +98,10 @@ module OBI_controler_if #(
                 estado.
                 */
                 REQUESTING: begin
-                    if (obi_gnt_i)
+                    if (obi_gnt_i && core_valid_i)
                         state = next_state;
+                    if(~core_valid_i)
+                        state = IDLE;
                 end
 
                 /*
