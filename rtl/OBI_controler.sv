@@ -20,7 +20,6 @@
 module OBI_controler_if #(
     parameter WIDTH = 32
 ) (
-
     
     input logic                 clk,
     input logic                 rst_n,
@@ -63,7 +62,11 @@ module OBI_controler_if #(
             logic [WIDTH-1:0]    wdata_aux_i;
 
         // mem to core
-            input  logic [WIDTH-1:0]    obi_rdata_i;
+            logic [WIDTH-1:0]    rdata_aux_i;
+
+    // Assigns 
+
+        assign resp_valid_o = obi_rvalid_i;
 
     always_ff(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
@@ -95,7 +98,7 @@ module OBI_controler_if #(
                 estado.
                 */
                 REQUESTING: begin
-                    if (obi_gnt_i && obi_req_o)
+                    if (obi_gnt_i)
                         state = next_state;
                 end
 
@@ -128,16 +131,56 @@ module OBI_controler_if #(
             IDLE:       begin
                 next_state      = REQUESTING;
                 if (core_valid_i) begin
-                    obi_req_o  = 1;
+
+                    obi_addr_o      = {addr_aux_i[31:2],2'b0};
+                    obi_we_o        = we_aux_i;
+                    obi_be_o        = be_aux_i
+                    obi_wdata_o     = wdata_aux_i;  
+                    addr_aux_i      = core_addr_i;
+                    we_aux_i        = core_we_i;
+                    be_aux_i        = core_be_i;
+                    wdata_aux_i     = core_wdata_i;
+                    obi_req_o       = 1;
+                    
                 end
                 else begin
                     obi_req_o = 0;
                 end
-                obi_rvalid_i    = 0;
+                
             end
 
             REQUESTING: begin
-                // é necessário revisão/discussão a respeito do endereçamento da memória
+
+                next_state      = WAITING;
+                obi_req_o       = 1;
+                
+                obi_addr_o      = {addr_aux_i[31:2],2'b0};
+                obi_we_o        = we_aux_i;
+                obi_be_o        = be_aux_i
+                obi_wdata_o     = wdata_aux_i;
+               
+            end
+            WAITING:    begin
+                next_state      = DUMPING;
+                obi_req_o       = 0;
+                if (obi_rvalid_i) begin
+                    resp_rdata_o    = obi_rdata_i;
+                    rdata_aux_i     = obi_rdata_i;
+                end
+            end
+            DUMPING:    begin  // resp_valid_o
+                next_state      = IDLE;
+                obi_req_o       = 0;
+                resp_rdata_o    = rdata_aux_i;
+            end
+            default: 
+                next_state      = IDLE;
+        endcase
+    end
+
+endmodule
+
+// é necessário revisão/discussão a respeito do endereçamento da memória
                 /* ------- VAI PARA O CORE -------
 
                 unique case(mem_data_type_i)
@@ -163,30 +206,4 @@ module OBI_controler_if #(
                 endcase
                 */
 
-                next_state      = WAITING;
-                obi_req_o       = 1;
-                obi_rvalid_i    = 0;
-                obi_addr_o      = {core_addr_i[31:2],2'b0};
-                obi_we_o        = core_we_i;
-                obi_wdata_o     = core_wdata_i;
-               
-            end
-            WAITING:    begin
-                next_state      = DUMPING;
-                obi_req_o       = 0;
-                obi_rvalid_i    = 0;
-            end
-            DUMPING:    begin
-                next_state      = IDLE;
-                obi_req_o       = 0;
-                obi_rvalid_i    = 1;
-
-                if (we_nxt) // podemos colocar ou não essa condição
-                    data_out    = rdata;
-            end
-            default: 
-                next_state      = IDLE;
-        endcase
-    end
-
-endmodule
+            
