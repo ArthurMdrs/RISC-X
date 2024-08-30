@@ -29,6 +29,7 @@ module controller import core_pkg::*; (
     output logic flush_wb_o,
     input  pc_source_t pc_source_id_i,
     input  logic       branch_decision_ex_i,
+    input  logic valid_if_i,
     input  logic trap_id_i,
     input  logic trap_ex_i,
     
@@ -105,7 +106,7 @@ always_comb begin
         if(rd_ex_is_rs1_id || rd_ex_is_rs2_id)
             stall_id_o = 1'b1;
     
-    stall_if_o = stall_id_o;
+    stall_if_o = stall_id_o || !valid_if_i;
     stall_ex_o = 1'b0;
     stall_mem_o = 1'b0;
 end
@@ -119,7 +120,7 @@ always_comb begin
     flush_wb_o  = 1'b0;
     flush_mem_o = flush_wb_o  || trap_ex_i;
     flush_ex_o  = flush_mem_o || branch_decision_ex_i || stall_id_o || trap_id_i;
-    flush_id_o  = flush_ex_o  || id_is_jump;
+    flush_id_o  = flush_ex_o  || id_is_jump || stall_if_o;
 end
 
 // Determine which PC should be saved to mepc in case of traps

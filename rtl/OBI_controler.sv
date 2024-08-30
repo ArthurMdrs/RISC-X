@@ -5,7 +5,7 @@
     Data: 14/08/2024
 
 
-    Ultima modificação: 19/08/2024
+    Ultima modificação: 30/08/2024
     Descrição: Alterações de Padrão de nomes;
     Autores: Túlio Tavares e Victor Hugo
 
@@ -47,14 +47,14 @@ module OBI_controler_if #(
     output logic [WIDTH-1:0]    obi_wdata_o,
     output logic [ 5:0]         obi_atop_o,
     input  logic [WIDTH-1:0]    obi_rdata_i,
-    input  logic                obi_rvalid_i
+    input  logic                obi_rvalid_i,
     input  logic                obi_err_i
 
 );
-
-    OBI_state_t                 state, next_state;     
-
-    // Internal Registers (TODO)
+    import core_pkg::*;
+    OBI_state_t  state, next_state; 
+   
+    // Internal Registers
     
         // core to mem
             logic [WIDTH-1:0]    addr_aux_i;
@@ -64,12 +64,13 @@ module OBI_controler_if #(
 
         // mem to core
             logic [WIDTH-1:0]    rdata_aux_i;
-
+        
+            
     // Assigns 
 
         assign resp_valid_o = obi_rvalid_i;
 
-    always_ff(posedge clk or negedge rst_n) begin
+    always_ff@(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             addr_aux_i          = 32'b0;
             we_aux_i            = 0;
@@ -158,7 +159,7 @@ module OBI_controler_if #(
                 //obi_addr_o      = {addr_aux_i[31:2],2'b0};
                 obi_addr_o      = addr_aux_i;
                 obi_we_o        = we_aux_i;
-                obi_be_o        = be_aux_i
+                obi_be_o        = be_aux_i;
                 obi_wdata_o     = wdata_aux_i;
                
             end

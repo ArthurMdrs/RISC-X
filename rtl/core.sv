@@ -410,6 +410,7 @@ controller controller_inst (
     .flush_wb_o  ( flush_wb ),
     .pc_source_id_i       ( pc_source_id ),
     .branch_decision_ex_i ( branch_decision_ex ),
+    .valid_if_i ( valid_if ),
     .trap_id_i ( trap_id ),
     .trap_ex_i ( trap_ex ),
     

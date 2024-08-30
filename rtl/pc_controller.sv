@@ -12,8 +12,9 @@ module pc_controller import core_pkg::*; #(
     input  pc_source_t       pc_source_ex_i,
     input                    trap_id_i,
     input                    trap_ex_i,
+    output                   trap_mem_read_if_o,
     
-    input                    is_mret_i,
+    input                    is_mret_i, 
     input  logic [WIDTH-1:0] mtvec_i,
     input  logic [WIDTH-1:0] mepc_i
 );
