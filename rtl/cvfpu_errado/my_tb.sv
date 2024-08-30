@@ -131,7 +131,7 @@ fpnew_top #(
     .TagType        (logic),
     .TrueSIMDClass  (TRUE_SIMD_CLASS),
     .EnableSIMDMask (ENABLE_SIMD_MASK)
-) i_fpnew_bulk (
+) fpu_inst (
     .clk_i          (clk_i),
     .rst_ni         (rst_ni),
     // Input signals
@@ -187,11 +187,15 @@ assign fpu_dst_fmt = FP32;  // We only support single-precision floats
 // Simulation
 //---------------------
 
+// Use variable below to get FP representation of result
+real res_fp;
+
 // Generate clock
 initial begin
     clk_i = 0;
-    forever
+    repeat (10_000)
         #1 clk_i = !clk_i;
+    $finish;
 end
 
 logic [31:0] num_a[0:9] = {
@@ -234,35 +238,34 @@ logic [31:0] num_c[0:9] = {
 };
 
 logic [31:0] instructions [0:23] = {
-     32'bXXXXX00XXXXXXXXXXXXXXXXXX1000011, // FMADD.S
-     32'bXXXXX00XXXXXXXXXXXXXXXXXX1000111, // FMSUB.S
-     32'bXXXXX00XXXXXXXXXXXXXXXXXX1001011, // FNMSUB.S
-     32'bXXXXX00XXXXXXXXXXXXXXXXXX1001111, // FNMADD.S
-     32'b0000000XXXXXXXXXXXXXXXXXX1010011, // FADD.S
-     32'b0000100XXXXXXXXXXXXXXXXXX1010011, // FSUB.S
-     32'b0001000XXXXXXXXXXXXXXXXXX1010011, // FMUL.S
-     32'b0001100XXXXXXXXXX000XXXXX1010011, // FDIV.S
-     32'b010110000000XXXXX000XXXXX1010011, // FSQRT.S
-     32'b0010000XXXXXXXXXX000XXXXX1010011, // FSGNJ.S
-     32'b0010000XXXXXXXXXX001XXXXX1010011, // FSGNJN.S
-     32'b0010000XXXXXXXXXX010XXXXX1010011, // FSGNJX.S
-     32'b0010100XXXXXXXXXX000XXXXX1010011, // FMIN.S
-     32'b0010100XXXXXXXXXX001XXXXX1010011, // FMAX.S
-     32'b110000000000XXXXXXXXXXXXX1010011, // FCVT.W.S
-     32'b110000000001XXXXXXXXXXXXX1010011, // FCVT.WU.S
-     32'b111000000000XXXXX000XXXXX1010011, // FMV.X.W
-     32'b101000000000XXXXX010XXXXX1010011, // FEQ.S
-     32'b101000000000XXXXX001XXXXX1010011, // FLT.S
-     32'b101000000000XXXXX000XXXXX1010011, // FLE.S
-     32'b111000000000XXXXX001XXXXX1010011, // FCLASS.S
-     32'b110100000000XXXXX000XXXXX1010011, // FCVT.S.W
-     32'b110100000001XXXXX000XXXXX1010011, // FCVT.S.WU
-     32'b111100000000XXXXX000XXXXX1010011  // FMV.W.X
+    //  32'bXXXXX00XXXXXXXXXX000XXXXX1000011, // FMADD.S
+    //  32'bXXXXX00XXXXXXXXXX000XXXXX1000111, // FMSUB.S
+    //  32'bXXXXX00XXXXXXXXXX000XXXXX1001011, // FNMSUB.S
+    //  32'bXXXXX00XXXXXXXXXX000XXXXX1001111, // FNMADD.S
+    //  32'b0000000XXXXXXXXXX000XXXXX1010011, // FADD.S
+    //  32'b0000100XXXXXXXXXX000XXXXX1010011, // FSUB.S
+    //  32'b0001000XXXXXXXXXX000XXXXX1010011, // FMUL.S
+    //  32'b0001100XXXXXXXXXX000XXXXX1010011, // FDIV.S
+    //  32'b010110000000XXXXX000XXXXX1010011, // FSQRT.S
+    //  32'b0010000XXXXXXXXXX000XXXXX1010011, // FSGNJ.S
+    //  32'b0010000XXXXXXXXXX001XXXXX1010011, // FSGNJN.S
+    //  32'b0010000XXXXXXXXXX010XXXXX1010011, // FSGNJX.S
+    //  32'b0010100XXXXXXXXXX000XXXXX1010011, // FMIN.S
+    //  32'b0010100XXXXXXXXXX001XXXXX1010011, // FMAX.S
+    //  32'b110000000000XXXXX000XXXXX1010011, // FCVT.W.S
+    //  32'b110000000001XXXXX000XXXXX1010011, // FCVT.WU.S
+    //  32'b111000000000XXXXX000XXXXX1010011, // FMV.X.W
+    //  32'b101000000000XXXXX010XXXXX1010011, // FEQ.S
+    //  32'b101000000000XXXXX001XXXXX1010011, // FLT.S
+    //  32'b101000000000XXXXX000XXXXX1010011, // FLE.S
+    //  32'b111000000000XXXXX001XXXXX1010011, // FCLASS.S
+    //  32'b110100000000XXXXX000XXXXX1010011, // FCVT.S.W
+    //  32'b110100000001XXXXX000XXXXX1010011, // FCVT.S.WU
+    //  32'b111100000000XXXXX000XXXXX1010011  // FMV.W.X
 };
 
 
 initial begin
-    real res_fp;
 
     apu_operands_i[0] = num_a[0];
     apu_operands_i[1] = num_b[0];
@@ -271,36 +274,44 @@ initial begin
     rst_ni = 0;
     #10;
     rst_ni = 1;
+    
+    apu_req_i = 0;
+    inst = '0;
+    
     @(negedge clk_i);
-    apu_req_i = 1;
 
     for(int i = 0; i<24; i++) begin
 
-        @(negedge clk_i);
-
-        inst = instructions[i];
-        @(negedge clk_i);
-        apu_req_i = 0;
-        //wait(apu_gnt_o);
-
+        drive_instr(instructions[i]);
         
-        wait(apu_rvalid_o);
-        @(negedge clk_i);
-        apu_req_i = 1;
-
-        $display("%t Inst: %b", $time, inst);
-        $display("%t result is 0x%h", $time, apu_rdata_o);
-        res_fp = logic_to_real(apu_rdata_o);
-        $display("%t result is %f", $time, res_fp);
-        $display("-----------------------------------------------------------");
-
-
     end
 
     #10;
     $finish;
 
 end
+
+task drive_instr(logic [31:0] instr);
+    @(negedge clk_i);
+
+    inst = instr;
+    apu_req_i = 1;
+    
+    wait(apu_gnt_o);
+
+    @(negedge clk_i);
+    apu_req_i = 0;
+    
+    wait(apu_rvalid_o);
+
+    $display("%t Instr: %b", $time, inst);
+    $display("%t result is 0x%h", $time, apu_rdata_o);
+    res_fp = logic_to_real(apu_rdata_o);
+    $display("%t result is %f", $time, res_fp);
+    $display("-----------------------------------------------------------");
+    
+    @(negedge clk_i);
+endtask
 
 // Function to convert 32-bit logic to real
 function real logic_to_real(input logic [31:0] bits);
