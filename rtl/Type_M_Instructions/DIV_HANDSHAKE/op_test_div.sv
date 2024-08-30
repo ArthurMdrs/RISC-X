@@ -30,16 +30,17 @@ module tb();
         clock = 0;
         nreset = 1;
         in_valid_i = 1;
-        a= 44; 
-        b = 3;
+        a= -1685767364; 
+        b = 1;
         $monitor(a,b,c);
         #200 $finish;
      end
      always #2 clock = ~clock;
   always_ff@(negedge clock)begin
-        $display("%d %d %d %d %d %d %s",inst0opdiv.a_reg,inst0opdiv.b_reg,inst0opdiv.ena,inst0opdiv.Quatient,inst0opdiv.minuend,inst0opdiv.k ,str[inst0opdiv.state]);
+        //$display("%d %d %d %d %d %d %s",inst0opdiv.a_reg,inst0opdiv.b_reg,inst0opdiv.ena,inst0opdiv.Quatient,inst0opdiv.minuend,inst0opdiv.k ,str[inst0opdiv.state]);
         //if(temp=="START")begin 
         if(inst0opdiv.out_valid_o)begin out_ready_i <=1;
+                $display(inst0opdiv.c);
                 $finish;
         end
 

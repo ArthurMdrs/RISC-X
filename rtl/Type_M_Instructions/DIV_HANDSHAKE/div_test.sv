@@ -1,6 +1,6 @@
 `include "./opdiv.sv"
 module tb();
-		parameter [31:0] numero_de_testes = 500000000;
+		parameter [31:0] numero_de_testes = 5000000000000000000;
 		logic 					clock		;
 		logic 					nreset		;
 		logic 					in_valid_i	;
@@ -11,7 +11,7 @@ module tb();
 		logic 					out_valid_o	;
 		logic					out_ready_i	;
 		logic 	[31:0]			nclocks		;
-		 opdiv divisor(
+		opdiv divisor(
 		
 				.clock		(	clock		),	
 				.nreset		(	nreset		),
@@ -47,7 +47,7 @@ module tb();
 				counter1 	<= 		0	;
 				counter2 	<= 		0	;
 				temp  		<= $urandom_range(100,1);
-				a 			<=	$urandom_range($pow(2,30),1);
+				a 			<=	-$urandom_range($pow(2,30),1);
 				b 			<=	$urandom_range($pow(2,25),1);
 				fail_test   <= 0;
 
@@ -61,8 +61,8 @@ module tb();
 						fail_test <= c != a/b ? fail_test +1:fail_test;
 						$display("%d %d  %d %d %s \n",a,b,c,a/b,c== a/b ? "Pass":"Fail");
 						out_ready_i <=	1 					;
-						a 			<=	$urandom_range($pow(2,30),1);
-						b 			<=	$urandom_range($pow(2,16),1);	
+						a 			<=	$urandom_range($pow(2,31),1)*$pow(-1,$urandom_range($pow(2,31),1));
+						b 			<=	$urandom_range($pow(2,16),1)*$pow(-1,$urandom_range($pow(2,31),1));	
 						counter1 	<= 	0					;
 						counter2 	<= counter2 + 1			;
 						temp  		<= $urandom_range(1000,1)	;
