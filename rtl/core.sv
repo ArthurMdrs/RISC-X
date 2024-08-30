@@ -427,7 +427,13 @@ controller controller_inst (
     .instr_addr_misaligned_id_i ( instr_addr_misaligned_id ),
     // .instr_addr_misaligned_ex_i ( instr_addr_misaligned_ex ),
     .is_mret_id_i      ( is_mret_id ),
-    .exception_cause_o ( exception_cause )
+    .exception_cause_o ( exception_cause ),
+
+    // FPU Controler
+    .fflag_i(fflags_csr),
+    .fflag_we_i(fflags_we),
+    .fregs_we_i(fregs_we),
+    .frm_o(frm_csr)
 );
 
 endmodule

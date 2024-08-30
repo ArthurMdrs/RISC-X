@@ -108,6 +108,13 @@ typedef enum logic [1:0] {
     CSR_CLEAR
 } csr_operation_t;
 
+// ULA-FPU sel
+
+typedef enum logic {
+    ULA_SEL,
+    FPU_SEL
+} ULA_FPU_t;
+
 // OpCodes
 
 localparam logic [6:0] OPCODE_OP     = 7'b011_0011; // 7'h33

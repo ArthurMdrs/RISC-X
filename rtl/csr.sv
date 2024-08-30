@@ -27,7 +27,7 @@ module csr import core_pkg::*; #(
     input  logic [ 4:0] exception_cause_i,
 
     // Adicionei aqui
-    // Floating point registers
+    // Floating point ports
     input logic [4:0] fflags_i,
     input logic fflag_we_i,
     input logic fregs_we_i,
