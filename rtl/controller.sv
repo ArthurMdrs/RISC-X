@@ -2,9 +2,11 @@ module controller import core_pkg::*; (
     // Data Hazards (forwarding)
     output forward_t fwd_op1_o,
     output forward_t fwd_op2_o,
+    output forward_t fwd_op3_o,
     // Source/destiny general purpose registers
     input  logic [4:0] rs1_addr_id_i,
     input  logic [4:0] rs2_addr_id_i,
+    input  logic [4:0] rs3_addr_id_i,
     input  logic [4:0] rd_addr_ex_i,
     input  logic [4:0] rd_addr_mem_i,
     input  logic [4:0] rd_addr_wb_i,
@@ -12,6 +14,7 @@ module controller import core_pkg::*; (
     input  logic reg_alu_wen_ex_i,
     input  logic reg_alu_wen_mem_i,
     input  logic reg_alu_wen_wb_i,
+    input  logic reg_mem_wen_ex_i,
     input  logic reg_mem_wen_mem_i,
     input  logic reg_mem_wen_wb_i,
     
@@ -20,7 +23,9 @@ module controller import core_pkg::*; (
     output logic stall_id_o,
     output logic stall_ex_o,
     output logic stall_mem_o,
-    input  logic reg_mem_wen_ex_i,
+    input  logic fpu_req_id_i,
+    input  logic fpu_gnt_id_i,
+    input  logic fpu_busy_ex_i,
     
     // Control Hazards (flushing)
     output logic flush_id_o,
@@ -57,6 +62,12 @@ logic rd_wb_is_rs2_id;
 assign rd_ex_is_rs2_id  = (rd_addr_ex_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0);
 assign rd_mem_is_rs2_id = (rd_addr_mem_i == rs2_addr_id_i) && (rs2_addr_id_i != '0);
 assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0);
+
+logic fpu_gnt_stall;
+logic fpu_rvalid_stall;
+
+assign fpu_gnt_stall    = fpu_req_id_i && !fpu_gnt_id_i;
+assign fpu_rvalid_stall = fpu_busy_ex_i;
 
 // Resolve forwarding for rs1
 always_comb begin
@@ -98,15 +109,23 @@ always_comb begin
     end
 end
 
+// Resolve forwarding for rs3
+always_comb begin
+    fwd_op3_o = NO_FORWARD;
+end
+
 // Resolve stalls
 always_comb begin
-    stall_id_o = 1'b0;
+    stall_ex_o = fpu_rvalid_stall;
+    
+    stall_id_o = stall_ex_o;
+    if (fpu_gnt_stall)
+        stall_id_o = 1'b1;
     if (reg_mem_wen_ex_i) // Load operation in EX
         if(rd_ex_is_rs1_id || rd_ex_is_rs2_id)
             stall_id_o = 1'b1;
     
     stall_if_o = stall_id_o;
-    stall_ex_o = 1'b0;
     stall_mem_o = 1'b0;
 end
 
@@ -117,7 +136,7 @@ assign id_is_jump = pc_source_id_i == PC_JAL || pc_source_id_i == PC_JALR;
 // Resolve flushing
 always_comb begin
     flush_wb_o  = 1'b0;
-    flush_mem_o = flush_wb_o  || trap_ex_i;
+    flush_mem_o = flush_wb_o  || trap_ex_i || stall_ex_o;
     flush_ex_o  = flush_mem_o || branch_decision_ex_i || stall_id_o || trap_id_i;
     flush_id_o  = flush_ex_o  || id_is_jump;
 end

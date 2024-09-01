@@ -45,15 +45,16 @@ logic        flush_id, flush_ex, flush_mem, flush_wb;
 logic        is_compressed_if;
 
 // Source and destiny registers from register file
-logic [ 4:0] rs1_addr_id, rs2_addr_id;
-logic [ 4:0] rd_addr_id, rd_addr_ex, rd_addr_mem, rd_addr_wb;
+logic [4:0] rs1_addr_id, rs2_addr_id, rs3_addr_id;
+logic [4:0] rd_addr_id, rd_addr_ex, rd_addr_mem, rd_addr_wb;
 
 // ALU control signals, operands and result
 alu_operation_t    alu_operation_id;
 logic [31:0]       alu_operand_1_id;
 logic [31:0]       alu_operand_2_id;
 logic [31:0]       alu_result_ex, alu_result_mem, alu_result_wb;
-forward_t          fwd_op1_id, fwd_op2_id;
+forward_t          fwd_op1_id, fwd_op2_id, fwd_op3_id;
+alu_result_mux_t   alu_result_mux_id;
 
 // Memory access control signals, write data and read data
 logic        mem_wen_id, mem_wen_ex, mem_wen_mem;
@@ -91,6 +92,14 @@ csr_addr_t      csr_addr_ex;
 logic [31:0]    mtvec, mepc;
 logic           save_pc_id, save_pc_ex;
 logic [ 4:0]    exception_cause;
+
+// FPU signals
+logic [2:0] fpu_rnd_mode_id;
+logic [3:0] fpu_op_id;
+logic       fpu_op_mod_id;
+logic       fpu_req_id, fpu_gnt_id;
+logic       fpu_busy_ex;
+logic [4:0] csr_fpu_flags_ex;
 
 
 
@@ -159,6 +168,7 @@ id_stage #(
     
     // Output to EX stage
     .alu_operation_id_o     ( alu_operation_id ),
+    .alu_result_mux_id_o    ( alu_result_mux_id ),
     .rd_addr_id_o           ( rd_addr_id ),
     .mem_wen_id_o           ( mem_wen_id ),
     .mem_data_type_id_o     ( mem_data_type_id ),
@@ -182,6 +192,7 @@ id_stage #(
     // Output to controller
     .rs1_addr_id_o ( rs1_addr_id ),
     .rs2_addr_id_o ( rs2_addr_id ),
+    .rs3_addr_id_o ( rs3_addr_id ),
     .illegal_instr_id_o ( illegal_instr_id ),
     .instr_addr_misaligned_id_o ( instr_addr_misaligned_id ),
     .is_mret_id_o ( is_mret_id ),
@@ -193,6 +204,7 @@ id_stage #(
     // Control inputs
     .stall_id_i ( stall_id ),
     .flush_id_i (flush_id),
+    .branch_decision_ex_i      ( branch_decision_ex ),
     
     // Inputs for forwarding
     .fwd_op1_id_i       ( fwd_op1_id ),
@@ -202,7 +214,18 @@ id_stage #(
     .mem_rdata_mem_i    ( mem_rdata_mem ),
     .alu_result_wb_i    ( alu_result_wb ),
     .mem_rdata_wb_i     ( mem_rdata_wb ),
-    .csr_rdata_ex_i     ( csr_rdata_ex )
+    .csr_rdata_ex_i     ( csr_rdata_ex ),
+    
+    // FPU signals
+    .fpu_rnd_mode_id_o ( fpu_rnd_mode_id ),
+    .fpu_op_id_o       ( fpu_op_id ),
+    .fpu_op_mod_id_o   ( fpu_op_mod_id ),
+    .fpu_req_id_o      ( fpu_req_id ),
+    
+    .rs1_src_bank_id_o ( rs1_src_bank_id ),
+    .rs2_src_bank_id_o ( rs2_src_bank_id ),
+    .rs3_src_bank_id_o ( rs3_src_bank_id ),
+    .rd_dst_bank_id_o  ( rd_dst_bank_id )
 );
 
 
@@ -227,6 +250,7 @@ ex_stage #(
     
     // Input from ID stage
     .alu_operation_id_i     ( alu_operation_id ),
+    .alu_result_mux_id_i    ( alu_result_mux_id ),
     .rd_addr_id_i           ( rd_addr_id ),
     .mem_wen_id_i           ( mem_wen_id ),
     .mem_data_type_id_i     ( mem_data_type_id ),
@@ -259,11 +283,12 @@ ex_stage #(
     // .instr_addr_misaligned_ex_o ( instr_addr_misaligned_ex ),
     
     // Output to CSRs
-    .pc_ex_o         ( pc_ex ),
-    .csr_addr_ex_o   ( csr_addr_ex ),
-    .csr_wdata_ex_o  ( csr_wdata_ex ),
-    .csr_op_ex_o     ( csr_op_ex ),
-    .csr_access_ex_o ( csr_access_ex ),
+    .pc_ex_o            ( pc_ex ),
+    .csr_addr_ex_o      ( csr_addr_ex ),
+    .csr_wdata_ex_o     ( csr_wdata_ex ),
+    .csr_op_ex_o        ( csr_op_ex ),
+    .csr_access_ex_o    ( csr_access_ex ),
+    .csr_fpu_flags_ex_o ( csr_fpu_flags_ex ),
     
     // Input from CSRs
     .csr_access_ex_i      ( csr_access_ex ),
@@ -271,7 +296,20 @@ ex_stage #(
     
     // Control inputs
     .stall_ex_i ( stall_ex ),
-    .flush_ex_i ( flush_ex )
+    .flush_ex_i ( flush_ex ),
+    
+    // FPU signals
+    .fpu_rnd_mode_id_i ( fpu_rnd_mode_id ),
+    .fpu_op_id_i       ( fpu_op_id ),
+    .fpu_op_mod_id_i   ( fpu_op_mod_id ),
+    .fpu_req_id_i      ( fpu_req_id ),
+    .fpu_gnt_id_o      ( fpu_gnt_id ),
+    .fpu_busy_ex_o     ( fpu_busy_ex )
+    
+    // .rs1_src_bank_id_i ( rs1_src_bank_id ),
+    // .rs2_src_bank_id_i ( rs2_src_bank_id ),
+    // .rs3_src_bank_id_i ( rs3_src_bank_id ),
+    // .rd_dst_bank_id_i  ( rd_dst_bank_id )
 );
 
 
@@ -362,22 +400,32 @@ csr #(
     .clk_i   ( clk_i ),
     .rst_n_i ( rst_n_i ),
     
+    // Ports for CSR read/modify instructions
     .csr_addr_i  ( csr_addr_ex ),
     .csr_wdata_i ( csr_wdata_ex ),
     .csr_op_i    ( csr_op_ex ),
     .csr_rdata_o ( csr_rdata_ex ),
     
+    // Initial values of CSRs
     .hartid_i ( hartid_i ),
     .mtvec_i  ( mtvec_i ),
     
+    // Output some CSRs
     .mtvec_o ( mtvec ),
     .mepc_o  ( mepc ),
     
+    // Trap handling
     .save_pc_id_i ( save_pc_id ),
     .save_pc_ex_i ( save_pc_ex ),
     .pc_id_i      ( pc_id ),
     .pc_ex_i      ( pc_ex ),
-    .exception_cause_i ( exception_cause )
+    .exception_cause_i ( exception_cause ),
+    
+    // Floating-point ports
+    .fflags_i   ( csr_fpu_flags_ex ),
+    .fflag_we_i ( 1'b0 ),
+    .fregs_we_i ( 1'b0 ),
+    .frm_o      (  )
 );
 
 
@@ -390,9 +438,11 @@ controller controller_inst (
     // Data Hazards (forwarding)
     .fwd_op1_o ( fwd_op1_id ),
     .fwd_op2_o ( fwd_op2_id ),
+    .fwd_op3_o ( fwd_op3_id ),
     // Source/destiny general purpose registers
     .rs1_addr_id_i     ( rs1_addr_id ),
     .rs2_addr_id_i     ( rs2_addr_id ),
+    .rs3_addr_id_i     ( rs3_addr_id ),
     .rd_addr_ex_i      ( rd_addr_ex ),
     .rd_addr_mem_i     ( rd_addr_mem ),
     .rd_addr_wb_i      ( rd_addr_wb ),
@@ -400,15 +450,18 @@ controller controller_inst (
     .reg_alu_wen_ex_i  ( reg_alu_wen_ex ),
     .reg_alu_wen_mem_i ( reg_alu_wen_mem ),
     .reg_alu_wen_wb_i  ( reg_alu_wen_wb ),
+    .reg_mem_wen_ex_i  ( reg_mem_wen_ex ),
     .reg_mem_wen_mem_i ( reg_mem_wen_mem ),
     .reg_mem_wen_wb_i  ( reg_mem_wen_wb ),
     
     // Data Hazards (stalling)
-    .stall_if_o  ( stall_if ),
-    .stall_id_o  ( stall_id ),
-    .stall_ex_o  ( stall_ex ),
-    .stall_mem_o ( stall_mem ),
-    .reg_mem_wen_ex_i ( reg_mem_wen_ex ),
+    .stall_if_o    ( stall_if ),
+    .stall_id_o    ( stall_id ),
+    .stall_ex_o    ( stall_ex ),
+    .stall_mem_o   ( stall_mem ),
+    .fpu_req_id_i  ( fpu_req_id ),
+    .fpu_gnt_id_i  ( fpu_gnt_id ),
+    .fpu_busy_ex_i ( fpu_busy_ex ),
     
     // Control Hazards (flushing)
     .flush_id_o  ( flush_id ),
@@ -427,13 +480,13 @@ controller controller_inst (
     .instr_addr_misaligned_id_i ( instr_addr_misaligned_id ),
     // .instr_addr_misaligned_ex_i ( instr_addr_misaligned_ex ),
     .is_mret_id_i      ( is_mret_id ),
-    .exception_cause_o ( exception_cause ),
+    .exception_cause_o ( exception_cause )
 
-    // FPU Controler
-    .fflag_i(fflags_csr),
-    .fflag_we_i(fflags_we),
-    .fregs_we_i(fregs_we),
-    .frm_o(frm_csr)
+    // // FPU Controler
+    // .fflag_i(fflags_csr),
+    // .fflag_we_i(fflags_we),
+    // .fregs_we_i(fregs_we),
+    // .frm_o(frm_csr)
 );
 
 endmodule

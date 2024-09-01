@@ -17,21 +17,22 @@ module id_stage import core_pkg::*; #(
     output logic        trap_id_o,
     
     // Output to EX stage
-    output alu_operation_t alu_operation_id_o,
-    output logic [ 4:0]    rd_addr_id_o,
-    output logic           mem_wen_id_o,
-    output data_type_t     mem_data_type_id_o,
-    output logic           mem_sign_extend_id_o,
-    output logic           reg_alu_wen_id_o,
-    output logic           reg_mem_wen_id_o,
-    output logic [31:0]    pc_id_o,
-    output pc_source_t     pc_source_id_o,
-    output logic           is_branch_id_o,
-    output logic [31:0]    alu_operand_1_id_o,
-    output logic [31:0]    alu_operand_2_id_o,
-    output logic [31:0]    mem_wdata_id_o,
-    output logic [31:0]    branch_target_id_o,
-    output logic           valid_id_o,
+    output alu_operation_t  alu_operation_id_o,
+    output alu_result_mux_t alu_result_mux_id_o,
+    output logic [ 4:0]     rd_addr_id_o,
+    output logic            mem_wen_id_o,
+    output data_type_t      mem_data_type_id_o,
+    output logic            mem_sign_extend_id_o,
+    output logic            reg_alu_wen_id_o,
+    output logic            reg_mem_wen_id_o,
+    output logic [31:0]     pc_id_o,
+    output pc_source_t      pc_source_id_o,
+    output logic            is_branch_id_o,
+    output logic [31:0]     alu_operand_1_id_o,
+    output logic [31:0]     alu_operand_2_id_o,
+    output logic [31:0]     mem_wdata_id_o,
+    output logic [31:0]     branch_target_id_o,
+    output logic            valid_id_o,
     
     // Input from WB stage
     input  logic [31:0] reg_wdata_wb_i,
@@ -41,6 +42,7 @@ module id_stage import core_pkg::*; #(
     // Output to controller
     output logic [ 4:0] rs1_addr_id_o,
     output logic [ 4:0] rs2_addr_id_o,
+    output logic [ 4:0] rs3_addr_id_o,
     output logic        illegal_instr_id_o,
     output logic        instr_addr_misaligned_id_o,
     output logic        is_mret_id_o,
@@ -52,6 +54,7 @@ module id_stage import core_pkg::*; #(
     // Control inputs
     input  logic stall_id_i,
     input  logic flush_id_i,
+    input  logic branch_decision_ex_i,
     
     // Inputs for forwarding
     input  forward_t    fwd_op1_id_i,
@@ -61,7 +64,18 @@ module id_stage import core_pkg::*; #(
     input  logic [31:0] mem_rdata_mem_i,
     input  logic [31:0] alu_result_wb_i,
     input  logic [31:0] mem_rdata_wb_i,
-    input  logic [31:0] csr_rdata_ex_i
+    input  logic [31:0] csr_rdata_ex_i,
+    
+    // FPU signals
+    output logic [2:0] fpu_rnd_mode_id_o,
+    output logic [3:0] fpu_op_id_o,
+    output logic       fpu_op_mod_id_o,
+    output logic       fpu_req_id_o,
+    
+    output reg_bank_mux_t rs1_src_bank_id_o,
+    output reg_bank_mux_t rs2_src_bank_id_o,
+    output reg_bank_mux_t rs3_src_bank_id_o,
+    output reg_bank_mux_t rd_dst_bank_id_o
 );
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -71,13 +85,15 @@ module id_stage import core_pkg::*; #(
 logic [31:0] instr_id;
 logic        is_compressed_id;
 
-logic [31:0] rs1_rdata_id, rs2_rdata_id;
-logic [31:0] rs1_or_fwd_id, rs2_or_fwd_id;
+logic [31:0] rs1_rdata_id , rs2_rdata_id , rs3_rdata_id ;
+logic [31:0] rs1_or_fwd_id, rs2_or_fwd_id, rs3_or_fwd_id;
 
 alu_source_1_t     alu_source_1_id; 
 alu_source_2_t     alu_source_2_id; 
 immediate_source_t immediate_type_id;
 logic [31:0]       immediate_id;
+
+logic fpu_req_id_int;
 
 logic exception_id;
 
@@ -116,11 +132,13 @@ decoder #(
     .alu_source_1_o   ( alu_source_1_id ), 
     .alu_source_2_o   ( alu_source_2_id ), 
     .immediate_type_o ( immediate_type_id ),
+    .alu_result_mux_o ( alu_result_mux_id_o ),
     
     // Source/destiny general purpose registers
-    .rs1_addr_o (rs1_addr_id_o),
-    .rs2_addr_o (rs2_addr_id_o),
-    .rd_addr_o  (rd_addr_id_o),
+    .rs1_addr_o ( rs1_addr_id_o ),
+    .rs2_addr_o ( rs2_addr_id_o ),
+    .rs3_addr_o ( rs3_addr_id_o ),
+    .rd_addr_o  ( rd_addr_id_o ),
     
     // Memory access related signals
     .mem_wen_o         ( mem_wen_id_o ),
@@ -147,7 +165,18 @@ decoder #(
     
     // Instruction to be decoded
     .instr_i         ( instr_id ),
-    .is_compressed_i ( is_compressed_id )
+    .is_compressed_i ( is_compressed_id ),
+    
+    // FPU signals
+    .fpu_rnd_mode_o ( fpu_rnd_mode_id_o ),
+    .fpu_op_o       ( fpu_op_id_o ),
+    .fpu_op_mod_o   ( fpu_op_mod_id_o ),
+    .fpu_req_o      ( fpu_req_id_int ),
+    
+    .rs1_src_bank_o ( rs1_src_bank_id_o ),
+    .rs2_src_bank_o ( rs2_src_bank_id_o ),
+    .rs3_src_bank_o ( rs3_src_bank_id_o ),
+    .rd_dst_bank_o  ( rd_dst_bank_id_o )
 );
 
 imm_extender imm_extender_inst (
@@ -156,21 +185,30 @@ imm_extender imm_extender_inst (
     .instr_i          ( instr_id )
 );
 
-register_file register_file_inst (
-    .rdata1_o ( rs1_rdata_id ),
-    .rdata2_o ( rs2_rdata_id ),
-    .raddr1_i ( rs1_addr_id_o ),
-    .raddr2_i ( rs2_addr_id_o ),
+register_file #(
+    .GEN_F_REGS ( ISA_F )
+) register_file_inst (
+    .clk_i    ( clk_i ),
+    .rst_n_i  ( rst_n_i ),
     
     .wdata_i  ( reg_wdata_wb_i ),
     .waddr_i  ( rd_addr_wb_i ),
     .wen_i    ( reg_wen_wb_i ),
+    .wdst_i   ( X_REG ),
     
-    .clk_i    ( clk_i ),
-    .rst_n_i  ( rst_n_i )
+    .rdata1_o ( rs1_rdata_id ),
+    .rdata2_o ( rs2_rdata_id ),
+    .rdata3_o ( rs3_rdata_id ),
+    .raddr1_i ( rs1_addr_id_o ),
+    .raddr2_i ( rs2_addr_id_o ),
+    .raddr3_i ( rs3_addr_id_o ),
+    .rsrc1_i  ( rs1_src_bank_id_o ),
+    .rsrc2_i  ( rs2_src_bank_id_o ),
+    .rsrc3_i  ( rs3_src_bank_id_o )
+    
 );
 
-// Resolve forwarding for rs1 and rs2
+// Resolve forwarding for source registers
 always_comb begin
     unique case (fwd_op1_id_i)
         NO_FORWARD           : rs1_or_fwd_id = rs1_rdata_id;
@@ -232,6 +270,10 @@ always_comb begin
     else // If no compressed instructions, target must be 4-byte aligned
         instr_addr_misaligned_id_o = jump_target_id_o[1] && (pc_source_id_o inside {PC_JAL, PC_JALR});
 end
+
+// Deassert FPU req if we don't have a valid instruction
+// assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !flush_ex_i; // && !stall_ex_i;
+assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i; // && !stall_ex_i;
 
 // Traps: illegal instruction decoded, jump target misaligned, mret
 assign exception_id = illegal_instr_id_o || instr_addr_misaligned_id_o || is_mret_id_o;

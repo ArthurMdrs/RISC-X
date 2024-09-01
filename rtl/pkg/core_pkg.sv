@@ -35,6 +35,18 @@ typedef enum logic [1:0] {
     ALU_SCR2_4_OR_2 // Used to calculate PC + 4 or PC + 2
 } alu_source_2_t;
 
+typedef enum logic [1:0] { 
+    BASIC_ALU_RESULT,
+    FPU_RESULT,
+    MULT_RESULT,
+    DIV_RESULT
+} alu_result_mux_t;
+
+typedef enum logic { 
+    X_REG,
+    F_REG
+} reg_bank_mux_t;
+
 
 
 typedef enum logic [3:0] {
@@ -108,12 +120,7 @@ typedef enum logic [1:0] {
     CSR_CLEAR
 } csr_operation_t;
 
-// ULA-FPU sel
 
-typedef enum logic {
-    ULA_SEL,
-    FPU_SEL
-} ULA_FPU_t;
 
 // OpCodes
 
@@ -132,13 +139,13 @@ localparam logic [6:0] OPCODE_SYSTEM = 7'b111_0011; // 7'h73
 ///////FPU////////
 
 ///OPCODES///
-localparam logic [6:0] OPCODE_F_R       = 7'b1010011; // 7'h53
-localparam logic [6:0] OPCODE_F_MADD    = 7'b1000011; // 7'h43
-localparam logic [6:0] OPCODE_F_MSUB    = 7'b1000111; // 7'h47
-localparam logic [6:0] OPCODE_F_NMSUB   = 7'b1001011; // 7'h4B
-localparam logic [6:0] OPCODE_F_NMADD   = 7'b1001111; // 7'h4F
-localparam logic [6:0] OPCODE_F_FSW     = 7'b0100111; // 7'h27
-localparam logic [6:0] OPCODE_F_FLW     = 7'b0000111; // 7'h07
+localparam logic [6:0] OPCODE_OP_FP     = 7'b1010011; // 7'h53
+localparam logic [6:0] OPCODE_FMADD_FP  = 7'b1000011; // 7'h43
+localparam logic [6:0] OPCODE_FMSUB_FP  = 7'b1000111; // 7'h47
+localparam logic [6:0] OPCODE_FNMSUB_FP = 7'b1001011; // 7'h4B
+localparam logic [6:0] OPCODE_FNMADD_FP = 7'b1001111; // 7'h4F
+localparam logic [6:0] OPCODE_STORE_FP  = 7'b0100111; // 7'h27
+localparam logic [6:0] OPCODE_LOAD_FP   = 7'b0000111; // 7'h07
 
 ///ROUND MODE///
 //localparam logic [2:0] RNE = 3'b000;

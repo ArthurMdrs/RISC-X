@@ -54,7 +54,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         mem_wdata_mem         <= '0;
         reg_alu_wen_mem_o     <= '0;
         reg_mem_wen_mem_o     <= '0;
-        valid_mem_o <= '0;
+        valid_mem_o           <= '0;
     end else begin
         if (!stall_mem_i) begin
             // Insert bubble if flushing is needed
@@ -62,7 +62,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 mem_wen_mem           <= '0;
                 reg_alu_wen_mem_o     <= '0;
                 reg_mem_wen_mem_o     <= '0;
-                valid_mem_o <= 1'b0;
+                valid_mem_o           <= 1'b0;
             end
             else begin
                 rd_addr_mem_o         <= rd_addr_ex_i;
@@ -73,7 +73,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 mem_wdata_mem         <= mem_wdata_ex_i;
                 reg_alu_wen_mem_o     <= reg_alu_wen_ex_i;
                 reg_mem_wen_mem_o     <= reg_mem_wen_ex_i;
-                valid_mem_o <= valid_ex_i;
+                valid_mem_o           <= valid_ex_i;
             end
         end
     end

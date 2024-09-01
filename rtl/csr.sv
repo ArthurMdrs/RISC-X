@@ -6,12 +6,13 @@ module csr import core_pkg::*; #(
     input  logic clk_i,
     input  logic rst_n_i,
     
-    // Porsts for CSR read/modify instructions
+    // Ports for CSR read/modify instructions
     input  csr_addr_t      csr_addr_i,
     input  logic    [31:0] csr_wdata_i,
     input  csr_operation_t csr_op_i,
     output logic    [31:0] csr_rdata_o,
     
+    // Initial values of CSRs
     input  logic    [31:0] hartid_i,
     input  logic    [23:0] mtvec_i,
     
@@ -27,7 +28,7 @@ module csr import core_pkg::*; #(
     input  logic [ 4:0] exception_cause_i,
 
     // Adicionei aqui
-    // Floating point ports
+    // Floating-point ports
     input logic [4:0] fflags_i,
     input logic fflag_we_i,
     input logic fregs_we_i,
