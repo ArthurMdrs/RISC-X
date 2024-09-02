@@ -27,7 +27,7 @@ module OBI_controler_if #(
     // Transaction request interface
     input  logic                core_rready_i,
     input  logic                core_valid_i,
-    //output logic                core_ready_o,
+    output logic                core_ready_o,
     input  logic [WIDTH-1:0]    core_addr_i,
     input  logic                core_we_i,
     input  logic [3:0]          core_be_i,
@@ -135,6 +135,7 @@ module OBI_controler_if #(
     end
 
     always_comb begin
+        core_ready_o = 0;
         case(state)
             IDLE:       begin
                 
@@ -144,7 +145,7 @@ module OBI_controler_if #(
                 obi_be_o         = core_be_i;
                 obi_wdata_o      = core_wdata_i;
                 obi_req_o        = core_valid_i;
-                
+                core_ready_o     = 1;
                 if (obi_gnt_i)
                     next_state = WAITING;
                 else

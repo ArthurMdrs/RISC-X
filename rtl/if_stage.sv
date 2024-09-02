@@ -9,12 +9,12 @@ module if_stage import core_pkg::*; (
     
     // OBI interface for instruction memory
     output logic        insn_obi_req_o,
-    input  logic        insn_obi_gnt_i
+    input  logic        insn_obi_gnt_i,
     output logic [31:0] insn_obi_addr_o,
-    // output logic        insn_obi_we_o
-    // output logic [ 3:0] insn_obi_be_o,
-    // output logic [31:0] insn_obi_wdata_o,
-    input  logic        insn_obi_rvalid_i
+    output logic        insn_obi_we_o,
+    output logic [ 3:0] insn_obi_be_o,
+    output logic [31:0] insn_obi_wdata_o,
+    input  logic        insn_obi_rvalid_i,
     output logic        insn_obi_rready_o,
     input  logic [31:0] insn_obi_rdata_i,
 
@@ -78,45 +78,46 @@ pc_controller pc_constroller_inst (
     .pc_source_ex_i       ( pc_source_ex_i ),
     .trap_id_i            ( trap_id_i ),
     .trap_ex_i            ( trap_ex_i ),
+    .core_ready_i         ( core_ready ),
     
     .is_mret_i            ( is_mret_i ),
     .mtvec_i              ( mtvec_i ),
     .mepc_i               ( mepc_i )
 );
 
-// module OBI_controler_if #(
-//     parameter WIDTH = 32
-// ) (
-//     .clk                    (clk_i),
-//     .rst_n,
+module OBI_controler_if #(
+    parameter WIDTH = 32
+) (
+    .clk                    ( clk_i ),
+    .rst_n                  ( rst_n_i ),
 
-//     // Transaction request interface
-//     .core_rready_i,
-//     .core_valid_i,
-//     //output logic                core_ready_o,
-//     .core_addr_i,
-//     .core_we_i,
-//     .core_be_i,
-//     .core_wdata_i,
+    // Transaction request interface
+    .core_rready_i          ( 1 ),
+    .core_valid_i           ( 1 ),
+    .core_ready_o           ( core_ready ),
+    .core_addr_i            ( pc_if_o ),
+    .core_we_i              ( 0 ),
+    .core_be_i              ( 4'b1111 ),
+    .core_wdata_i           ( 0 ),
 
-//     // Transaction response interface
-//     .resp_valid_o,  // Note: Consumer is assumed to be 'ready' whenever resp_valid_o = 1
-//     .resp_rdata_o,
-//     .resp_err_o,
+    // Transaction response interface
+    .resp_valid_o           (  ),  // Note: Consumer is assumed to be 'ready' whenever resp_valid_o = 1
+    .resp_rdata_o           (  ),
+    .resp_err_o             (  ),
 
-//     // OBI interface
-//     .obi_req_o,
-//     .obi_gnt_i,
-//     .obi_addr_o,
-//     .obi_we_o,
-//     .obi_be_o,
-//     .obi_wdata_o,
-//     .obi_atop_o,
-//     .obi_rdata_i,
-//     .obi_rvalid_i,
-//     .obi_err_i
+    // OBI interface
+    .obi_req_o              ( insn_obi_req_o ),
+    .obi_gnt_i              ( insn_obi_gnt_i ),
+    .obi_addr_o             ( insn_obi_addr_o ),
+    .obi_we_o               ( insn_obi_we_o ),
+    .obi_be_o               ( insn_obi_be_o ),
+    .obi_wdata_o            ( insn_obi_wdata_o ),
+    .obi_atop_o             (  ),
+    .obi_rdata_i            ( insn_obi_rdata_i ),
+    .obi_rvalid_i           ( insn_obi_rvalid_i ),
+    .obi_err_i              ( 0 )
 
-// );
+);
 
 
 

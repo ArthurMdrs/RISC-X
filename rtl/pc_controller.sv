@@ -12,7 +12,7 @@ module pc_controller import core_pkg::*; #(
     input  pc_source_t       pc_source_ex_i,
     input                    trap_id_i,
     input                    trap_ex_i,
-    output                   trap_mem_read_if_o,
+    input                    core_ready_i,
     
     input                    is_mret_i, 
     input  logic [WIDTH-1:0] mtvec_i,
@@ -25,7 +25,9 @@ logic [31:0]  exc_pc;
 
 // Determine the select signal for the next PC mux
 always_comb begin
-    if (trap_ex_i)
+    if (!core_ready_i)
+        next_pc_mux = curr_pc_i;
+    else if (trap_ex_i)=
         next_pc_mux = NPC_EXCEPTION;
     else if ((pc_source_ex_i == PC_BRANCH) && branch_decision_ex_i)
         next_pc_mux = NPC_BRANCH;
