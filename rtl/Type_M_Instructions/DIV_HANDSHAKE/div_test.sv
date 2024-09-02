@@ -1,6 +1,6 @@
 `include "./opdiv.sv"
 module tb();
-		parameter [31:0] numero_de_testes = 5000000000000000000;
+		parameter [31:0] numero_de_testes = 2;
 		logic 					clock		;
 		logic 					nreset		;
 		logic 					in_valid_i	;

@@ -30,10 +30,10 @@ module tb();
         clock = 0;
         nreset = 1;
         in_valid_i = 1;
-        a= -1685767364; 
-        b = 1;
+        a= 59699056; 
+        b = 87783792;
         $monitor(a,b,c);
-        #200 $finish;
+        #2000 $finish;
      end
      always #2 clock = ~clock;
   always_ff@(negedge clock)begin

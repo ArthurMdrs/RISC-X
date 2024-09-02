@@ -23,7 +23,7 @@ module opdiv(
                 .mask   (mask)
     );
     enum {IDLE,INITIALISE_AND_COUNTER_BITS,SET_AK_MINUEND,LOOP,UPDATE_MINUEND_RIGHT,UPDATE_MINUEND_LEFT,INCREASE_K,DONE} states;
-    always_ff@(negedge clock, negedge nreset)begin
+    always_ff@(posedge clock, negedge nreset)begin
         if(!nreset)begin
             a_reg       <= 0;
             b_reg       <= 0;
@@ -171,19 +171,9 @@ module opdiv(
         end
         default                     :next = IDLE;
     endcase
-    always_ff@(posedge clock, negedge nreset)begin
-        if(!nreset)begin c <= 0;
-                         c_signal <= 0;
-        end
-        else begin 
-            case({a_signal,b_signal})
-                  2'b10: c_signal <= 1;
-                  2'b01: c_signal <= 1;
-                default: c_signal <= 0;
-            endcase
-            c <= out_valid_o ? {c_signal,c_signal ? ~Quatient+1: Quatient}: c;
-        end
-    end
+
+    always_comb c_signal        = a_signal == b_signal ? 0 : 1;
+    always_comb c <= out_valid_o ? {c_signal,c_signal ? ~Quatient+1: Quatient}: c;
     always_comb left_updade     = {minuend,a_reg[next_k]};
     always_comb right_updade    = {minuend-b_reg,a_reg[next_k]};
     always_comb next_k          = k - 1;
