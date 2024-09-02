@@ -1,8 +1,8 @@
 module controller import core_pkg::*; (
     // Data Hazards (forwarding)
-    output forward_t fwd_op1_o,
-    output forward_t fwd_op2_o,
-    output forward_t fwd_op3_o,
+    output forward_t fwd_rs1_o,
+    output forward_t fwd_rs2_o,
+    output forward_t fwd_rs3_o,
     // Source/destiny general purpose registers
     input  logic [4:0] rs1_addr_id_i,
     input  logic [4:0] rs2_addr_id_i,
@@ -17,6 +17,13 @@ module controller import core_pkg::*; (
     input  logic reg_mem_wen_ex_i,
     input  logic reg_mem_wen_mem_i,
     input  logic reg_mem_wen_wb_i,
+    // Type of register (x or f)
+    input  reg_bank_mux_t rs1_src_bank_id_i,
+    input  reg_bank_mux_t rs2_src_bank_id_i,
+    input  reg_bank_mux_t rs3_src_bank_id_i,
+    input  reg_bank_mux_t rd_dst_bank_ex_i,
+    input  reg_bank_mux_t rd_dst_bank_mem_i,
+    input  reg_bank_mux_t rd_dst_bank_wb_i,
     
     // Data Hazards (stalling)
     output logic stall_if_o,
@@ -51,67 +58,78 @@ logic rd_ex_is_rs1_id;
 logic rd_mem_is_rs1_id;
 logic rd_wb_is_rs1_id;
 
-assign rd_ex_is_rs1_id  = (rd_addr_ex_i  == rs1_addr_id_i) && (rs1_addr_id_i != '0);
-assign rd_mem_is_rs1_id = (rd_addr_mem_i == rs1_addr_id_i) && (rs1_addr_id_i != '0);
-assign rd_wb_is_rs1_id  = (rd_addr_wb_i  == rs1_addr_id_i) && (rs1_addr_id_i != '0);
-
 logic rd_ex_is_rs2_id;
 logic rd_mem_is_rs2_id;
 logic rd_wb_is_rs2_id;
 
-assign rd_ex_is_rs2_id  = (rd_addr_ex_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0);
-assign rd_mem_is_rs2_id = (rd_addr_mem_i == rs2_addr_id_i) && (rs2_addr_id_i != '0);
-assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0);
+logic rd_ex_is_rs3_id;
+logic rd_mem_is_rs3_id;
+logic rd_wb_is_rs3_id;
 
 logic fpu_gnt_stall;
 logic fpu_rvalid_stall;
+
+`default_nettype none
+
+// TODO: register f0 is not always zero. Some treatment must be made
+assign rd_ex_is_rs1_id  = (rd_addr_ex_i  == rs1_addr_id_i) && (rs1_addr_id_i != '0) && (rd_dst_bank_ex_i  == rs1_src_bank_id_i);
+assign rd_mem_is_rs1_id = (rd_addr_mem_i == rs1_addr_id_i) && (rs1_addr_id_i != '0) && (rd_dst_bank_mem_i == rs1_src_bank_id_i);
+assign rd_wb_is_rs1_id  = (rd_addr_wb_i  == rs1_addr_id_i) && (rs1_addr_id_i != '0) && (rd_dst_bank_wb_i  == rs1_src_bank_id_i);
+
+assign rd_ex_is_rs2_id  = (rd_addr_ex_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0) && (rd_dst_bank_ex_i  == rs2_src_bank_id_i);
+assign rd_mem_is_rs2_id = (rd_addr_mem_i == rs2_addr_id_i) && (rs2_addr_id_i != '0) && (rd_dst_bank_mem_i == rs2_src_bank_id_i);
+assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0) && (rd_dst_bank_wb_i  == rs2_src_bank_id_i);
+
+assign rd_ex_is_rs3_id  = (rd_addr_ex_i  == rs3_addr_id_i) && (rs3_addr_id_i != '0) && (rd_dst_bank_ex_i  == rs3_src_bank_id_i);
+assign rd_mem_is_rs3_id = (rd_addr_mem_i == rs3_addr_id_i) && (rs3_addr_id_i != '0) && (rd_dst_bank_mem_i == rs3_src_bank_id_i);
+assign rd_wb_is_rs3_id  = (rd_addr_wb_i  == rs3_addr_id_i) && (rs3_addr_id_i != '0) && (rd_dst_bank_wb_i  == rs3_src_bank_id_i);
 
 assign fpu_gnt_stall    = fpu_req_id_i && !fpu_gnt_id_i;
 assign fpu_rvalid_stall = fpu_busy_ex_i;
 
 // Resolve forwarding for rs1
 always_comb begin
-    fwd_op1_o = NO_FORWARD;
+    fwd_rs1_o = NO_FORWARD;
     if (rd_ex_is_rs1_id && reg_alu_wen_ex_i) begin
-        fwd_op1_o = FWD_EX_ALU_RES_TO_ID;
+        fwd_rs1_o = FWD_EX_ALU_RES_TO_ID;
     end
     else if (rd_mem_is_rs1_id && (reg_alu_wen_mem_i || reg_mem_wen_mem_i)) begin
         if (reg_alu_wen_mem_i)
-            fwd_op1_o = FWD_MEM_ALU_RES_TO_ID;
+            fwd_rs1_o = FWD_MEM_ALU_RES_TO_ID;
         else if (reg_mem_wen_mem_i)
-            fwd_op1_o = FWD_MEM_RDATA_TO_ID;
+            fwd_rs1_o = FWD_MEM_RDATA_TO_ID;
     end
     else if (rd_wb_is_rs1_id && (reg_alu_wen_wb_i || reg_mem_wen_wb_i)) begin
         if (reg_alu_wen_wb_i)
-            fwd_op1_o = FWD_WB_ALU_RES_TO_ID;
+            fwd_rs1_o = FWD_WB_ALU_RES_TO_ID;
         else if (reg_mem_wen_wb_i)
-            fwd_op1_o = FWD_WB_RDATA_TO_ID;
+            fwd_rs1_o = FWD_WB_RDATA_TO_ID;
     end
 end
 
 // Resolve forwarding for rs2
 always_comb begin
-    fwd_op2_o = NO_FORWARD;
+    fwd_rs2_o = NO_FORWARD;
     if (rd_ex_is_rs2_id && reg_alu_wen_ex_i) begin
-        fwd_op2_o = FWD_EX_ALU_RES_TO_ID;
+        fwd_rs2_o = FWD_EX_ALU_RES_TO_ID;
     end
     else if (rd_mem_is_rs2_id && (reg_alu_wen_mem_i || reg_mem_wen_mem_i)) begin
         if (reg_alu_wen_mem_i)
-            fwd_op2_o = FWD_MEM_ALU_RES_TO_ID;
+            fwd_rs2_o = FWD_MEM_ALU_RES_TO_ID;
         else if (reg_mem_wen_mem_i)
-            fwd_op2_o = FWD_MEM_RDATA_TO_ID;
+            fwd_rs2_o = FWD_MEM_RDATA_TO_ID;
     end
     else if (rd_wb_is_rs2_id && (reg_alu_wen_wb_i || reg_mem_wen_wb_i)) begin
         if (reg_alu_wen_wb_i)
-            fwd_op2_o = FWD_WB_ALU_RES_TO_ID;
+            fwd_rs2_o = FWD_WB_ALU_RES_TO_ID;
         else if (reg_mem_wen_wb_i)
-            fwd_op2_o = FWD_WB_RDATA_TO_ID;
+            fwd_rs2_o = FWD_WB_RDATA_TO_ID;
     end
 end
 
 // Resolve forwarding for rs3
 always_comb begin
-    fwd_op3_o = NO_FORWARD;
+    fwd_rs3_o = NO_FORWARD;
 end
 
 // Resolve stalls
@@ -160,5 +178,7 @@ always_comb begin
             exception_cause_o = EXC_CAUSE_INSTR_ADDR_MISAL;
     end
 end
+
+`default_nettype wire
 
 endmodule

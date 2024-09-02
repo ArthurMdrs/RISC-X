@@ -10,23 +10,25 @@ module mem_stage import core_pkg::*; (
     output logic  [3:0] dmem_ben_o,
     
     // Input from EX stage
-    input  logic [ 4:0] rd_addr_ex_i,
-    input  logic [31:0] alu_result_ex_i,
-    input  logic        mem_wen_ex_i,
-    input  data_type_t  mem_data_type_ex_i,
-    input  logic        mem_sign_extend_ex_i,
-    input  logic [31:0] mem_wdata_ex_i,
-    input  logic        reg_alu_wen_ex_i,
-    input  logic        reg_mem_wen_ex_i,
-    input  logic        valid_ex_i,
+    input  logic [ 4:0]   rd_addr_ex_i,
+    input  reg_bank_mux_t rd_dst_bank_ex_i,
+    input  logic [31:0]   alu_result_ex_i,
+    input  logic          mem_wen_ex_i,
+    input  data_type_t    mem_data_type_ex_i,
+    input  logic          mem_sign_extend_ex_i,
+    input  logic [31:0]   mem_wdata_ex_i,
+    input  logic          reg_alu_wen_ex_i,
+    input  logic          reg_mem_wen_ex_i,
+    input  logic          valid_ex_i,
     
     // Output to WB stage
-    output logic [ 4:0] rd_addr_mem_o,
-    output logic [31:0] alu_result_mem_o,
-    output logic [31:0] mem_rdata_mem_o,
-    output logic        reg_alu_wen_mem_o,
-    output logic        reg_mem_wen_mem_o,
-    output logic        valid_mem_o,
+    output logic [ 4:0]   rd_addr_mem_o,
+    output reg_bank_mux_t rd_dst_bank_mem_o,
+    output logic [31:0]   alu_result_mem_o,
+    output logic [31:0]   mem_rdata_mem_o,
+    output logic          reg_alu_wen_mem_o,
+    output logic          reg_mem_wen_mem_o,
+    output logic          valid_mem_o,
     
     // Control inputs
     input  logic stall_mem_i,
@@ -42,11 +44,13 @@ data_type_t  mem_data_type_mem;
 logic        mem_sign_extend_mem;
 logic [31:0] mem_wdata_mem;
 
+`default_nettype none
 
 // Pipeline registers EX->MEM
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
         rd_addr_mem_o         <= '0;
+        rd_dst_bank_mem_o     <= X_REG;
         alu_result_mem_o      <= '0;
         mem_wen_mem           <= '0;
         mem_data_type_mem     <= WORD;
@@ -66,6 +70,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
             end
             else begin
                 rd_addr_mem_o         <= rd_addr_ex_i;
+                rd_dst_bank_mem_o     <= rd_dst_bank_ex_i;
                 alu_result_mem_o      <= alu_result_ex_i;
                 mem_wen_mem           <= mem_wen_ex_i;
                 mem_data_type_mem     <= mem_data_type_ex_i;
@@ -114,5 +119,7 @@ always_comb begin
         default: mem_rdata_mem_o = dmem_rdata_i;
     endcase
 end
+
+`default_nettype wire
 
 endmodule

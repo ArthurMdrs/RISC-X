@@ -21,6 +21,9 @@ rvfi rvfi_inst (
     .alu_source_2_id  ( core_inst.id_stage_inst.alu_source_2_id ),
     .rs1_addr_id      ( core_inst.rs1_addr_id ),
     .rs2_addr_id      ( core_inst.rs2_addr_id ),
+    .rs1_src_bank_id  ( core_inst.rs1_src_bank_id ),
+    .rs2_src_bank_id  ( core_inst.rs2_src_bank_id ),
+    .rs3_src_bank_id  ( core_inst.rs3_src_bank_id ),
     .rs1_or_fwd_id    ( core_inst.id_stage_inst.rs1_or_fwd_id ),
     .rs2_or_fwd_id    ( core_inst.id_stage_inst.rs2_or_fwd_id ),
     .pc_id            ( core_inst.pc_id ),
@@ -49,11 +52,12 @@ rvfi rvfi_inst (
     .dmem_ben_o   ( core_inst.dmem_ben_o ),
     
     // Input from WB stage
-    .flush_wb     ( core_inst.flush_wb ),
-    .rd_addr_wb   ( core_inst.rd_addr_wb ),
-    .reg_wen_wb   ( core_inst.reg_wen_wb ),
-    .reg_wdata_wb ( core_inst.reg_wdata_wb ),
-    .mem_rdata_wb ( core_inst.mem_rdata_wb ),
+    .flush_wb       ( core_inst.flush_wb ),
+    .rd_addr_wb     ( core_inst.rd_addr_wb ),
+    .rd_dst_bank_wb ( core_inst.rd_dst_bank_wb ),
+    .reg_wen_wb     ( core_inst.reg_wen_wb ),
+    .reg_wdata_wb   ( core_inst.reg_wdata_wb ),
+    .mem_rdata_wb   ( core_inst.mem_rdata_wb ),
   
     .misa ( core_inst.csr_inst.misa ),
   

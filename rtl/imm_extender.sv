@@ -6,6 +6,8 @@ module imm_extender import core_pkg::*; #(
     input  logic [31:0]       instr_i
 );
 
+`default_nettype none
+
 `ifdef SVA_ON
 AST_DWIDTH_MORE_THAN_IMM_SIZE: assert property (@ (instr_i) DWIDTH >= 12);
 `endif
@@ -33,5 +35,7 @@ always_comb begin
         default: immediate = {{(DWIDTH-12){instr_i[31]}}, instr_i[31:20]};
     endcase
 end
+
+`default_nettype wire
 
 endmodule

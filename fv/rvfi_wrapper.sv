@@ -31,6 +31,8 @@ module rvfi_wrapper (
 (* keep *)               wire [29:0] boot_addr;
     
 ////////////////////    PORT LIST - END    ////////////////////
+
+`default_nettype none
     
 // Tie-offs
 assign clk_i   = clock;
@@ -44,7 +46,6 @@ localparam bit ISA_C = 1;
 localparam bit ISA_M = 0;
 localparam bit ISA_F = 1;
 
-`default_nettype none
 core #(
     .ISA_M(ISA_M),
     .ISA_C(ISA_C),
@@ -68,6 +69,8 @@ core #(
 );
 
 `include "rvfi_inst.sv"
+
+`default_nettype wire
 
 endmodule
 

@@ -16,6 +16,7 @@ module ex_stage import core_pkg::*; #(
     input  alu_operation_t  alu_operation_id_i,
     input  alu_result_mux_t alu_result_mux_id_i,
     input  logic [ 4:0]     rd_addr_id_i,
+    input  reg_bank_mux_t   rd_dst_bank_id_i,
     input  logic            mem_wen_id_i,
     input  data_type_t      mem_data_type_id_i,
     input  logic            mem_sign_extend_id_i,
@@ -26,6 +27,7 @@ module ex_stage import core_pkg::*; #(
     input  logic            is_branch_id_i,
     input  logic [31:0]     alu_operand_1_id_i,
     input  logic [31:0]     alu_operand_2_id_i,
+    input  logic [31:0]     alu_operand_3_id_i,
     input  logic [31:0]     mem_wdata_id_i,
     input  logic [31:0]     branch_target_id_i,
     input  logic            valid_id_i,
@@ -33,15 +35,16 @@ module ex_stage import core_pkg::*; #(
     input  csr_operation_t  csr_op_id_i,
     
     // Output to MEM stage
-    output logic [ 4:0] rd_addr_ex_o,
-    output logic [31:0] alu_result_ex_o,
-    output logic        mem_wen_ex_o,
-    output data_type_t  mem_data_type_ex_o,
-    output logic        mem_sign_extend_ex_o,
-    output logic [31:0] mem_wdata_ex_o,
-    output logic        reg_alu_wen_ex_o,
-    output logic        reg_mem_wen_ex_o,
-    output logic        valid_ex_o,
+    output logic [ 4:0]   rd_addr_ex_o,
+    output reg_bank_mux_t rd_dst_bank_ex_o,
+    output logic [31:0]   alu_result_ex_o,
+    output logic          mem_wen_ex_o,
+    output data_type_t    mem_data_type_ex_o,
+    output logic          mem_sign_extend_ex_o,
+    output logic [31:0]   mem_wdata_ex_o,
+    output logic          reg_alu_wen_ex_o,
+    output logic          reg_mem_wen_ex_o,
+    output logic          valid_ex_o,
     
     // Output to controller
     // output logic instr_addr_misaligned_ex_o,
@@ -99,6 +102,7 @@ logic exception_ex;
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
         rd_addr_ex_o         <= '0;
+        rd_dst_bank_ex_o     <= X_REG;
         alu_operation_ex     <= ALU_ADD;
         alu_operand_1_ex     <= '0;
         alu_operand_2_ex     <= '0;
@@ -132,6 +136,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
             end
             else begin
                 rd_addr_ex_o         <= rd_addr_id_i;
+                rd_dst_bank_ex_o     <= rd_dst_bank_id_i;
                 alu_operation_ex     <= alu_operation_id_i;
                 alu_operand_1_ex     <= alu_operand_1_id_i;
                 alu_operand_2_ex     <= alu_operand_2_id_i;
@@ -230,6 +235,10 @@ generate
         assign fpu_op = fpnew_pkg::operation_e'(fpu_op_id_i);
         fpnew_pkg::status_t fpu_flags;
         assign csr_fpu_flags_ex_o = {fpu_flags.NV, fpu_flags.DZ, fpu_flags.OF, fpu_flags.UF, fpu_flags.NX};
+        
+        assign fpu_operands_i[0] = alu_operand_1_id_i;
+        assign fpu_operands_i[1] = alu_operand_2_id_i;
+        assign fpu_operands_i[2] = alu_operand_3_id_i;
         
         fpnew_top #(
             .Features       (FPU_FEATURES),

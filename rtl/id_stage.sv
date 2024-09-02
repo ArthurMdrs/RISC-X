@@ -20,6 +20,7 @@ module id_stage import core_pkg::*; #(
     output alu_operation_t  alu_operation_id_o,
     output alu_result_mux_t alu_result_mux_id_o,
     output logic [ 4:0]     rd_addr_id_o,
+    output reg_bank_mux_t   rd_dst_bank_id_o,
     output logic            mem_wen_id_o,
     output data_type_t      mem_data_type_id_o,
     output logic            mem_sign_extend_id_o,
@@ -30,22 +31,27 @@ module id_stage import core_pkg::*; #(
     output logic            is_branch_id_o,
     output logic [31:0]     alu_operand_1_id_o,
     output logic [31:0]     alu_operand_2_id_o,
+    output logic [31:0]     alu_operand_3_id_o,
     output logic [31:0]     mem_wdata_id_o,
     output logic [31:0]     branch_target_id_o,
     output logic            valid_id_o,
     
     // Input from WB stage
-    input  logic [31:0] reg_wdata_wb_i,
-    input  logic [ 4:0] rd_addr_wb_i,
-    input  logic        reg_wen_wb_i,
+    input  logic [31:0]   reg_wdata_wb_i,
+    input  logic [ 4:0]   rd_addr_wb_i,
+    input  reg_bank_mux_t rd_dst_bank_wb_i,
+    input  logic          reg_wen_wb_i,
     
     // Output to controller
-    output logic [ 4:0] rs1_addr_id_o,
-    output logic [ 4:0] rs2_addr_id_o,
-    output logic [ 4:0] rs3_addr_id_o,
-    output logic        illegal_instr_id_o,
-    output logic        instr_addr_misaligned_id_o,
-    output logic        is_mret_id_o,
+    output logic [ 4:0]   rs1_addr_id_o,
+    output logic [ 4:0]   rs2_addr_id_o,
+    output logic [ 4:0]   rs3_addr_id_o,
+    output reg_bank_mux_t rs1_src_bank_id_o,
+    output reg_bank_mux_t rs2_src_bank_id_o,
+    output reg_bank_mux_t rs3_src_bank_id_o,
+    output logic          illegal_instr_id_o,
+    output logic          instr_addr_misaligned_id_o,
+    output logic          is_mret_id_o,
     
     // Output to CSRs
     output logic           csr_access_id_o,
@@ -57,8 +63,9 @@ module id_stage import core_pkg::*; #(
     input  logic branch_decision_ex_i,
     
     // Inputs for forwarding
-    input  forward_t    fwd_op1_id_i,
-    input  forward_t    fwd_op2_id_i,
+    input  forward_t    fwd_rs1_id_i,
+    input  forward_t    fwd_rs2_id_i,
+    input  forward_t    fwd_rs3_id_i,
     input  logic [31:0] alu_result_ex_i,
     input  logic [31:0] alu_result_mem_i,
     input  logic [31:0] mem_rdata_mem_i,
@@ -70,12 +77,7 @@ module id_stage import core_pkg::*; #(
     output logic [2:0] fpu_rnd_mode_id_o,
     output logic [3:0] fpu_op_id_o,
     output logic       fpu_op_mod_id_o,
-    output logic       fpu_req_id_o,
-    
-    output reg_bank_mux_t rs1_src_bank_id_o,
-    output reg_bank_mux_t rs2_src_bank_id_o,
-    output reg_bank_mux_t rs3_src_bank_id_o,
-    output reg_bank_mux_t rd_dst_bank_id_o
+    output logic       fpu_req_id_o
 );
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -90,12 +92,15 @@ logic [31:0] rs1_or_fwd_id, rs2_or_fwd_id, rs3_or_fwd_id;
 
 alu_source_1_t     alu_source_1_id; 
 alu_source_2_t     alu_source_2_id; 
+alu_source_3_t     alu_source_3_id; 
 immediate_source_t immediate_type_id;
 logic [31:0]       immediate_id;
 
 logic fpu_req_id_int;
 
 logic exception_id;
+
+`default_nettype none
 
 // Pipeline registers IF->ID
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -131,6 +136,7 @@ decoder #(
     .alu_operation_o  ( alu_operation_id_o ),
     .alu_source_1_o   ( alu_source_1_id ), 
     .alu_source_2_o   ( alu_source_2_id ), 
+    .alu_source_3_o   ( alu_source_3_id ), 
     .immediate_type_o ( immediate_type_id ),
     .alu_result_mux_o ( alu_result_mux_id_o ),
     
@@ -194,7 +200,7 @@ register_file #(
     .wdata_i  ( reg_wdata_wb_i ),
     .waddr_i  ( rd_addr_wb_i ),
     .wen_i    ( reg_wen_wb_i ),
-    .wdst_i   ( X_REG ),
+    .wdst_i   ( rd_dst_bank_wb_i ),
     
     .rdata1_o ( rs1_rdata_id ),
     .rdata2_o ( rs2_rdata_id ),
@@ -210,7 +216,7 @@ register_file #(
 
 // Resolve forwarding for source registers
 always_comb begin
-    unique case (fwd_op1_id_i)
+    unique case (fwd_rs1_id_i)
         NO_FORWARD           : rs1_or_fwd_id = rs1_rdata_id;
         FWD_EX_ALU_RES_TO_ID : rs1_or_fwd_id = alu_result_ex_i;
         FWD_MEM_ALU_RES_TO_ID: rs1_or_fwd_id = alu_result_mem_i;
@@ -219,7 +225,7 @@ always_comb begin
         FWD_WB_RDATA_TO_ID   : rs1_or_fwd_id = mem_rdata_wb_i;
         default: rs1_or_fwd_id = rs1_rdata_id;
     endcase
-    unique case (fwd_op2_id_i)
+    unique case (fwd_rs2_id_i)
         NO_FORWARD           : rs2_or_fwd_id = rs2_rdata_id;
         FWD_EX_ALU_RES_TO_ID : rs2_or_fwd_id = alu_result_ex_i;
         FWD_MEM_ALU_RES_TO_ID: rs2_or_fwd_id = alu_result_mem_i;
@@ -227,6 +233,15 @@ always_comb begin
         FWD_WB_ALU_RES_TO_ID : rs2_or_fwd_id = alu_result_wb_i;
         FWD_WB_RDATA_TO_ID   : rs2_or_fwd_id = mem_rdata_wb_i;
         default: rs2_or_fwd_id = rs2_rdata_id;
+    endcase
+    unique case (fwd_rs3_id_i)
+        NO_FORWARD           : rs3_or_fwd_id = rs3_rdata_id;
+        FWD_EX_ALU_RES_TO_ID : rs3_or_fwd_id = alu_result_ex_i;
+        FWD_MEM_ALU_RES_TO_ID: rs3_or_fwd_id = alu_result_mem_i;
+        FWD_MEM_RDATA_TO_ID  : rs3_or_fwd_id = mem_rdata_mem_i;
+        FWD_WB_ALU_RES_TO_ID : rs3_or_fwd_id = alu_result_wb_i;
+        FWD_WB_RDATA_TO_ID   : rs3_or_fwd_id = mem_rdata_wb_i;
+        default: rs3_or_fwd_id = rs3_rdata_id;
     endcase
 end
 
@@ -244,6 +259,10 @@ always_comb begin
         ALU_SCR2_IMM   : alu_operand_2_id_o = immediate_id;
         ALU_SCR2_4_OR_2: alu_operand_2_id_o = (is_compressed_id) ? (32'd2) : (32'd4);
         default: alu_operand_2_id_o = 32'b0;
+    endcase
+    unique case (alu_source_3_id)
+        ALU_SCR3_RS3   : alu_operand_3_id_o = rs3_or_fwd_id;
+        default: alu_operand_3_id_o = 32'b0;
     endcase
 end
 
@@ -279,5 +298,6 @@ assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !br
 assign exception_id = illegal_instr_id_o || instr_addr_misaligned_id_o || is_mret_id_o;
 assign trap_id_o = valid_id_o && exception_id;
 
+`default_nettype wire
 
 endmodule

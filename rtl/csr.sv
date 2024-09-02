@@ -82,6 +82,8 @@ logic [31:0] mie, mie_n;
 logic [4:0] fflags, fflags_n;
 logic [2:0] frm, frm_n;
 
+`default_nettype none
+
 // Define read operation
 always_comb begin
     case (csr_addr_i)
@@ -250,5 +252,7 @@ assign mtvec_o = mtvec;
 // assign mepc_o = mepc;
 // Output next value of mepc to account for writes followed by xRET 
 assign mepc_o = mepc_n;
+
+`default_nettype wire
 
 endmodule

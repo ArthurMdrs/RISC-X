@@ -47,13 +47,16 @@ logic        is_compressed_if;
 // Source and destiny registers from register file
 logic [4:0] rs1_addr_id, rs2_addr_id, rs3_addr_id;
 logic [4:0] rd_addr_id, rd_addr_ex, rd_addr_mem, rd_addr_wb;
+reg_bank_mux_t rs1_src_bank_id, rs2_src_bank_id, rs3_src_bank_id;
+reg_bank_mux_t rd_dst_bank_id, rd_dst_bank_ex, rd_dst_bank_mem, rd_dst_bank_wb;
 
 // ALU control signals, operands and result
 alu_operation_t    alu_operation_id;
 logic [31:0]       alu_operand_1_id;
 logic [31:0]       alu_operand_2_id;
+logic [31:0]       alu_operand_3_id;
 logic [31:0]       alu_result_ex, alu_result_mem, alu_result_wb;
-forward_t          fwd_op1_id, fwd_op2_id, fwd_op3_id;
+forward_t          fwd_rs1_id, fwd_rs2_id, fwd_rs3_id;
 alu_result_mux_t   alu_result_mux_id;
 
 // Memory access control signals, write data and read data
@@ -102,6 +105,8 @@ logic       fpu_busy_ex;
 logic [4:0] csr_fpu_flags_ex;
 
 
+
+`default_nettype none
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////        INSTRUCTION FETCH        ///////////////////////
@@ -170,6 +175,7 @@ id_stage #(
     .alu_operation_id_o     ( alu_operation_id ),
     .alu_result_mux_id_o    ( alu_result_mux_id ),
     .rd_addr_id_o           ( rd_addr_id ),
+    .rd_dst_bank_id_o       ( rd_dst_bank_id ),
     .mem_wen_id_o           ( mem_wen_id ),
     .mem_data_type_id_o     ( mem_data_type_id ),
     .mem_sign_extend_id_o   ( mem_sign_extend_id ),
@@ -180,22 +186,27 @@ id_stage #(
     .is_branch_id_o         ( is_branch_id ),
     .alu_operand_1_id_o     ( alu_operand_1_id ),
     .alu_operand_2_id_o     ( alu_operand_2_id ),
+    .alu_operand_3_id_o     ( alu_operand_3_id ),
     .mem_wdata_id_o         ( mem_wdata_id ),
     .branch_target_id_o     ( branch_target_id ),
     .valid_id_o             ( valid_id ),
     
     // Input from WB stage
-    .reg_wdata_wb_i ( reg_wdata_wb ),
-    .rd_addr_wb_i   ( rd_addr_wb ),
-    .reg_wen_wb_i   ( reg_wen_wb ),
+    .reg_wdata_wb_i   ( reg_wdata_wb ),
+    .rd_addr_wb_i     ( rd_addr_wb ),
+    .rd_dst_bank_wb_i ( rd_dst_bank_wb ),
+    .reg_wen_wb_i     ( reg_wen_wb ),
     
     // Output to controller
-    .rs1_addr_id_o ( rs1_addr_id ),
-    .rs2_addr_id_o ( rs2_addr_id ),
-    .rs3_addr_id_o ( rs3_addr_id ),
-    .illegal_instr_id_o ( illegal_instr_id ),
+    .rs1_addr_id_o              ( rs1_addr_id ),
+    .rs2_addr_id_o              ( rs2_addr_id ),
+    .rs3_addr_id_o              ( rs3_addr_id ),
+    .rs1_src_bank_id_o          ( rs1_src_bank_id ),
+    .rs2_src_bank_id_o          ( rs2_src_bank_id ),
+    .rs3_src_bank_id_o          ( rs3_src_bank_id ),
+    .illegal_instr_id_o         ( illegal_instr_id ),
     .instr_addr_misaligned_id_o ( instr_addr_misaligned_id ),
-    .is_mret_id_o ( is_mret_id ),
+    .is_mret_id_o               ( is_mret_id ),
     
     // Output to CSRs
     .csr_access_id_o ( csr_access_id ),
@@ -207,8 +218,9 @@ id_stage #(
     .branch_decision_ex_i      ( branch_decision_ex ),
     
     // Inputs for forwarding
-    .fwd_op1_id_i       ( fwd_op1_id ),
-    .fwd_op2_id_i       ( fwd_op2_id ),
+    .fwd_rs1_id_i       ( fwd_rs1_id ),
+    .fwd_rs2_id_i       ( fwd_rs2_id ),
+    .fwd_rs3_id_i       ( fwd_rs3_id ),
     .alu_result_ex_i    ( alu_result_ex ),
     .alu_result_mem_i   ( alu_result_mem ),
     .mem_rdata_mem_i    ( mem_rdata_mem ),
@@ -220,12 +232,7 @@ id_stage #(
     .fpu_rnd_mode_id_o ( fpu_rnd_mode_id ),
     .fpu_op_id_o       ( fpu_op_id ),
     .fpu_op_mod_id_o   ( fpu_op_mod_id ),
-    .fpu_req_id_o      ( fpu_req_id ),
-    
-    .rs1_src_bank_id_o ( rs1_src_bank_id ),
-    .rs2_src_bank_id_o ( rs2_src_bank_id ),
-    .rs3_src_bank_id_o ( rs3_src_bank_id ),
-    .rd_dst_bank_id_o  ( rd_dst_bank_id )
+    .fpu_req_id_o      ( fpu_req_id )
 );
 
 
@@ -252,6 +259,7 @@ ex_stage #(
     .alu_operation_id_i     ( alu_operation_id ),
     .alu_result_mux_id_i    ( alu_result_mux_id ),
     .rd_addr_id_i           ( rd_addr_id ),
+    .rd_dst_bank_id_i       ( rd_dst_bank_id ),
     .mem_wen_id_i           ( mem_wen_id ),
     .mem_data_type_id_i     ( mem_data_type_id ),
     .mem_sign_extend_id_i   ( mem_sign_extend_id ),
@@ -262,6 +270,7 @@ ex_stage #(
     .is_branch_id_i         ( is_branch_id ),
     .alu_operand_1_id_i     ( alu_operand_1_id ),
     .alu_operand_2_id_i     ( alu_operand_2_id ),
+    .alu_operand_3_id_i     ( alu_operand_3_id ),
     .mem_wdata_id_i         ( mem_wdata_id ),
     .branch_target_id_i     ( branch_target_id ),
     .valid_id_i             ( valid_id ),
@@ -270,6 +279,7 @@ ex_stage #(
     
     // Output to MEM stage
     .rd_addr_ex_o         ( rd_addr_ex ),
+    .rd_dst_bank_ex_o     ( rd_dst_bank_ex ),
     .alu_result_ex_o      ( alu_result_ex ),
     .mem_wen_ex_o         ( mem_wen_ex ),
     .mem_data_type_ex_o   ( mem_data_type_ex ),
@@ -305,11 +315,6 @@ ex_stage #(
     .fpu_req_id_i      ( fpu_req_id ),
     .fpu_gnt_id_o      ( fpu_gnt_id ),
     .fpu_busy_ex_o     ( fpu_busy_ex )
-    
-    // .rs1_src_bank_id_i ( rs1_src_bank_id ),
-    // .rs2_src_bank_id_i ( rs2_src_bank_id ),
-    // .rs3_src_bank_id_i ( rs3_src_bank_id ),
-    // .rd_dst_bank_id_i  ( rd_dst_bank_id )
 );
 
 
@@ -331,6 +336,7 @@ mem_stage mem_stage_inst (
     
     // Input from EX stage
     .rd_addr_ex_i         ( rd_addr_ex ),
+    .rd_dst_bank_ex_i     ( rd_dst_bank_ex ),
     .alu_result_ex_i      ( alu_result_ex ),
     .mem_wen_ex_i         ( mem_wen_ex ),
     .mem_data_type_ex_i   ( mem_data_type_ex ),
@@ -342,6 +348,7 @@ mem_stage mem_stage_inst (
     
     // Output to WB stage
     .rd_addr_mem_o     ( rd_addr_mem ),
+    .rd_dst_bank_mem_o ( rd_dst_bank_mem ),
     .alu_result_mem_o  ( alu_result_mem ),
     .mem_rdata_mem_o   ( mem_rdata_mem ),
     .reg_alu_wen_mem_o ( reg_alu_wen_mem ),
@@ -365,6 +372,7 @@ wb_stage wb_stage_inst (
     
     // Input from MEM stage
     .rd_addr_mem_i     ( rd_addr_mem ),
+    .rd_dst_bank_mem_i ( rd_dst_bank_mem ),
     .alu_result_mem_i  ( alu_result_mem ),
     .mem_rdata_mem_i   ( mem_rdata_mem ),
     .reg_alu_wen_mem_i ( reg_alu_wen_mem ),
@@ -377,6 +385,7 @@ wb_stage wb_stage_inst (
     
     // Output for forwarding
     .rd_addr_wb_o     ( rd_addr_wb ),
+    .rd_dst_bank_wb_o ( rd_dst_bank_wb ),
     .alu_result_wb_o  ( alu_result_wb ),
     .mem_rdata_wb_o   ( mem_rdata_wb ),
     .reg_alu_wen_wb_o ( reg_alu_wen_wb ),
@@ -436,9 +445,9 @@ csr #(
 
 controller controller_inst (
     // Data Hazards (forwarding)
-    .fwd_op1_o ( fwd_op1_id ),
-    .fwd_op2_o ( fwd_op2_id ),
-    .fwd_op3_o ( fwd_op3_id ),
+    .fwd_rs1_o ( fwd_rs1_id ),
+    .fwd_rs2_o ( fwd_rs2_id ),
+    .fwd_rs3_o ( fwd_rs3_id ),
     // Source/destiny general purpose registers
     .rs1_addr_id_i     ( rs1_addr_id ),
     .rs2_addr_id_i     ( rs2_addr_id ),
@@ -453,6 +462,13 @@ controller controller_inst (
     .reg_mem_wen_ex_i  ( reg_mem_wen_ex ),
     .reg_mem_wen_mem_i ( reg_mem_wen_mem ),
     .reg_mem_wen_wb_i  ( reg_mem_wen_wb ),
+    // Type of register (x or f)
+    .rs1_src_bank_id_i ( rs1_src_bank_id ),
+    .rs2_src_bank_id_i ( rs2_src_bank_id ),
+    .rs3_src_bank_id_i ( rs3_src_bank_id ),
+    .rd_dst_bank_ex_i  ( rd_dst_bank_ex ),
+    .rd_dst_bank_mem_i ( rd_dst_bank_mem ),
+    .rd_dst_bank_wb_i  ( rd_dst_bank_wb ),
     
     // Data Hazards (stalling)
     .stall_if_o    ( stall_if ),
@@ -488,5 +504,7 @@ controller controller_inst (
     // .fregs_we_i(fregs_we),
     // .frm_o(frm_csr)
 );
+
+`default_nettype wire
 
 endmodule

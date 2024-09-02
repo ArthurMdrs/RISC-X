@@ -35,6 +35,10 @@ typedef enum logic [1:0] {
     ALU_SCR2_4_OR_2 // Used to calculate PC + 4 or PC + 2
 } alu_source_2_t;
 
+typedef enum logic { 
+    ALU_SCR3_RS3
+} alu_source_3_t;
+
 typedef enum logic [1:0] { 
     BASIC_ALU_RESULT,
     FPU_RESULT,
@@ -135,10 +139,6 @@ localparam logic [6:0] OPCODE_LUI    = 7'b011_0111; // 7'h37
 localparam logic [6:0] OPCODE_AUIPC  = 7'b001_0111; // 7'h17
 localparam logic [6:0] OPCODE_SYSTEM = 7'b111_0011; // 7'h73
 
-
-///////FPU////////
-
-///OPCODES///
 localparam logic [6:0] OPCODE_OP_FP     = 7'b1010011; // 7'h53
 localparam logic [6:0] OPCODE_FMADD_FP  = 7'b1000011; // 7'h43
 localparam logic [6:0] OPCODE_FMSUB_FP  = 7'b1000111; // 7'h47
@@ -146,24 +146,6 @@ localparam logic [6:0] OPCODE_FNMSUB_FP = 7'b1001011; // 7'h4B
 localparam logic [6:0] OPCODE_FNMADD_FP = 7'b1001111; // 7'h4F
 localparam logic [6:0] OPCODE_STORE_FP  = 7'b0100111; // 7'h27
 localparam logic [6:0] OPCODE_LOAD_FP   = 7'b0000111; // 7'h07
-
-///ROUND MODE///
-//localparam logic [2:0] RNE = 3'b000;
-//localparam logic [2:0] RTZ = 3'b001;
-//localparam logic [2:0] RDN = 3'b010;
-//localparam logic [2:0] RUP = 3'b011;
-//localparam logic [2:0] RMM = 3'b100;
-//localparam logic [2:0] ROD = 3'b101;
-//localparam logic [2:0] DYN = 3'b111;
-
-///////FPU////////
-
-
-// Type RVC opcode:
-
-// localparam logic [6:0] OPCODE_RVC_0 = 7'bxxx_xx00; // First Quadrant
-// localparam logic [6:0] OPCODE_RVC_1 = 7'bxxx_xx01; // Second
-// localparam logic [6:0] OPCODE_RVC_2 = 7'bxxx_xx10; // Third
 
 localparam logic [1:0] OPCODE_RVC_0 = 2'b00; // First Quadrant
 localparam logic [1:0] OPCODE_RVC_1 = 2'b01; // Second Quadrant

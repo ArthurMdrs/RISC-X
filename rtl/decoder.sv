@@ -10,6 +10,7 @@ module decoder  #(
     output alu_operation_t    alu_operation_o,
     output alu_source_1_t     alu_source_1_o, 
     output alu_source_2_t     alu_source_2_o, 
+    output alu_source_3_t     alu_source_3_o, 
     output immediate_source_t immediate_type_o,
     // output logic              alu_en_o, // Disable ALU to save some power?
     output alu_result_mux_t   alu_result_mux_o,
@@ -19,6 +20,14 @@ module decoder  #(
     output logic [4:0] rs2_addr_o,
     output logic [4:0] rs3_addr_o,
     output logic [4:0] rd_addr_o,
+    output reg_bank_mux_t rs1_src_bank_o,
+    output reg_bank_mux_t rs2_src_bank_o,
+    output reg_bank_mux_t rs3_src_bank_o,
+    output reg_bank_mux_t rd_dst_bank_o,
+    // TODO: really implement rsx_is_used (use to make better forwarding/stalls and in RVFI)
+    output logic rs1_is_used_o,
+    output logic rs2_is_used_o,
+    output logic rs3_is_used_o,
     
     // Memory access related signals
     output logic       mem_wen_o,
@@ -32,6 +41,7 @@ module decoder  #(
     // Control transfer related signals
     output pc_source_t pc_source_o, 
     output logic       is_branch_o,
+    // TODO: create a is_jump so pc_controller doesn't have to use pc_source
     
     // CSR related signals
     output logic           csr_access_o,
@@ -54,13 +64,6 @@ module decoder  #(
     output logic       fpu_op_mod_o,
     output logic       fpu_req_o,
     
-    output reg_bank_mux_t rs1_src_bank_o,
-    output reg_bank_mux_t rs2_src_bank_o,
-    output reg_bank_mux_t rs3_src_bank_o,
-    output reg_bank_mux_t rd_dst_bank_o,
-    
-    // TODO: really implement rsx_is_used (use to make better forwarding/stalls)
-    output logic rs3_is_used_o,
     // output logic [4:0] rs3_addr_F_o,
     // output logic [4:0] is_store_o
     //output logic is_immediate_F
@@ -83,6 +86,8 @@ logic [2:0] funct3_C;
 logic [1:0] funct2_C;
 logic [4:0] rs1_addr_C, rs2_addr_C, rd_addr_C;
 
+`default_nettype none
+
 assign funct7 = instr_i[31:25];
 assign funct3 = instr_i[14:12];
 assign opcode = instr_i[ 6: 0];
@@ -94,6 +99,7 @@ assign funct2_C = instr_i[ 6: 5];
 
 wire is_compressed_int = is_compressed_i && ISA_C;
 
+// TODO: move all rs and rd logic to the always_comb
 assign rs1_addr_o = (is_compressed_int) ? (rs1_addr_C) : (instr_i[19:15]);
 assign rs2_addr_o = (is_compressed_int) ? (rs2_addr_C) : (instr_i[24:20]);
 assign rd_addr_o  = (is_compressed_int) ? (rd_addr_C ) : (instr_i[11: 7]);
@@ -104,8 +110,18 @@ always_comb begin
     alu_operation_o  = ALU_ADD;
     alu_source_1_o   = ALU_SCR1_RS1;
     alu_source_2_o   = ALU_SCR2_RS2;
+    alu_source_3_o   = ALU_SCR3_RS3;
     immediate_type_o = IMM_I;
     alu_result_mux_o = BASIC_ALU_RESULT;
+    
+    rs3_addr_o = instr_i[31:27];
+    rs1_src_bank_o = X_REG;
+    rs2_src_bank_o = X_REG;
+    rs3_src_bank_o = F_REG;
+    rd_dst_bank_o  = X_REG;
+    rs1_is_used_o  = 1'b0;
+    rs2_is_used_o  = 1'b0;
+    rs3_is_used_o  = 1'b0;
     
     mem_wen_o         = 1'b0;
     mem_data_type_o   = WORD;
@@ -132,16 +148,10 @@ always_comb begin
     fpu_req_o = 1'b0;
     
     
-    rs3_addr_o = instr_i[31:27];
     fpu_rnd_mode_o  = instr_i[14:12];
     fpu_op_o = fpnew_pkg::SGNJ;
     fpu_op_mod_o = 1'b0;
     //is_immediate_F = 1'b0;
-    rs1_src_bank_o = X_REG;
-    rs2_src_bank_o = X_REG;
-    rs3_src_bank_o = F_REG;
-    rd_dst_bank_o  = X_REG;
-    rs3_is_used_o = 1'b0;
     csr_status_o = 1'b0;
 
     
@@ -807,6 +817,7 @@ always_comb begin
                 reg_alu_wen_o = 1'b1;
                 rs1_src_bank_o = F_REG;
                 rs2_src_bank_o = F_REG;
+                rs3_src_bank_o = F_REG;
                 rd_dst_bank_o  = F_REG;
                 alu_result_mux_o = FPU_RESULT;
                 unique case (funct7)
@@ -856,6 +867,7 @@ always_comb begin
                     end
                     7'b110_0000: begin
                         fpu_op_o = fpnew_pkg::F2I;
+                        rd_dst_bank_o  = X_REG;
                         unique case (instr_i[24:20])
                             5'b00000: begin // fcvt.w.s
                                 fpu_op_mod_o = 1'b0;
@@ -868,6 +880,7 @@ always_comb begin
                     end
                     7'b110_1000: begin
                         fpu_op_o = fpnew_pkg::I2F;
+                        rs1_src_bank_o = X_REG;
                         unique case (instr_i[24:20])
                             5'b00000: begin // fcvt.s.w
                                 fpu_op_mod_o = 1'b0;
@@ -880,6 +893,7 @@ always_comb begin
                     end
                     7'b101_0000: begin
                         fpu_op_o = fpnew_pkg::CMP;
+                        rd_dst_bank_o = X_REG;
                         unique case (funct3)
                             3'b000: begin // fle.s
                                 fpu_rnd_mode_o = fpnew_pkg::RNE;
@@ -895,27 +909,30 @@ always_comb begin
                     end
                     7'b111_0000: begin
                         if(instr_i[24:20] != 5'b0) illegal_instr_o = 1'b1;
+                        rd_dst_bank_o = X_REG;
                         unique case (funct3)
                             3'b000: begin // fmv.x.w
+                                // Move from F reg to X reg
                                 // TODO: test fpu_req_o = 1'b0;
                                 fpu_op_o = fpnew_pkg::SGNJ;
                                 fpu_op_mod_o = 1'b1;
                                 fpu_rnd_mode_o = fpnew_pkg::RUP;
-                                rd_dst_bank_o = X_REG;
                             end
                             3'b001: begin // fclass.s
                                 fpu_op_o = fpnew_pkg::CLASSIFY;
-                                fpu_rnd_mode_o = fpnew_pkg::RNE;
+                                fpu_rnd_mode_o = fpnew_pkg::RNE; // TODO: is this necessary?
                             end
                             default: illegal_instr_o = 1'b1;
                         endcase
                     end
-                    7'b111_1000:begin // fmv.w.x
+                    7'b111_1000: begin // fmv.w.x
+                        // Move from X reg to F reg
                         // TODO: test fpu_req_o = 1'b0;
                         fpu_op_o = fpnew_pkg::SGNJ;
                         fpu_op_mod_o = 1'b0;
                         fpu_rnd_mode_o = 3'b011;
                         rs1_src_bank_o = X_REG;
+                        
                         if(instr_i[24:20] != 5'b0) illegal_instr_o = 1'b1;
                         if(funct3         != 3'b0) illegal_instr_o = 1'b1;
                     end
@@ -932,9 +949,14 @@ always_comb begin
             if (ISA_F) begin
                 fpu_req_o = 1'b1;
                 reg_alu_wen_o = 1'b1;
+                rs1_src_bank_o = F_REG;
+                rs2_src_bank_o = F_REG;
+                rs3_src_bank_o = F_REG;
+                rd_dst_bank_o  = X_REG;
                 rs3_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FMADD;
                 alu_result_mux_o = FPU_RESULT;
+                
                 if(instr_i[26:25] != 2'b0) illegal_instr_o = 1'b1;
             end 
             else begin 
@@ -946,10 +968,15 @@ always_comb begin
             if (ISA_F) begin
                 fpu_req_o = 1'b1;
                 reg_alu_wen_o = 1'b1;
+                rs1_src_bank_o = F_REG;
+                rs2_src_bank_o = F_REG;
+                rs3_src_bank_o = F_REG;
+                rd_dst_bank_o  = X_REG;
                 rs3_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FMADD;
                 fpu_op_mod_o = 1'b1;
                 alu_result_mux_o = FPU_RESULT;
+                
                 if(instr_i[26:25] != 2'b0) illegal_instr_o = 1'b1;
             end 
             else begin 
@@ -961,9 +988,14 @@ always_comb begin
             if (ISA_F) begin
                 fpu_req_o = 1'b1;
                 reg_alu_wen_o = 1'b1;
+                rs1_src_bank_o = F_REG;
+                rs2_src_bank_o = F_REG;
+                rs3_src_bank_o = F_REG;
+                rd_dst_bank_o  = X_REG;
                 rs3_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FNMSUB;
                 alu_result_mux_o = FPU_RESULT;
+                
                 if(instr_i[26:25] != 2'b0) illegal_instr_o = 1'b1;
             end 
             else begin 
@@ -975,10 +1007,15 @@ always_comb begin
             if (ISA_F) begin
                 fpu_req_o = 1'b1;
                 reg_alu_wen_o = 1'b1;
+                rs1_src_bank_o = F_REG;
+                rs2_src_bank_o = F_REG;
+                rs3_src_bank_o = F_REG;
+                rd_dst_bank_o  = X_REG;
                 rs3_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FNMSUB;
                 fpu_op_mod_o = 1'b1;
                 alu_result_mux_o = FPU_RESULT;
+                
                 if(instr_i[26:25] != 2'b0) illegal_instr_o = 1'b1;
             end 
             else begin 
@@ -997,6 +1034,9 @@ always_comb begin
                 mem_data_type_o = WORD;
                 mem_wen_o = 1'b1;
                 rs2_src_bank_o = F_REG;
+                
+                if(funct3 != 3'b010) 
+                    illegal_instr_o = 1'b1;
             end 
             else begin 
                 illegal_instr_o = 1'b1;
@@ -1014,6 +1054,9 @@ always_comb begin
                 mem_data_type_o = WORD;
                 reg_mem_wen_o = 1'b1;
                 rd_dst_bank_o = F_REG;
+                
+                if(funct3 != 3'b010) 
+                    illegal_instr_o = 1'b1;
             end 
             else begin 
                 illegal_instr_o = 1'b1;
@@ -1024,5 +1067,7 @@ always_comb begin
     endcase
     end
 end
+
+`default_nettype wire
     
 endmodule

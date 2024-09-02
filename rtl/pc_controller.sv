@@ -22,6 +22,8 @@ next_pc_mux_t next_pc_mux;
 exc_pc_mux_t  exc_pc_mux;
 logic [31:0]  exc_pc;
 
+`default_nettype none
+
 // Determine the select signal for the next PC mux
 always_comb begin
     if (trap_ex_i)
@@ -66,5 +68,7 @@ always_comb begin
         default: next_pc_o = curr_pc_i + 32'd4;
     endcase
 end
+
+`default_nettype wire
 
 endmodule
