@@ -22,7 +22,9 @@ next_pc_mux_t next_pc_mux;
 exc_pc_mux_t  exc_pc_mux;
 logic [31:0]  exc_pc;
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 // Determine the select signal for the next PC mux
 always_comb begin
@@ -69,6 +71,8 @@ always_comb begin
     endcase
 end
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule

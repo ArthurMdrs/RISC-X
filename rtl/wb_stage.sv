@@ -31,7 +31,9 @@ module wb_stage import core_pkg::*; (
 ////////////////////////          WRITE BACK          /////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 // Pipeline registers MEM->WB
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -71,6 +73,8 @@ always_comb begin
     reg_wen_wb_o = reg_alu_wen_wb_o || reg_mem_wen_wb_o;
 end
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule

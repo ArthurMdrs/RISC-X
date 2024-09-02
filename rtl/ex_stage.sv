@@ -96,7 +96,9 @@ logic is_branch_ex;
 logic instr_addr_misaligned_ex;
 logic exception_ex;
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 // Pipeline registers ID->EX
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -225,7 +227,7 @@ generate
             PipeConfig: fpnew_pkg::AFTER
         };
         
-        localparam fpnew_pkg::divsqrt_unit_t DIV_SQRT_SEL = TH32;
+        localparam fpnew_pkg::divsqrt_unit_t DIV_SQRT_SEL = fpnew_pkg::TH32;
         localparam int unsigned TRUE_SIMD_CLASS  = 0;
         localparam int unsigned ENABLE_SIMD_MASK = 0;
         
@@ -294,6 +296,7 @@ generate
         assign fpu_busy_ex_o = fpu_busy_int && !fpu_rvalid;
     end
     else begin
+        assign fpu_operands_i = '0;
         assign fpu_gnt_id_o = '0;
         assign fpu_result = '0;
         assign csr_fpu_flags_ex_o = '0;
@@ -301,7 +304,6 @@ generate
         assign fpu_busy_ex_o = '0;
     end
 endgenerate
-
 
 // Pass CSR rdata through ALU result in case of CSR reads
 assign alu_result_ex_o = (csr_access_ex_i) ? (csr_rdata_ex_i) : (alu_result_ex);
@@ -321,6 +323,8 @@ end
 assign exception_ex = instr_addr_misaligned_ex;
 assign trap_ex_o = valid_ex_o && exception_ex;
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule

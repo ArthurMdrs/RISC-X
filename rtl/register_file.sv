@@ -1,4 +1,4 @@
-module register_file #(
+module register_file import core_pkg::*; #(
     parameter int AWIDTH = 5,
     parameter int DWIDTH = 32,
     parameter bit GEN_F_REGS = 0
@@ -31,7 +31,9 @@ logic [DWIDTH-1:0] mem_x [1:MEM_SIZE-1];
 // Floating-point registers
 logic [DWIDTH-1:0] mem_f [1:MEM_SIZE-1];
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 // Define write operation
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -110,6 +112,8 @@ always_comb begin
     // rdata2_o = (!raddr2_i) ? ('0) : (mem_x[raddr2_i]);
 end
 
+`ifdef JASPER
 `default_nettype wire
+`endif
     
 endmodule

@@ -100,7 +100,9 @@ logic fpu_req_id_int;
 
 logic exception_id;
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 // Pipeline registers IF->ID
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -298,6 +300,8 @@ assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !br
 assign exception_id = illegal_instr_id_o || instr_addr_misaligned_id_o || is_mret_id_o;
 assign trap_id_o = valid_id_o && exception_id;
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule

@@ -106,7 +106,9 @@ logic [4:0] csr_fpu_flags_ex;
 
 
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////        INSTRUCTION FETCH        ///////////////////////
@@ -505,6 +507,8 @@ controller controller_inst (
     // .frm_o(frm_csr)
 );
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule

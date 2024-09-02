@@ -32,7 +32,9 @@ module rvfi_wrapper (
     
 ////////////////////    PORT LIST - END    ////////////////////
 
+`ifdef JASPER
 `default_nettype none
+`endif
     
 // Tie-offs
 assign clk_i   = clock;
@@ -70,7 +72,9 @@ core #(
 
 `include "rvfi_inst.sv"
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule
 

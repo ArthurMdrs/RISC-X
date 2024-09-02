@@ -82,7 +82,9 @@ logic [31:0] mie, mie_n;
 logic [4:0] fflags, fflags_n;
 logic [2:0] frm, frm_n;
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 // Define read operation
 always_comb begin
@@ -253,6 +255,8 @@ assign mtvec_o = mtvec;
 // Output next value of mepc to account for writes followed by xRET 
 assign mepc_o = mepc_n;
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule

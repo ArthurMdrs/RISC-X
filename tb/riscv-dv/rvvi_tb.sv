@@ -86,7 +86,7 @@ bit fetch_enable;
 section_info_t sections[$]; // Dynamic array of section information
 
 logic [31:0] regs_clone [32];
-assign regs_clone[1:31] = `CORE.id_stage_inst.register_file_inst.mem;
+assign regs_clone[1:31] = `CORE.id_stage_inst.register_file_inst.mem_x;
 assign regs_clone[0] = '0;
 
 logic [31:0] xptd_dmem [1024];

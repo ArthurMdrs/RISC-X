@@ -100,7 +100,9 @@ logic [31:0] mem_wdata_wb;//, mem_rdata_wb;
 logic [31:0] csr_wdata_wb, csr_rdata_wb;
 logic        csr_wen_wb;
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 ///////////////////////////////////////////////////////////////////////////////
 //////////////////////        INSTRUCTION FETCH         ///////////////////////
@@ -369,6 +371,8 @@ assign rvfi_csr_``name``_wdata = csr_wdata_wb;
 `assign_rvfi_csr(frm)
 
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule

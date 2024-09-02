@@ -69,7 +69,9 @@ logic rd_wb_is_rs3_id;
 logic fpu_gnt_stall;
 logic fpu_rvalid_stall;
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 // TODO: register f0 is not always zero. Some treatment must be made
 assign rd_ex_is_rs1_id  = (rd_addr_ex_i  == rs1_addr_id_i) && (rs1_addr_id_i != '0) && (rd_dst_bank_ex_i  == rs1_src_bank_id_i);
@@ -179,6 +181,8 @@ always_comb begin
     end
 end
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule

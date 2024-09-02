@@ -1,7 +1,4 @@
-import core_pkg::*;
-import fpnew_pkg::*;
-
-module decoder  #(
+module decoder import core_pkg::*; #(
     parameter bit ISA_M = 0,
     parameter bit ISA_C = 0,
     parameter bit ISA_F = 1
@@ -86,7 +83,9 @@ logic [2:0] funct3_C;
 logic [1:0] funct2_C;
 logic [4:0] rs1_addr_C, rs2_addr_C, rd_addr_C;
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 assign funct7 = instr_i[31:25];
 assign funct3 = instr_i[14:12];
@@ -1068,6 +1067,8 @@ always_comb begin
     end
 end
 
+`ifdef JASPER
 `default_nettype wire
+`endif
     
 endmodule

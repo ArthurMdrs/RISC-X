@@ -6,7 +6,9 @@ module imm_extender import core_pkg::*; #(
     input  logic [31:0]       instr_i
 );
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 `ifdef SVA_ON
 AST_DWIDTH_MORE_THAN_IMM_SIZE: assert property (@ (instr_i) DWIDTH >= 12);
@@ -36,6 +38,8 @@ always_comb begin
     endcase
 end
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule

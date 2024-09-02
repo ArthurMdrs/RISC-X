@@ -40,7 +40,9 @@ module if_stage import core_pkg::*; (
 logic [31:0] pc_if_n;
 // logic        is_compressed_if_o;
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 // Next instruction pointer decision maker
 assign is_compressed_if_o = ~(imem_rdata_i[1] && imem_rdata_i[0]);
@@ -82,6 +84,8 @@ pc_controller pc_constroller_inst (
 // Resolve validness. Not valid implies inserting bubble
 assign valid_if_o = 1'b1;
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule

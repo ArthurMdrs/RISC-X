@@ -44,7 +44,9 @@ data_type_t  mem_data_type_mem;
 logic        mem_sign_extend_mem;
 logic [31:0] mem_wdata_mem;
 
+`ifdef JASPER
 `default_nettype none
+`endif
 
 // Pipeline registers EX->MEM
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -120,6 +122,8 @@ always_comb begin
     endcase
 end
 
+`ifdef JASPER
 `default_nettype wire
+`endif
 
 endmodule
