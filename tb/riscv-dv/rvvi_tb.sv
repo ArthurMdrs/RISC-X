@@ -4,7 +4,7 @@ import tb_pkg::*;
 
 localparam ISA_M = 0;
 localparam ISA_C = 1;
-localparam ISA_F = 0;
+localparam ISA_F = 1;
 
 // Primary inputs
 logic clk;

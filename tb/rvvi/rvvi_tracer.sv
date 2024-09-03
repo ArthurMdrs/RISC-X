@@ -18,8 +18,11 @@ wire [31:0] pc = rvvi.pc_rdata[0][0];
 wire [31:0] instr = rvvi.insn[0][0];
 wire        trap = rvvi.trap[0][0];
 
-logic [31:0] rd_wdata;
-string       rd_str, rd_mnemonic;
+logic [31:0]    rd_wdata;
+string          rd_str;
+string          frd_str;
+string          rd_mnemonic;
+bit             got_first_fp_instr = 0;
 
 csr_addr_t   csr_addr;
 logic [31:0] csr_wdata;
@@ -58,11 +61,31 @@ always @ (negedge clk_i) begin
         rd_str = " ";
         foreach(rvvi.x_wb[0][0][i]) begin
             if (rvvi.x_wb[0][0][i]) begin
-                rd_mnemonic = dec.translate_register(i);
+                rd_mnemonic = dec.translate_register(i, .is_f(0));
                 rd_wdata = rvvi.x_wdata[0][0][i];
                 rd_str = $sformatf("%4s: %h", rd_mnemonic, rd_wdata);
-            end;
+            end
+            // We are assuming that if x_wb[i]==1 then f_wb[i]!=1 and vice versa
+            if (rvvi.f_wb[0][0][i]) begin
+                rd_mnemonic = dec.translate_register(i, .is_f(1));
+                rd_wdata = rvvi.f_wdata[0][0][i];
+                rd_str = $sformatf("%4s: %h", rd_mnemonic, rd_wdata);
+                if (!got_first_fp_instr) begin
+                    rd_str = " ";
+                    got_first_fp_instr = 1;
+                end
+            end
         end
+        
+        // rd_wdata = '0;
+        // frd_str = " ";
+        // foreach(rvvi.f_wb[0][0][i]) begin
+        //     if (rvvi.f_wb[0][0][i]) begin
+        //         rd_mnemonic = dec.translate_register(i, .is_f(1));
+        //         rd_wdata = rvvi.f_wdata[0][0][i];
+        //         frd_str = $sformatf("%4s: %h", rd_mnemonic, rd_wdata);
+        //     end
+        // end
         
         csr_addr = csr_addr.first();
         csr_str = " ";

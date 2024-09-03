@@ -26,6 +26,13 @@ class riscv_decoder;
                 OPCODE_OP:        mnemonic = decode_op(instruction);
                 // OPCODE_MISC_MEM:  mnemonic = decode_misc_mem(instruction);
                 OPCODE_SYSTEM:    mnemonic = decode_system(instruction);
+                
+                OPCODE_OP_FP:     mnemonic = decode_op_fp(instruction);
+                OPCODE_FMADD_FP:  mnemonic = decode_fmadd(instruction);
+                OPCODE_FMSUB_FP:  mnemonic = decode_fmsub(instruction);
+                OPCODE_FNMADD_FP: mnemonic = decode_fnmadd(instruction);
+                OPCODE_FNMSUB_FP: mnemonic = decode_fnmsub(instruction);
+                
                 default:          mnemonic = "UNKNOWN";
             endcase
         end
@@ -573,6 +580,150 @@ class riscv_decoder;
             end
             default: return "UNKNOWN";
         endcase
+    endfunction
+    
+    // Function to decode FP OP instructions
+    function string decode_op_fp(logic [31:0] instruction);
+        string rd, rs1, rs2;
+        string func;
+        bit use_2_ops;
+        use_2_ops = 1;
+        rd  = translate_register(instruction[11:7] , 1);
+        rs1 = translate_register(instruction[19:15], 1);
+        rs2 = translate_register(instruction[24:20], 1);
+        case (instruction[31:25])
+            7'b000_0000: begin
+                func = "fadd.s";
+            end
+            7'b000_0100: begin
+                func = "fsub.s";
+            end
+            7'b000_1000: begin
+                func = "fmul.s";
+            end
+            7'b000_1100: begin
+                func = "fdiv.s";
+            end
+            7'b010_1100: begin
+                if (instruction[24:20] != 5'b0)
+                    return "UNKNOWN";
+                func = "fsqrt.s";
+                use_2_ops = 0;
+            end
+            7'b001_0000: begin
+                case (instruction[14:12])
+                    3'b000: func = "fsgnj.s";
+                    3'b001: func = "fsgnjn.s";
+                    3'b010: func = "fsgnjx.s";
+                    default: return "UNKNOWN";
+                endcase
+            end
+            7'b001_0100: begin
+                case (instruction[14:12])
+                    3'b000: func = "fmin.s";
+                    3'b001: func = "fmax.s";
+                    default: return "UNKNOWN";
+                endcase
+            end
+            7'b110_0000: begin
+                case (instruction[24:20])
+                    5'b00000: func = "fcvt.w.s";
+                    5'b00001: func = "fcvt.wu.s";
+                    default: return "UNKNOWN";
+                endcase
+                rd  = translate_register(instruction[11:7] , 0);
+                use_2_ops = 0;
+            end
+            7'b110_1000: begin
+                case (instruction[24:20])
+                    5'b00000: func = "fcvt.s.w";
+                    5'b00001: func = "fcvt.s.wu";
+                    default: return "UNKNOWN";
+                endcase
+                rs1 = translate_register(instruction[19:15], 0);
+                use_2_ops = 0;
+            end
+            7'b101_0000: begin
+                case (instruction[14:12])
+                    3'b000: func = "fle.s";
+                    3'b001: func = "flt.s";
+                    3'b010: func = "feq.s";
+                    default: return "UNKNOWN";
+                endcase
+                rd  = translate_register(instruction[11:7] , 0);
+            end
+            7'b111_0000: begin
+                if (instruction[24:20] != 5'b0)
+                    return "UNKNOWN";
+                case (instruction[14:12])
+                    3'b000: func = "fmv.x.w";
+                    3'b001: func = "fclass.s";
+                    default: return "UNKNOWN";
+                endcase
+                rd  = translate_register(instruction[11:7] , 0);
+                use_2_ops = 0;
+            end
+            7'b111_1000: begin
+                if (instruction[24:20] != 5'b0)
+                    return "UNKNOWN";
+                if (instruction[14:12] != 3'b0)
+                    return "UNKNOWN";
+                rs1 = translate_register(instruction[19:15], 0);
+                use_2_ops = 0;
+                func = "fmv.w.x";
+            end
+            default: func = "UNKNOWN";
+        endcase
+        if (use_2_ops) return $sformatf("%s %s, %s, %s", func, rd, rs1, rs2);
+        else           return $sformatf("%s %s, %s", func, rd, rs1);
+    endfunction
+    
+    // Function to decode FMADD instructions
+    function string decode_fmadd(logic [31:0] instruction);
+        string rd, rs1, rs2, rs3;
+        if (instruction[26:25] != 2'b0)
+            return "UNKNOWN";
+        rd  = translate_register(instruction[11:7] , 1);
+        rs1 = translate_register(instruction[19:15], 1);
+        rs2 = translate_register(instruction[24:20], 1);
+        rs3 = translate_register(instruction[31:27], 1);
+        return $sformatf("fmadd.s %s, %s, %s, %s", rd, rs1, rs2, rs3);
+    endfunction
+    
+    // Function to decode FMSUB instructions
+    function string decode_fmsub(logic [31:0] instruction);
+        string rd, rs1, rs2, rs3;
+        if (instruction[26:25] != 2'b0)
+            return "UNKNOWN";
+        rd  = translate_register(instruction[11:7] , 1);
+        rs1 = translate_register(instruction[19:15], 1);
+        rs2 = translate_register(instruction[24:20], 1);
+        rs3 = translate_register(instruction[31:27], 1);
+        return $sformatf("fmsub.s %s, %s, %s, %s", rd, rs1, rs2, rs3);
+    endfunction
+    
+    // Function to decode FMNADD instructions
+    function string decode_fnmadd(logic [31:0] instruction);
+        string rd, rs1, rs2, rs3;
+        if (instruction[26:25] != 2'b0)
+            return "UNKNOWN";
+        rd  = translate_register(instruction[11:7] , 1);
+        rs1 = translate_register(instruction[19:15], 1);
+        rs2 = translate_register(instruction[24:20], 1);
+        rs3 = translate_register(instruction[31:27], 1);
+        return $sformatf("fnmadd.s %s, %s, %s, %s", rd, rs1, rs2, rs3);
+    endfunction
+    
+    // Function to decode FNMSUB instructions
+    function string decode_fnmsub(logic [31:0] instruction);
+        string rd, rs1, rs2, rs3;
+        if (instruction[26:25] != 2'b0)
+            return "UNKNOWN";
+        rd  = translate_register(instruction[11:7] , 1);
+        rs1 = translate_register(instruction[19:15], 1);
+        rs2 = translate_register(instruction[24:20], 1);
+        rs3 = translate_register(instruction[31:27], 1);
+        return $sformatf("fnmsub.s %s, %s, %s, %s", rd, rs1, rs2, rs3);
     endfunction
     
 endclass

@@ -45,10 +45,11 @@ logic        flush_id, flush_ex, flush_mem, flush_wb;
 logic        is_compressed_if;
 
 // Source and destiny registers from register file
-logic [4:0] rs1_addr_id, rs2_addr_id, rs3_addr_id;
-logic [4:0] rd_addr_id, rd_addr_ex, rd_addr_mem, rd_addr_wb;
-reg_bank_mux_t rs1_src_bank_id, rs2_src_bank_id, rs3_src_bank_id;
-reg_bank_mux_t rd_dst_bank_id, rd_dst_bank_ex, rd_dst_bank_mem, rd_dst_bank_wb;
+logic [4:0]     rs1_addr_id, rs2_addr_id, rs3_addr_id;
+logic [4:0]     rd_addr_id, rd_addr_ex, rd_addr_mem, rd_addr_wb;
+reg_bank_mux_t  rs1_src_bank_id, rs2_src_bank_id, rs3_src_bank_id;
+logic           rs1_is_used_id, rs2_is_used_id, rs3_is_used_id;
+reg_bank_mux_t  rd_dst_bank_id, rd_dst_bank_ex, rd_dst_bank_mem, rd_dst_bank_wb;
 
 // ALU control signals, operands and result
 alu_operation_t    alu_operation_id;
@@ -206,6 +207,9 @@ id_stage #(
     .rs1_src_bank_id_o          ( rs1_src_bank_id ),
     .rs2_src_bank_id_o          ( rs2_src_bank_id ),
     .rs3_src_bank_id_o          ( rs3_src_bank_id ),
+    .rs1_is_used_id_o           ( rs1_is_used_id ),
+    .rs2_is_used_id_o           ( rs2_is_used_id ),
+    .rs3_is_used_id_o           ( rs3_is_used_id ),
     .illegal_instr_id_o         ( illegal_instr_id ),
     .instr_addr_misaligned_id_o ( instr_addr_misaligned_id ),
     .is_mret_id_o               ( is_mret_id ),

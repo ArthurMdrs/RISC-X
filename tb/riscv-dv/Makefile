@@ -14,7 +14,7 @@ DV_ALL_SIM_TESTS := $(shell tr '\n' ',' < full_test_list.txt | sed 's/,$$//')
 DV_SIM_TEST := $(DV_ALL_SIM_TESTS)
 DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) \
 					   --simulator xlm --noclean --csr_yaml $(TB_HOME)/csr_description.yaml \
-					   --custom_target $(DV_RISCX_TARGET) --isa rv32ic_zicsr_zifencei --mabi ilp32 
+					   --custom_target $(DV_RISCX_TARGET) --isa rv32ifc_zicsr_zifencei --mabi ilp32 
 DV_RUN_CMD := python3 run_mod.py
 DV_COV_CMD := python3 cov_mod.py
 

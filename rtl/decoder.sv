@@ -951,7 +951,7 @@ always_comb begin
                 rs1_src_bank_o = F_REG;
                 rs2_src_bank_o = F_REG;
                 rs3_src_bank_o = F_REG;
-                rd_dst_bank_o  = X_REG;
+                rd_dst_bank_o  = F_REG;
                 rs3_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FMADD;
                 alu_result_mux_o = FPU_RESULT;
@@ -970,7 +970,7 @@ always_comb begin
                 rs1_src_bank_o = F_REG;
                 rs2_src_bank_o = F_REG;
                 rs3_src_bank_o = F_REG;
-                rd_dst_bank_o  = X_REG;
+                rd_dst_bank_o  = F_REG;
                 rs3_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FMADD;
                 fpu_op_mod_o = 1'b1;
@@ -990,7 +990,7 @@ always_comb begin
                 rs1_src_bank_o = F_REG;
                 rs2_src_bank_o = F_REG;
                 rs3_src_bank_o = F_REG;
-                rd_dst_bank_o  = X_REG;
+                rd_dst_bank_o  = F_REG;
                 rs3_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FNMSUB;
                 alu_result_mux_o = FPU_RESULT;
@@ -1009,7 +1009,7 @@ always_comb begin
                 rs1_src_bank_o = F_REG;
                 rs2_src_bank_o = F_REG;
                 rs3_src_bank_o = F_REG;
-                rd_dst_bank_o  = X_REG;
+                rd_dst_bank_o  = F_REG;
                 rs3_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FNMSUB;
                 fpu_op_mod_o = 1'b1;

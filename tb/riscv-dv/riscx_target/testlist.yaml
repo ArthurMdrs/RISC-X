@@ -32,6 +32,23 @@
 
 - import: <riscv_dv_root>/yaml/base_testlist.yaml
 
+- test: riscv_floating_point_arithmetic_test
+  description: >
+    Enable floating point instructions
+  gen_opts: >
+    +instr_cnt=10000
+    +num_of_sub_program=0
+    +no_fence=1
+    +no_data_page=1
+    +no_branch_jump=1
+    +enable_floating_point=1
+    +boot_mode=m
+  iterations: 1
+  gen_test: riscv_instr_base_test
+  rtl_test: core_base_test
+
+
+
 - test: riscv_csr_test
   description: >
     Test all CSR instructions on all implemented CSR registers

@@ -49,6 +49,9 @@ module id_stage import core_pkg::*; #(
     output reg_bank_mux_t rs1_src_bank_id_o,
     output reg_bank_mux_t rs2_src_bank_id_o,
     output reg_bank_mux_t rs3_src_bank_id_o,
+    output logic          rs1_is_used_id_o,
+    output logic          rs2_is_used_id_o,
+    output logic          rs3_is_used_id_o,
     output logic          illegal_instr_id_o,
     output logic          instr_addr_misaligned_id_o,
     output logic          is_mret_id_o,
@@ -143,10 +146,17 @@ decoder #(
     .alu_result_mux_o ( alu_result_mux_id_o ),
     
     // Source/destiny general purpose registers
-    .rs1_addr_o ( rs1_addr_id_o ),
-    .rs2_addr_o ( rs2_addr_id_o ),
-    .rs3_addr_o ( rs3_addr_id_o ),
-    .rd_addr_o  ( rd_addr_id_o ),
+    .rs1_addr_o     ( rs1_addr_id_o ),
+    .rs2_addr_o     ( rs2_addr_id_o ),
+    .rs3_addr_o     ( rs3_addr_id_o ),
+    .rd_addr_o      ( rd_addr_id_o ),
+    .rs1_src_bank_o ( rs1_src_bank_id_o ),
+    .rs2_src_bank_o ( rs2_src_bank_id_o ),
+    .rs3_src_bank_o ( rs3_src_bank_id_o ),
+    .rd_dst_bank_o  ( rd_dst_bank_id_o ),
+    .rs1_is_used_o  ( rs1_is_used_id_o ),
+    .rs2_is_used_o  ( rs2_is_used_id_o ),
+    .rs3_is_used_o  ( rs3_is_used_id_o ),
     
     // Memory access related signals
     .mem_wen_o         ( mem_wen_id_o ),
@@ -179,12 +189,7 @@ decoder #(
     .fpu_rnd_mode_o ( fpu_rnd_mode_id_o ),
     .fpu_op_o       ( fpu_op_id_o ),
     .fpu_op_mod_o   ( fpu_op_mod_id_o ),
-    .fpu_req_o      ( fpu_req_id_int ),
-    
-    .rs1_src_bank_o ( rs1_src_bank_id_o ),
-    .rs2_src_bank_o ( rs2_src_bank_id_o ),
-    .rs3_src_bank_o ( rs3_src_bank_id_o ),
-    .rd_dst_bank_o  ( rd_dst_bank_id_o )
+    .fpu_req_o      ( fpu_req_id_int )
 );
 
 imm_extender imm_extender_inst (
