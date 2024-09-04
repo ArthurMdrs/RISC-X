@@ -9,4 +9,5 @@ SECTIONS
   .tohost : { *(.tohost) }
   .data : { *(.data) }
   .bss : { *(.bss) }
+  _end = .;
 }

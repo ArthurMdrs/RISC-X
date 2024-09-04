@@ -1,4 +1,7 @@
-# The program below was copied from https://github.com/shrubbroom/Simple-RISC-V-testbench/tree/main
+# The program below is based on https://github.com/shrubbroom/Simple-RISC-V-testbench/tree/main
+
+.include "init.s"
+
 .section .text
 .globl main
 main:
@@ -16,4 +19,6 @@ loop:
     nop
     nop
     ecall
+    nop
+    j _exit
 

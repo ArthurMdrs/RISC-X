@@ -553,7 +553,8 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
       setting_dir     : Generator setting directory
       debug_cmd       : Produce the debug cmd log without running
     """
-    result = run_cmd("find {} -name \"*.S\"".format(asm_test_dir))
+    # result = run_cmd("find {} -name \"*.S\"".format(asm_test_dir))
+    result = run_cmd("find {} -maxdepth 1 \\( -name \"*.S\" -o -name \"*.s\" \\)".format(asm_test_dir))
     if result:
         asm_list = result.splitlines()
         logging.info("Found {} assembly tests under {}".format(
@@ -588,7 +589,8 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
     if not c_test.endswith(".c"):
         logging.error("{} is not a .c file".format(c_test))
         return
-    cwd = os.path.dirname(os.path.realpath(__file__))
+    # cwd = os.path.dirname(os.path.realpath(__file__))
+    cwd = os.environ.get('RISCV_DV_ROOT')
     c_test = os.path.expanduser(c_test)
     report = ("{}/iss_regr.log".format(output_dir)).rstrip()
     c = re.sub(r"^.*\/", "", c_test)
@@ -610,6 +612,11 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
     cmd += (" -march={}".format(isa))
     cmd += (" -mabi={}".format(mabi))
     run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
+    
+    # result = subprocess.run(['ls',"/home/pedro.medeiros/Tools/RISC-X/tb/riscv-dv/mytest/directed_c_test"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # print(result.stdout)
+    # logging.info("{}".format(result.stdout))
+    
     # Convert the ELF to plain binary, used in RTL sim
     logging.info("Converting to {}".format(binary))
     cmd = ("{} -O binary {} {}".format(
@@ -764,12 +771,20 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0,
         logging.info(result)
 
 
+# def save_regr_report(report):
+#     passed_cnt = run_cmd("grep PASSED {} | wc -l".format(report)).strip()
+#     failed_cnt = run_cmd("grep FAILED {} | wc -l".format(report)).strip()
+#     summary = ("{} PASSED, {} FAILED".format(passed_cnt, failed_cnt))
+#     logging.info(summary)
+#     run_cmd(("echo {} >> {}".format(summary, report)))
+#     logging.info("ISS regression report is saved to {}".format(report))
+    
 def save_regr_report(report):
-    passed_cnt = run_cmd("grep PASSED {} | wc -l".format(report)).strip()
-    failed_cnt = run_cmd("grep FAILED {} | wc -l".format(report)).strip()
-    summary = ("{} PASSED, {} FAILED".format(passed_cnt, failed_cnt))
+    passed_cnt = run_cmd("grep PASSED {} | grep -v '^# Summary:' | wc -l".format(report)).strip()
+    failed_cnt = run_cmd("grep FAILED {} | grep -v '^# Summary:' | wc -l".format(report)).strip()
+    summary = "# Summary: {} PASSED, {} FAILED".format(passed_cnt, failed_cnt)
     logging.info(summary)
-    run_cmd(("echo {} >> {}".format(summary, report)))
+    run_cmd("echo {} >> {}".format(summary, report))
     logging.info("ISS regression report is saved to {}".format(report))
 
 

@@ -1,7 +1,7 @@
-.globl main
+.include "init.s"
 
 .section .text
-
+.globl main
 main:
     # x4 will be the base addr for .data
     la x4, .data
@@ -70,3 +70,5 @@ branch6:
     lw x16, 44(x4)
     
     ecall
+    nop
+    j _exit

@@ -1,9 +1,15 @@
-# The program below was copied from https://github.com/shrubbroom/Simple-RISC-V-testbench/tree/main
+# The program below is based on https://github.com/shrubbroom/Simple-RISC-V-testbench/tree/main
+
+.include "init.s"
+
+.section .text
+.globl main
+main:
         addi x1, x0, 0
         addi x2, x0, 50
         addi x3, x0, 100
         addi x4, x0, 2
-        addi x5, x0, 0
+        la x5, .data
 makeseq:
         sw x3, 0(x5)
         sub x3, x3, x4
@@ -116,3 +122,5 @@ qsortbreak:
 programend:
     
     ecall
+    nop
+    j _exit

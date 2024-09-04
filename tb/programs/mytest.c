@@ -1,4 +1,5 @@
-#include <stdio.h>
+// #include <stdio.h>
+#include "init.c"
 
 // Function to calculate the Fibonacci sequence up to n terms
 void fibonacci(int n) {
@@ -26,6 +27,7 @@ int main() {
     // scanf("%d", &n);
 
     fibonacci(n);
-
+    
+    asm volatile ("ecall");
     return 0;
 }

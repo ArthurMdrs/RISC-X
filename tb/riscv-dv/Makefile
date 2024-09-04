@@ -4,6 +4,8 @@ export RVVI_HOME := $(abspath $(shell pwd)/../rvvi)
 export TB_HOME := $(abspath $(shell pwd))
 export RISC_X_PATH := $(abspath $(shell pwd))
 
+ISA := rv32ic_zicsr_zifencei
+
 DV_OUT_DIR := $(TB_HOME)/mytest
 DV_FILE_LIST := $(RISCV_DV_ROOT)/files.f
 DV_GEN_TEST := riscv_instr_base_test
@@ -14,7 +16,7 @@ DV_ALL_SIM_TESTS := $(shell tr '\n' ',' < full_test_list.txt | sed 's/,$$//')
 DV_SIM_TEST := $(DV_ALL_SIM_TESTS)
 DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) \
 					   --simulator xlm --noclean --csr_yaml $(TB_HOME)/csr_description.yaml \
-					   --custom_target $(DV_RISCX_TARGET) --isa rv32ic_zicsr_zifencei --mabi ilp32 
+					   --custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi ilp32 
 DV_RUN_CMD := python3 run_mod.py
 DV_COV_CMD := python3 cov_mod.py
 
@@ -138,19 +140,19 @@ spike-sim:
 csr-test:
 	@python3 $(RISCV_DV_ROOT)/scripts/gen_csr_test.py --xlen 32 --iterations 1 --out $(DV_OUT_DIR)/asm_test --end_signature_addr 0 --csr_file $(TB_HOME)/csr_description.yaml
 
-# c-test does NOT work yet
+# c-test does NOT work yet (run_c is not compiling correctly??)
 c-test:
-	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm --noclean --debug debug.log \
-		--custom_target $(DV_RISCX_TARGET) --isa rv32ic_zicsr_zifencei --mabi ilp32 \
-		--so --steps iss_sim,iss_cmp --iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike \
-		--c_test /home/pedro.medeiros/Tools/riscv-formal-VeeR/cores/risc-x/RISC-X/tb/programs/mytest.c
+	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm --noclean \
+		--custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi ilp32 \
+		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike --gcc_opts="-I$(PROGS_PATH)/include" \
+		--c_test $(PROGS_PATH) --debug debug.log
 
-# asm-test does NOT work yet
+# asm-test IS WORKING!
 asm-test:
-	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm \
-		--custom_target $(DV_RISCX_TARGET) --isa rv32ic_zicsr_zifencei --mabi ilp32 \
-		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike --gcc_opts="-I$(PROGS_PATH)" \
-		--asm_test $(PROGS_PATH)/1_basic.s
+	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm --noclean \
+		--custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi ilp32 \
+		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike --gcc_opts="-I$(PROGS_PATH)/include" \
+		--asm_test $(PROGS_PATH)
 
 ##########################################################################################################################
 

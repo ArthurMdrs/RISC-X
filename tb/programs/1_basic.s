@@ -1,17 +1,17 @@
-# The program below was copied from https://github.com/shrubbroom/Simple-RISC-V-testbench/tree/main
+# The program below is based on https://github.com/shrubbroom/Simple-RISC-V-testbench/tree/main
 
 .include "init.s"
 
 .section .text
 .globl main
 main:
-    addi x1, x0, 1
-    addi x2, x0, 255
-    add x3, x1, x2
-    sub x4, x3, x1
-    and x5, x1, x2
-    or x6, x1, x2
-    xor x7, x1, x2
+    addi x31, x0, 1
+    addi x30, x0, 255
+    add x29, x31, x2
+    sub x28, x29, x1
+    and x5, x31, x2
+    or x6, x31, x2
+    xor x7, x31, x2
     addi x8, x0, 0
     addi x9, x0, 7
     addi x10, x0, 1
@@ -30,13 +30,13 @@ loop2:
     la x13, .data
     sw x0, 0(x13)
     addi x13, x13, 4
-    sw x1, 0(x13)
+    sw x31, 0(x13)
     addi x13, x13, 4
-    sw x2, 0(x13)
+    sw x30, 0(x13)
     addi x13, x13, 4
-    sw x3, 0(x13)
+    sw x29, 0(x13)
     addi x13, x13, 4
-    sw x4, 0(x13)
+    sw x28, 0(x13)
     addi x13, x13, 4
     sw x5, 0(x13)
     addi x13, x13, 4
@@ -58,13 +58,13 @@ loop2:
     sub x13, x13, x14
     lw x0, 0(x13)
     sub x13, x13, x14
-    lw x1, 0(x13)
+    lw x31, 0(x13)
     sub x13, x13, x14
-    lw x2, 0(x13)
+    lw x30, 0(x13)
     sub x13, x13, x14
-    lw x3, 0(x13)
+    lw x29, 0(x13)
     sub x13, x13, x14
-    lw x4, 0(x13)
+    lw x28, 0(x13)
     sub x13, x13, x14
     lw x5, 0(x13)
     sub x13, x13, x14
@@ -84,5 +84,3 @@ loop2:
     jal x15, loop3
 loop3:
     ecall
-
-.include "post_text.s"
