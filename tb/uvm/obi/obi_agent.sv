@@ -3,14 +3,9 @@ class obi_agent #(int XLEN=32, int ALEN=32) extends uvm_agent;
     obi_cfg   cfg;
     obi_cntxt cntxt;
 
-    uvm_active_passive_enum is_active = UVM_ACTIVE;
-    obi_cov_enable_enum cov_control = COV_ENABLE;
-
     `uvm_component_utils_begin(obi_agent)
-        `uvm_field_object(cfg  , UVM_DEFAULT)
-        `uvm_field_object(cntxt, UVM_DEFAULT)
-        `uvm_field_enum(uvm_active_passive_enum, is_active, UVM_ALL_ON)
-        `uvm_field_enum(obi_cov_enable_enum, cov_control, UVM_ALL_ON)
+        `uvm_field_object(cfg  , UVM_ALL_ON)
+        `uvm_field_object(cntxt, UVM_ALL_ON)
     `uvm_component_utils_end
 
     obi_vif     vif;
@@ -32,13 +27,13 @@ class obi_agent #(int XLEN=32, int ALEN=32) extends uvm_agent;
         if(uvm_config_db#(obi_vif)::get(this, "", "vif", vif))
             `uvm_info("OBI AGENT", "Virtual interface was successfully set!", UVM_MEDIUM)
         else
-            `uvm_error("OBI AGENT", "No interface was set!")
+            `uvm_fatal("OBI AGENT", "No interface was set!")
         
         uvm_config_db#(obi_vif)::set(this, "*", "vif", vif);
         
         void'(uvm_config_db#(obi_cfg)::get(this, "", "cfg", cfg));
         if (cfg == null) begin
-            `uvm_error("OBI AGENT", "Config handle is null.")
+            `uvm_fatal("OBI AGENT", "Config handle is null.")
         end      
         void'(uvm_config_db#(obi_cntxt)::get(this, "", "cntxt", cntxt));
         if (cntxt == null) begin
@@ -49,32 +44,33 @@ class obi_agent #(int XLEN=32, int ALEN=32) extends uvm_agent;
         uvm_config_db#(obi_cntxt)::set(this, "*", "cntxt", cntxt);
 
         monitor       = obi_mon#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("monitor", this);
-        if (is_active == UVM_ACTIVE) begin
+        if (cfg.is_active == UVM_ACTIVE) begin
             sequencer = obi_seqr#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("sequencer", this);
             driver    = obi_drv #(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("driver", this);
+            `uvm_info("OBI AGENT", "Agent is active." , UVM_MEDIUM)
+        end else begin
+            `uvm_info("OBI AGENT", "Agent is not active." , UVM_MEDIUM)
         end
 
-        if (cov_control == COV_ENABLE) begin
+        if (cfg.cov_control == OBI_COV_ENABLE) begin
             coverage = obi_cov#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("coverage", this);
-            `uvm_info("OBI AGENT", "Coverage is enabled." , UVM_LOW) 
+            `uvm_info("OBI AGENT", "Coverage is enabled." , UVM_MEDIUM) 
         end else begin
-            `uvm_info("OBI AGENT", "Coverage is disabled." , UVM_LOW)
+            `uvm_info("OBI AGENT", "Coverage is disabled." , UVM_MEDIUM)
         end
     endfunction: build_phase
 
     function void connect_phase (uvm_phase phase);
         super.connect_phase(phase);
 
-        //item_from_monitor_port.connect(monitor.item_collected_port);
         monitor.item_collected_port.connect(item_from_monitor_port);
         
-        if (is_active == UVM_ACTIVE) begin
+        if (cfg.is_active == UVM_ACTIVE) begin
             driver.seq_item_port.connect(sequencer.seq_item_export);
-            // `uvm_info("OBI AGENT", "Connecting fifo." , UVM_LOW)
             monitor.to_seqr_port.connect(sequencer.mon_tr_fifo.analysis_export);
         end
 
-        if (cov_control == COV_ENABLE) begin
+        if (cfg.cov_control == OBI_COV_ENABLE) begin
             monitor.item_collected_port.connect(coverage.analysis_export);
         end
     endfunction: connect_phase

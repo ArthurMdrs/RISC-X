@@ -4,8 +4,8 @@ class obi_drv #(int XLEN=32, int ALEN=32) extends uvm_driver #(obi_tr#(.XLEN(XLE
     obi_cntxt cntxt;
 
     `uvm_component_utils_begin(obi_drv)
-        `uvm_field_object(cfg  , UVM_DEFAULT)
-        `uvm_field_object(cntxt, UVM_DEFAULT)
+        `uvm_field_object(cfg  , UVM_ALL_ON|UVM_NOPRINT)
+        `uvm_field_object(cntxt, UVM_ALL_ON|UVM_NOPRINT)
     `uvm_component_utils_end
 
     obi_vif vif;
@@ -19,17 +19,17 @@ class obi_drv #(int XLEN=32, int ALEN=32) extends uvm_driver #(obi_tr#(.XLEN(XLE
     function void build_phase (uvm_phase phase);
         super.build_phase(phase);
         if(uvm_config_db#(obi_vif)::get(this, "", "vif", vif))
-            `uvm_info("OBI DRIVER", "Virtual interface was successfully set!", UVM_MEDIUM)
+            `uvm_info("OBI DRIVER", "Virtual interface was successfully set!", UVM_HIGH)
         else
-            `uvm_error("OBI DRIVER", "No interface was set!")
+            `uvm_fatal("OBI DRIVER", "No interface was set!")
         
         void'(uvm_config_db#(obi_cfg)::get(this, "", "cfg", cfg));
         if (cfg == null) begin
-            `uvm_fatal("OBI SEQUENCER", "Config handle is null.")
+            `uvm_fatal("OBI DRIVER", "Config handle is null.")
         end      
         void'(uvm_config_db#(obi_cntxt)::get(this, "", "cntxt", cntxt));
         if (cntxt == null) begin
-            `uvm_fatal("OBI SEQUENCER", "Context handle is null.")
+            `uvm_fatal("OBI DRIVER", "Context handle is null.")
         end      
     endfunction: build_phase
 

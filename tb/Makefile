@@ -38,11 +38,11 @@ VERBOSE := 0
 SEED := 1
 SVA := +define+SVA_ON
 INPUT := -input restore.tcl
-FILES := -f file_list.f
+# FILES := -f file_list.f
 FILE_LIST := riscx_tb.flist
 SIM_TOP := -top tb_top
 UVM_HOME := CDNS-1.2
-UVM_VERBOSITY := UVM_HIGH
+UVM_VERBOSITY := UVM_MEDIUM
 UVM_TEST := random_test
 PLUS_ARG := +progs_path=$(PROGS_PATH)
 ifneq ($(strip $(PROG)),)
@@ -83,8 +83,8 @@ gui:
 
 
 clean-sim:
-	rm -rf xcelium.d xrun* .simvision .symbol* waves* jgproject *.log *.diag trace* \
-		*.vcd *.dump $(DV_OUT_DIR)/*_sim/ $(DV_OUT_DIR)/*.log
+	rm -rf xcelium.* xrun* .simvision .symbol* waves* jgproject *.log *.diag trace* \
+		*.vcd *.evcd *.dump $(DV_OUT_DIR)/*_sim/ $(DV_OUT_DIR)/*.log
 
 clean-asm:
 	rm -rf $(DV_OUT_DIR)/asm_test/

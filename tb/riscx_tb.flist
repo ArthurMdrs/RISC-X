@@ -1,15 +1,59 @@
+// Core RTL
+${RTL_HOME}/pkg/core_pkg.sv
+
+${RTL_HOME}/alu.sv
+${RTL_HOME}/controller.sv
+${RTL_HOME}/decoder.sv
+${RTL_HOME}/imm_extender.sv
+${RTL_HOME}/pc_controller.sv
+${RTL_HOME}/register_file.sv
+${RTL_HOME}/csr.sv
+
+${RTL_HOME}/if_stage.sv
+${RTL_HOME}/id_stage.sv
+${RTL_HOME}/ex_stage.sv
+${RTL_HOME}/mem_stage.sv
+${RTL_HOME}/wb_stage.sv
+
+${RTL_HOME}/core.sv
+
+////////////////////////////////////////////////////////////
+
+// Core wrapper with RVVI interface
++incdir+${RVFI_HOME}
+${RVFI_HOME}/rvfi_defines.sv
+${RVFI_HOME}/rvfi_macros.vh
+${RVFI_HOME}/rvfi.sv
+
++incdir+${RVVI_HOME}
+${RVVI_HOME}/rvviTrace.sv
+${RVVI_HOME}/rvvi_tracer.sv
+${RVVI_HOME}/rvvi_wrapper.sv
+
+////////////////////////////////////////////////////////////
+
+// clknrst UVC
++incdir+${RISCX_UVM_SRC}/clknrst
+${RISCX_UVM_SRC}/clknrst/clknrst_pkg.sv
+${RISCX_UVM_SRC}/clknrst/clknrst_if.sv
+
+// bad_uvc UVC
++incdir+${RISCX_UVM_SRC}/bad_uvc
+${RISCX_UVM_SRC}/bad_uvc/bad_uvc_pkg.sv
+${RISCX_UVM_SRC}/bad_uvc/bad_uvc_if.sv
 
 // OBI UVC
 +incdir+${RISCX_UVM_SRC}/obi
-${RISCX_UVM_SRC}/obi/obi_tdefs_pkg.sv
 ${RISCX_UVM_SRC}/obi/obi_pkg.sv
 ${RISCX_UVM_SRC}/obi/obi_if.sv
 
 // RISC-X ENV
-+incdir+${RISCX_UVM_SRC}/riscx
-${RISCX_UVM_SRC}/riscx/riscx_pkg.sv
++incdir+${RISCX_UVM_SRC}/bad_riscx
+${RISCX_UVM_SRC}/bad_riscx/riscx_pkg.sv
+//+incdir+${RISCX_UVM_SRC}/riscx
+//${RISCX_UVM_SRC}/riscx/riscx_pkg.sv
 
 // Testbench files
-+incdir+${RISCX_UVM_SRC}/riscx
-${TB_HOME}/rtl/stub.sv
-${TB_HOME}/tb_top.sv
+${TB_HOME}/bad_tb_top.sv
+//${TB_HOME}/rtl/stub.sv
+//${TB_HOME}/tb_top.sv

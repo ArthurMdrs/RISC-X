@@ -4,8 +4,8 @@ class obi_mon #(int XLEN=32, int ALEN=32) extends uvm_monitor;
     obi_cntxt cntxt;
 
     `uvm_component_utils_begin(obi_mon)
-        `uvm_field_object(cfg  , UVM_DEFAULT)
-        `uvm_field_object(cntxt, UVM_DEFAULT)
+        `uvm_field_object(cfg  , UVM_ALL_ON|UVM_NOPRINT)
+        `uvm_field_object(cntxt, UVM_ALL_ON|UVM_NOPRINT)
     `uvm_component_utils_end
 
     obi_vif vif;
@@ -24,17 +24,17 @@ class obi_mon #(int XLEN=32, int ALEN=32) extends uvm_monitor;
     function void build_phase (uvm_phase phase);
         super.build_phase(phase);
         if(uvm_config_db#(obi_vif)::get(this, "", "vif", vif))
-            `uvm_info("OBI MONITOR", "Virtual interface was successfully set!", UVM_MEDIUM)
+            `uvm_info("OBI MONITOR", "Virtual interface was successfully set!", UVM_HIGH)
         else
-            `uvm_error("OBI MONITOR", "No interface was set!")   
+            `uvm_fatal("OBI MONITOR", "No interface was set!")   
         
         void'(uvm_config_db#(obi_cfg)::get(this, "", "cfg", cfg));
         if (cfg == null) begin
-            `uvm_fatal("OBI SEQUENCER", "Config handle is null.")
+            `uvm_fatal("OBI MONITOR", "Config handle is null.")
         end      
         void'(uvm_config_db#(obi_cntxt)::get(this, "", "cntxt", cntxt));
         if (cntxt == null) begin
-            `uvm_fatal("OBI SEQUENCER", "Context handle is null.")
+            `uvm_fatal("OBI MONITOR", "Context handle is null.")
         end     
     endfunction: build_phase
 
@@ -66,13 +66,13 @@ class obi_mon #(int XLEN=32, int ALEN=32) extends uvm_monitor;
         forever begin
             wait (vif.rst_n === 0);
             cntxt.rst_state = OBI_RST_STATE_IN_RESET;
-            `uvm_info("OBI MONITOR", $sformatf("Currently in reset state."), UVM_NONE)
+            `uvm_info("OBI MONITOR", $sformatf("Currently in reset state."), UVM_LOW)
             // vif.addr_ch_reset_sigs();
             // vif.resp_ch_reset_sigs();
             vif.obi_reset_sigs();
             wait (vif.rst_n === 1);
             cntxt.rst_state = OBI_RST_STATE_POST_RESET;
-            `uvm_info("OBI MONITOR", $sformatf("Currently in post reset state."), UVM_NONE)
+            `uvm_info("OBI MONITOR", $sformatf("Currently in post reset state."), UVM_LOW)
         end
     endtask : observe_reset
 

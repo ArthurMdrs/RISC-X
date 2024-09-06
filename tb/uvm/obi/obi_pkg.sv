@@ -5,7 +5,7 @@ package obi_pkg;
 
     `include "riscx_mem_model.sv"
     
-    import obi_tdefs_pkg::*;
+    `include "obi_tdefs.sv"
 
     typedef virtual interface obi_if obi_vif;
 

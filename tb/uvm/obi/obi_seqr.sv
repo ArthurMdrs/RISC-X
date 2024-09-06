@@ -4,8 +4,8 @@ class obi_seqr #(int XLEN=32, int ALEN=32) extends uvm_sequencer#(obi_tr);
     obi_cntxt cntxt;
 
     `uvm_component_utils_begin(obi_seqr)
-        `uvm_field_object(cfg  , UVM_DEFAULT)
-        `uvm_field_object(cntxt, UVM_DEFAULT)
+        `uvm_field_object(cfg  , UVM_ALL_ON|UVM_NOPRINT)
+        `uvm_field_object(cntxt, UVM_ALL_ON|UVM_NOPRINT)
     `uvm_component_utils_end
     
     uvm_tlm_analysis_fifo #(obi_tr#(.XLEN(XLEN),.ALEN(ALEN))) mon_tr_fifo;
