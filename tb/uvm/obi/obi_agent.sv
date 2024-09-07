@@ -3,7 +3,7 @@ class obi_agent #(int XLEN=32, int ALEN=32) extends uvm_agent;
     obi_cfg   cfg;
     obi_cntxt cntxt;
 
-    `uvm_component_utils_begin(obi_agent)
+    `uvm_component_param_utils_begin(obi_agent#(XLEN, ALEN))
         `uvm_field_object(cfg  , UVM_ALL_ON)
         `uvm_field_object(cntxt, UVM_ALL_ON)
     `uvm_component_utils_end

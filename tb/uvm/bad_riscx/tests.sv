@@ -8,6 +8,7 @@ class base_test extends uvm_test;
     clknrst_vif vif_clknrst;
     bad_uvc_vif instr_bad_uvc_vif;
     bad_uvc_vif data_bad_uvc_vif;
+    rvvi_vif    vif_rvvi;
     
     riscx_env riscx_env_inst;
 
@@ -32,10 +33,15 @@ class base_test extends uvm_test;
             `uvm_info("BASE TEST", "Virtual interface for Data bad_uvc was successfully set!", UVM_HIGH)
         else
             `uvm_error("BASE TEST", "No interface for Data bad_uvc was set!")
+        if(uvm_config_db#(rvvi_vif)::get(this, "", "vif_rvvi", vif_rvvi))
+            `uvm_info("BASE TEST", "Virtual interface for RVVI was successfully set!", UVM_HIGH)
+        else
+            `uvm_error("BASE TEST", "No interface for RVVI was set!")
         
         uvm_config_db#(clknrst_vif)::set(this, "riscx_env_inst", "vif_clknrst"      , vif_clknrst      );
         uvm_config_db#(bad_uvc_vif)::set(this, "riscx_env_inst", "instr_bad_uvc_vif", instr_bad_uvc_vif);
         uvm_config_db#(bad_uvc_vif)::set(this, "riscx_env_inst", "data_bad_uvc_vif" , data_bad_uvc_vif );
+        uvm_config_db#(rvvi_vif   )::set(this, "riscx_env_inst", "vif_rvvi"         , vif_rvvi         );
         
         riscx_env_inst = riscx_env::type_id::create("riscx_env_inst", this);
 

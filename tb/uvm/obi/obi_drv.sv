@@ -3,7 +3,7 @@ class obi_drv #(int XLEN=32, int ALEN=32) extends uvm_driver #(obi_tr#(.XLEN(XLE
     obi_cfg   cfg;
     obi_cntxt cntxt;
 
-    `uvm_component_utils_begin(obi_drv)
+    `uvm_component_param_utils_begin(obi_drv#(XLEN, ALEN))
         `uvm_field_object(cfg  , UVM_ALL_ON|UVM_NOPRINT)
         `uvm_field_object(cntxt, UVM_ALL_ON|UVM_NOPRINT)
     `uvm_component_utils_end

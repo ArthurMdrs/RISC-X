@@ -6,7 +6,7 @@ class obi_cov #(int XLEN=32, int ALEN=32) extends uvm_subscriber #(obi_tr#(.XLEN
     real cov_val;
     obi_tr cov_transaction;
 
-    `uvm_component_utils_begin(obi_cov)
+    `uvm_component_param_utils_begin(obi_cov#(XLEN, ALEN))
         `uvm_field_object(cfg  , UVM_ALL_ON|UVM_NOPRINT)
         `uvm_field_object(cntxt, UVM_ALL_ON|UVM_NOPRINT)
         `uvm_field_real(cov_val, UVM_ALL_ON)

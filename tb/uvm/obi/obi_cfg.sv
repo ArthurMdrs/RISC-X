@@ -9,7 +9,7 @@ class obi_cfg #(int XLEN=32, int ALEN=32) extends uvm_object;
     rand int unsigned gnt_latency_min;
     rand int unsigned gnt_latency_max;
    
-    `uvm_object_param_utils_begin(obi_cfg)
+    `uvm_object_param_utils_begin(obi_cfg#(XLEN, ALEN))
         `uvm_field_enum(uvm_active_passive_enum, is_active, UVM_ALL_ON)
         `uvm_field_enum(obi_cov_enable_enum, cov_control, UVM_ALL_ON)
         `uvm_field_int(mem_start_addr, UVM_ALL_ON)

@@ -1,11 +1,11 @@
-class obi_base_sequence extends uvm_sequence#(obi_tr);
+class obi_base_sequence #(int XLEN=32, int ALEN=32) extends uvm_sequence#(obi_tr#(XLEN, ALEN));
 
     obi_cfg   cfg;
     obi_cntxt cntxt;
     riscx_mem_model mem;
 
     `uvm_object_utils(obi_base_sequence)
-    `uvm_declare_p_sequencer(obi_seqr)
+    `uvm_declare_p_sequencer(obi_seqr#(XLEN, ALEN))
 
     function new(string name="obi_base_sequence");
         super.new(name);
@@ -33,7 +33,7 @@ endclass: obi_base_sequence
 
 //==============================================================//
 
-class obi_random_seq extends obi_base_sequence;
+class obi_random_seq #(int XLEN=32, int ALEN=32) extends obi_base_sequence#(XLEN, ALEN);
 
     `uvm_object_utils(obi_random_seq)
 
@@ -87,7 +87,7 @@ endclass: obi_random_seq
 
 //==============================================================//
 
-class obi_load_mem_seq extends obi_base_sequence;
+class obi_load_mem_seq #(int XLEN=32, int ALEN=32) extends obi_base_sequence#(XLEN, ALEN);
 
     `uvm_object_utils(obi_load_mem_seq)
 

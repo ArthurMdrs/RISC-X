@@ -2,6 +2,8 @@ class riscx_env extends uvm_env;
 
     localparam int XLEN = 32;
     localparam int ALEN = 32;
+    localparam int ILEN = 32;
+    localparam int FLEN = 32;
 
     clknrst_cfg   cfg_clknrst;
     // clknrst_cntxt cntxt_clknrst;
@@ -15,18 +17,25 @@ class riscx_env extends uvm_env;
     bad_uvc_cntxt data_bad_uvc_cntxt;
     bad_uvc_vif   data_bad_uvc_vif;
 
+    rvvi_cfg   cfg_rvvi;
+    // rvvi_cntxt cntxt_rvvi;
+    rvvi_vif   vif_rvvi;
+
     `uvm_component_utils_begin(riscx_env)
-      `uvm_field_object(cfg_clknrst   , UVM_ALL_ON)
-    //   `uvm_field_object(cntxt_clknrst , UVM_ALL_ON)
+      `uvm_field_object(cfg_clknrst        , UVM_ALL_ON)
+    //   `uvm_field_object(cntxt_clknrst      , UVM_ALL_ON)
       `uvm_field_object(instr_bad_uvc_cfg  , UVM_ALL_ON)
       `uvm_field_object(instr_bad_uvc_cntxt, UVM_ALL_ON)
       `uvm_field_object(data_bad_uvc_cfg   , UVM_ALL_ON)
       `uvm_field_object(data_bad_uvc_cntxt , UVM_ALL_ON)
+      `uvm_field_object(cfg_rvvi           , UVM_ALL_ON)
+    //   `uvm_field_object(cntxt_rvvi         , UVM_ALL_ON)
     `uvm_component_utils_end
 
     clknrst_agent agent_clknrst;
     bad_uvc_agent instr_bad_uvc_agent;
     bad_uvc_agent data_bad_uvc_agent;
+    rvvi_agent    agent_rvvi;
     
     riscx_vseqr vsequencer;
 
@@ -51,10 +60,15 @@ class riscx_env extends uvm_env;
             `uvm_info("RISC-X ENV", "Virtual interface for Data bad_uvc was successfully set!", UVM_HIGH)
         else
             `uvm_error("RISC-X ENV", "No interface for Data bad_uvc was set!")
+        if(uvm_config_db#(rvvi_vif)::get(this, "", "vif_rvvi", vif_rvvi))
+            `uvm_info("RISC-X ENV", "Virtual interface for RVVI was successfully set!", UVM_HIGH)
+        else
+            `uvm_error("RISC-X ENV", "No interface for RVVI was set!")
         
         uvm_config_db#(clknrst_vif)::set(this, "agent_clknrst"      , "vif", vif_clknrst      );
         uvm_config_db#(bad_uvc_vif)::set(this, "instr_bad_uvc_agent", "vif", instr_bad_uvc_vif);
         uvm_config_db#(bad_uvc_vif)::set(this, "data_bad_uvc_agent" , "vif", data_bad_uvc_vif );
+        uvm_config_db#(rvvi_vif   )::set(this, "agent_rvvi"         , "vif", vif_rvvi         );
         
         cfg_clknrst         = clknrst_cfg                            ::type_id::create("cfg_clknrst"        );
         // cntxt_clknrst       = clknrst_cntxt                          ::type_id::create("cntxt_clknrst"      );
@@ -62,6 +76,8 @@ class riscx_env extends uvm_env;
         instr_bad_uvc_cntxt = bad_uvc_cntxt#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("instr_bad_uvc_cntxt");
         data_bad_uvc_cfg    = bad_uvc_cfg  #(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("data_bad_uvc_cfg"   );
         data_bad_uvc_cntxt  = bad_uvc_cntxt#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("data_bad_uvc_cntxt" );
+        cfg_rvvi            = rvvi_cfg#(ILEN,XLEN,FLEN)              ::type_id::create("cfg_rvvi"           );
+        // cntxt_rvvi          = rvvi_cntxt#(ILEN,XLEN,FLEN)            ::type_id::create("cntxt_rvvi"         );
         
         data_bad_uvc_cntxt.mem = instr_bad_uvc_cntxt.mem;
         
@@ -75,10 +91,13 @@ class riscx_env extends uvm_env;
         uvm_config_db#(bad_uvc_cntxt)::set(this, "instr_bad_uvc_agent", "cntxt", instr_bad_uvc_cntxt);
         uvm_config_db#(bad_uvc_cfg  )::set(this, "data_bad_uvc_agent" , "cfg"  , data_bad_uvc_cfg   );
         uvm_config_db#(bad_uvc_cntxt)::set(this, "data_bad_uvc_agent" , "cntxt", data_bad_uvc_cntxt );
+        uvm_config_db#(rvvi_cfg     )::set(this, "agent_rvvi"         , "cfg"  , cfg_rvvi           );
+        // uvm_config_db#(rvvi_cntxt   )::set(this, "agent_rvvi"         , "cntxt", cntxt_rvvi         );
 
         agent_clknrst       = clknrst_agent                          ::type_id::create("agent_clknrst"      , this);
         instr_bad_uvc_agent = bad_uvc_agent#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("instr_bad_uvc_agent", this);
         data_bad_uvc_agent  = bad_uvc_agent#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("data_bad_uvc_agent" , this);
+        agent_rvvi          = rvvi_agent#(ILEN,XLEN,FLEN)            ::type_id::create("agent_rvvi"         , this);
         
         vsequencer = riscx_vseqr#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("vsequencer", this);
 

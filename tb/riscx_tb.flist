@@ -19,16 +19,11 @@ ${RTL_HOME}/core.sv
 
 ////////////////////////////////////////////////////////////
 
-// Core wrapper with RVVI interface
+// RVFI
 +incdir+${RVFI_HOME}
 ${RVFI_HOME}/rvfi_defines.sv
 ${RVFI_HOME}/rvfi_macros.vh
 ${RVFI_HOME}/rvfi.sv
-
-+incdir+${RVVI_HOME}
-${RVVI_HOME}/rvviTrace.sv
-${RVVI_HOME}/rvvi_tracer.sv
-${RVVI_HOME}/rvvi_wrapper.sv
 
 ////////////////////////////////////////////////////////////
 
@@ -47,13 +42,23 @@ ${RISCX_UVM_SRC}/bad_uvc/bad_uvc_if.sv
 ${RISCX_UVM_SRC}/obi/obi_pkg.sv
 ${RISCX_UVM_SRC}/obi/obi_if.sv
 
+// RVVI UVC
++incdir+${RISCX_UVM_SRC}/rvvi
+${RISCX_UVM_SRC}/rvvi/rvvi_pkg.sv
+${RISCX_UVM_SRC}/rvvi/rvvi_if.sv
+
+////////////////////////////////////////////////////////////
+
 // RISC-X ENV
 +incdir+${RISCX_UVM_SRC}/bad_riscx
 ${RISCX_UVM_SRC}/bad_riscx/riscx_pkg.sv
 //+incdir+${RISCX_UVM_SRC}/riscx
 //${RISCX_UVM_SRC}/riscx/riscx_pkg.sv
 
+////////////////////////////////////////////////////////////
+
 // Testbench files
+${TB_HOME}/core_wrapper.sv
 ${TB_HOME}/bad_tb_top.sv
 //${TB_HOME}/rtl/stub.sv
 //${TB_HOME}/tb_top.sv
