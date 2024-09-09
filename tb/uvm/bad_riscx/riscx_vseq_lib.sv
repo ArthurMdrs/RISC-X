@@ -56,14 +56,69 @@ class riscx_random_vseq extends riscx_base_vseq;
             // begin : clknrst
                 
             // end : clknrst
+            
             begin : instr_bad_uvc
                 `uvm_do_on(bad_uvc_load_mem_seq_inst    , p_sequencer.instr_bad_uvc_seqr);
                 `uvm_do_on(instr_bad_uvc_random_seq_inst, p_sequencer.instr_bad_uvc_seqr);
             end : instr_bad_uvc
+            
             begin : data_bad_uvc
                 `uvm_do_on(data_bad_uvc_random_seq_inst, p_sequencer.data_bad_uvc_seqr);
             end : data_bad_uvc
         join
+        
     endtask: body
 
 endclass: riscx_random_vseq
+
+//==============================================================//
+
+class riscx_dv_vseq extends riscx_base_vseq;
+
+    `uvm_object_utils(riscx_dv_vseq)
+    
+    clknrst_reset_and_start_clk_seq clknrst_reset_and_start_clk_seq_inst;
+    
+    bad_uvc_load_mem_seq bad_uvc_load_mem_seq_inst;
+    bad_uvc_memory_seq   instr_bad_uvc_memory_seq_inst;
+    
+    bad_uvc_memory_seq   data_bad_uvc_memory_seq_inst;
+
+    function new(string name="riscx_dv_vseq");
+        super.new(name);
+    endfunction: new
+    
+    // If a sequence is called via a `uvm_do variant, then it is defined as a 
+    // subsequence and it's pre/post_body() methods are not executed
+    virtual task body();
+    
+        `uvm_do_on(clknrst_reset_and_start_clk_seq_inst, p_sequencer.sequencer_clknrst);
+        
+        fork
+            // begin : clknrst
+                
+            // end : clknrst
+            
+            // This block goes forever
+            begin : instr_bad_uvc
+                `uvm_do_on(bad_uvc_load_mem_seq_inst    , p_sequencer.instr_bad_uvc_seqr);
+                `uvm_do_on(instr_bad_uvc_memory_seq_inst, p_sequencer.instr_bad_uvc_seqr);
+            end : instr_bad_uvc
+            
+            // This block goes forever
+            begin : data_bad_uvc
+                `uvm_do_on(data_bad_uvc_memory_seq_inst, p_sequencer.data_bad_uvc_seqr);
+            end : data_bad_uvc
+            
+            // Because of join_any, the fork block finishes when we get should_drop_objection
+            begin : drop_objection
+                wait (p_sequencer.should_drop_objection === 1'b1);
+                `uvm_info("RISC-X Sequence", "Got signal to drop objection.", UVM_HIGH)
+            end : drop_objection
+        join_any
+        
+    endtask: body
+
+endclass: riscx_dv_vseq
+
+//==============================================================//

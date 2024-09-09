@@ -46,6 +46,8 @@ class bad_uvc_random_seq extends bad_uvc_base_sequence;
         int id;
         logic [31:0] addr, rdata;
         
+        `uvm_info("BAD_UVC RND SEQ", $sformatf("Started random sequence."), UVM_LOW)
+        
         id = 0;
         repeat(10) begin
             p_sequencer.mon_tr_fifo.get(mon_tr);
@@ -83,6 +85,8 @@ class bad_uvc_random_seq extends bad_uvc_base_sequence;
             `uvm_send(req)
             
         end
+        
+        `uvm_info("BAD_UVC RND SEQ", $sformatf("Finished random sequence."), UVM_LOW)
     endtask: body
 
 endclass: bad_uvc_random_seq
@@ -104,5 +108,65 @@ class bad_uvc_load_mem_seq extends bad_uvc_base_sequence;
     endtask: body
 
 endclass: bad_uvc_load_mem_seq
+
+//==============================================================//
+
+class bad_uvc_memory_seq extends bad_uvc_base_sequence;
+
+    `uvm_object_utils(bad_uvc_memory_seq)
+
+    function new(string name="bad_uvc_memory_seq");
+        super.new(name);
+    endfunction: new
+    
+    virtual task body();
+        bad_uvc_tr mon_tr;
+        int id;
+        logic [31:0] addr, rdata;
+        
+        `uvm_info("BAD_UVC RND SEQ", $sformatf("Started memory sequence."), UVM_LOW)
+        
+        id = 0;
+        forever begin
+            p_sequencer.mon_tr_fifo.get(mon_tr);
+            // `uvm_info("BAD_UVC RND SEQ", $sformatf("Got transaction from monitor:\n%s", mon_tr.sprint()), UVM_HIGH)
+            // `uvm_info("BAD_UVC RND SEQ", "Got transaction from monitor.", UVM_HIGH)
+            
+            `uvm_create(req)
+            void'(req.randomize());
+            
+            addr = mon_tr.addr;
+            if (mon_tr.we) begin
+                foreach (mon_tr.be[i]) begin
+                    if (mon_tr.be[i])
+                        mem.write (addr+i, mon_tr.wdata[i*8+:8]);
+                end
+            end
+            else begin
+                // `uvm_info("BAD_UVC RND SEQ", $sformatf("Reading from addr %h", addr), UVM_NONE)
+                foreach (mon_tr.be[i]) begin
+                    // if (mem.exists(addr)) begin
+                    // end
+                    if (mon_tr.be[i])
+                        rdata[i*8+:8] = mem.read (addr+i);
+                    else
+                        rdata[i*8+:8] = 8'b0;
+                end
+                req.rdata = rdata;
+                // `uvm_info("BAD_UVC RND SEQ", $sformatf("Read %h", req.rdata), UVM_NONE)
+            end
+            
+            // void'(req.randomize() with {field_1==value_1; field_2==value_2;});
+            
+            req.id = id;
+            id++;
+            `uvm_send(req)
+            
+        end
+        
+        `uvm_info("BAD_UVC RND SEQ", $sformatf("Finished memory sequence."), UVM_LOW)
+    endtask: body
+
+endclass: bad_uvc_memory_seq
 
 //==============================================================//

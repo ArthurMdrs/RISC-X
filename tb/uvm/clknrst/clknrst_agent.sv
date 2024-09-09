@@ -23,13 +23,13 @@ class clknrst_agent extends uvm_agent;
         super.build_phase(phase);
         
         if(uvm_config_db#(clknrst_cfg)::get(.cntxt(this), .inst_name(""), .field_name("cfg"), .value(cfg)))
-            `uvm_info("CLKNRST AGENT", "Configuration object was successfully set!", UVM_MEDIUM)
+            `uvm_info("CLKNRST AGENT", "Configuration object was successfully set!", UVM_HIGH)
         else
             `uvm_fatal("CLKNRST AGENT", "No configuration object was set!")
         uvm_config_db#(clknrst_cfg)::set(.cntxt(this), .inst_name("*"), .field_name("cfg"), .value(cfg));
         
         if(uvm_config_db#(clknrst_vif)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
-            `uvm_info("CLKNRST AGENT", "Virtual interface was successfully set!", UVM_MEDIUM)
+            `uvm_info("CLKNRST AGENT", "Virtual interface was successfully set!", UVM_HIGH)
         else
             `uvm_fatal("CLKNRST AGENT", "No interface was set!")
         uvm_config_db#(clknrst_vif)::set(.cntxt(this), .inst_name("*"), .field_name("vif"), .value(vif));

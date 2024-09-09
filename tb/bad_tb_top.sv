@@ -36,61 +36,6 @@ assign rst_n = if_clknrst.rst_n;
 
 //==============   Module instantiations - BEGIN   ==============//
 
-// stub dut(
-//     .clk(clk),
-//     // .rst_n(rst_n),
-//     .rst_n(dlyd_rst_n),
-
-//     .dmem_rdata_i ( if_data_bad_uvc.rdata ),
-//     .dmem_wdata_o ( if_data_bad_uvc.wdata ),
-//     .dmem_addr_o  ( if_data_bad_uvc.addr ),
-//     .dmem_wen_o   ( if_data_bad_uvc.we ),
-//     .dmem_ben_o   ( if_data_bad_uvc.be ),
-    
-//     .imem_rdata_i ( if_instr_bad_uvc.rdata ),
-//     .imem_addr_o  ( if_instr_bad_uvc.addr )
-// );
-
-// rvviTrace #(
-//     .ILEN(32),  // Instruction length in bits
-//     .XLEN(32),  // GPR length in bits
-//     .FLEN(32),  // FPR length in bits
-//     .VLEN(256), // Vector register size in bits
-//     .NHART(1),  // Number of harts reported
-//     .RETIRE(1)  // Number of instructions that can retire during valid event
-// ) rvvi ();
-
-// rvvi_wrapper #(
-//     .ISA_M(ISA_M),
-//     .ISA_C(ISA_C),
-//     .ISA_F(ISA_F)
-// ) wrapper_inst (
-//     .clk_i   ( clk ),
-//     // .rst_n_i ( rst_n ),
-//     .rst_n_i ( dlyd_rst_n ),
-
-//     .dmem_rdata_i ( if_data_bad_uvc.rdata ),
-//     .dmem_wdata_o ( if_data_bad_uvc.wdata ),
-//     .dmem_addr_o  ( if_data_bad_uvc.addr ),
-//     .dmem_wen_o   ( if_data_bad_uvc.we ),
-//     .dmem_ben_o   ( if_data_bad_uvc.be ),
-    
-//     .imem_rdata_i ( if_instr_bad_uvc.rdata ),
-//     .imem_addr_o  ( if_instr_bad_uvc.addr ),
-    
-//     .hartid_i    ( hartid ),
-//     .mtvec_i     ( mtvec ),
-//     .boot_addr_i ( boot_addr ),
-    
-//     .rvvi ( rvvi )
-// );
-
-// // Tie-offs
-// assign if_instr_bad_uvc.wdata = '0;
-// assign if_instr_bad_uvc.we    = '0;
-// // assign if_instr_bad_uvc.be    = 4'b0011;
-// assign if_instr_bad_uvc.be    = '1;
-
 core_wrapper #(
     .ISA_M(ISA_M),
     .ISA_C(ISA_C),

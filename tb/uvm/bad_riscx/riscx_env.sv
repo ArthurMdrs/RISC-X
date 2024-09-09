@@ -39,8 +39,6 @@ class riscx_env extends uvm_env;
     
     riscx_vseqr vsequencer;
 
-    // uvm_objection obj;
-
     function new(string name, uvm_component parent);
         super.new(name, parent);
     endfunction
@@ -85,6 +83,11 @@ class riscx_env extends uvm_env;
         instr_bad_uvc_cfg.cov_control = BAD_UVC_COV_DISABLE;
         data_bad_uvc_cfg.cov_control  = BAD_UVC_COV_DISABLE;
         
+        // Set to detect retired ecall instruction
+        // Used to terminate simulation
+        cfg_rvvi.detect_insn     = 1;
+        cfg_rvvi.detect_insn_val = 'h00000073;
+        
         uvm_config_db#(clknrst_cfg  )::set(this, "agent_clknrst"      , "cfg"  , cfg_clknrst        );
         // uvm_config_db#(clknrst_cntxt)::set(this, "agent_clknrst"      , "cntxt", cntxt_clknrst      );
         uvm_config_db#(bad_uvc_cfg  )::set(this, "instr_bad_uvc_agent", "cfg"  , instr_bad_uvc_cfg  );
@@ -99,7 +102,7 @@ class riscx_env extends uvm_env;
         data_bad_uvc_agent  = bad_uvc_agent#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("data_bad_uvc_agent" , this);
         agent_rvvi          = rvvi_agent#(ILEN,XLEN,FLEN)            ::type_id::create("agent_rvvi"         , this);
         
-        vsequencer = riscx_vseqr#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("vsequencer", this);
+        vsequencer = riscx_vseqr#(ILEN)::type_id::create("vsequencer", this);
 
         `uvm_info("RISC-X ENV", "Build phase running", UVM_HIGH)
         // uvm_config_db#(int)::set(this, "*", "recording_detail", 1);
@@ -111,6 +114,8 @@ class riscx_env extends uvm_env;
         vsequencer.sequencer_clknrst  = agent_clknrst      .sequencer;
         vsequencer.instr_bad_uvc_seqr = instr_bad_uvc_agent.sequencer;
         vsequencer.data_bad_uvc_seqr  = data_bad_uvc_agent .sequencer;
+        
+        agent_rvvi.detected_insn_port.connect(vsequencer.detected_insn_imp);
     endfunction: connect_phase
 
 endclass: riscx_env

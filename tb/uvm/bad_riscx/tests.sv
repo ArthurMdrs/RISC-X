@@ -1,9 +1,9 @@
-class base_test extends uvm_test;
+class riscx_base_test extends uvm_test;
 
     localparam int XLEN = 32;
     localparam int ALEN = 32;
 
-    `uvm_component_utils(base_test)
+    `uvm_component_utils(riscx_base_test)
 
     clknrst_vif vif_clknrst;
     bad_uvc_vif instr_bad_uvc_vif;
@@ -65,36 +65,13 @@ class base_test extends uvm_test;
         obj.set_drain_time(this, 200ns);
     endtask: run_phase
 
-endclass: base_test
+endclass: riscx_base_test
 
 //==============================================================//
 
-class random_test extends base_test;
+class random_test extends riscx_base_test;
 
     `uvm_component_utils(random_test)
-
-    function new(string name, uvm_component parent);
-        super.new(name, parent);
-    endfunction: new
-
-    function void build_phase(uvm_phase phase);
-        // set_type_override_by_type (bad_uvc_tr#(.XLEN(XLEN),.ALEN(ALEN))::get_type(), bad_uvc_no_wait_tr::get_type());
-        
-        super.build_phase(phase);
-
-        // Sequences config - begin
-        uvm_config_wrapper::set(this, "riscx_env_inst.instr_bad_uvc_agent.sequencer.run_phase", "default_sequence", bad_uvc_random_seq::get_type());
-        // Sequences config - end
-        
-    endfunction: build_phase
-
-endclass: random_test
-
-//==============================================================//
-
-class vseqr_test extends base_test;
-
-    `uvm_component_utils(vseqr_test)
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
@@ -111,7 +88,25 @@ class vseqr_test extends base_test;
         
     endfunction: build_phase
 
-endclass: vseqr_test
+endclass: random_test
+
+//==============================================================//
+
+class riscx_dv_test extends riscx_base_test;
+
+    `uvm_component_utils(riscx_dv_test)
+
+    function new(string name, uvm_component parent);
+        super.new(name, parent);
+    endfunction: new
+
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+
+        uvm_config_wrapper::set(this, "riscx_env_inst.vsequencer.run_phase", "default_sequence", riscx_dv_vseq::get_type());
+    endfunction: build_phase
+
+endclass: riscx_dv_test
 
 //==============================================================//
 

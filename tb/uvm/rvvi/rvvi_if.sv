@@ -75,8 +75,7 @@ interface rvvi_if #(
         
         // TODO: is this okay??
         // This fixes monitor getting duplicate transactions
-        #1step;
-        // @(posedge clk);
+        wait(clk === 1'b0);
     endtask : collect_tr
     
     task wait_clk();

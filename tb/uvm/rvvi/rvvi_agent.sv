@@ -18,10 +18,12 @@ class rvvi_agent #(
     rvvi_tr_log tr_logger;
 
     uvm_analysis_port #(rvvi_tr#(ILEN,XLEN,FLEN)) item_from_monitor_port;
+    uvm_analysis_port #(bit [ILEN-1:0])           detected_insn_port;
 
     function new (string name, uvm_component parent);
         super.new(name, parent);
         item_from_monitor_port = new("item_from_monitor_port", this);
+        detected_insn_port     = new("detected_insn_port"    , this);
     endfunction: new
 
     function void build_phase (uvm_phase phase);
@@ -79,6 +81,8 @@ class rvvi_agent #(
         if (cfg.log_control == RVVI_LOGGING_ENABLE) begin
             monitor.item_collected_port.connect(tr_logger.analysis_export);
         end
+        
+        monitor.detected_insn_port.connect(detected_insn_port);
     endfunction: connect_phase
 
     function void start_of_simulation_phase (uvm_phase phase);

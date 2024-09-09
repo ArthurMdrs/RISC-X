@@ -15,11 +15,13 @@ class rvvi_mon #(
     int num_tr_col;
 
     uvm_analysis_port #(rvvi_tr#(ILEN,XLEN,FLEN)) item_collected_port;
+    uvm_analysis_port #(bit [ILEN-1:0])           detected_insn_port;
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
         num_tr_col = 0;
         item_collected_port = new("item_collected_port", this);
+        detected_insn_port  = new("detected_insn_port" , this);
     endfunction: new
 
     function void build_phase (uvm_phase phase);
@@ -38,6 +40,7 @@ class rvvi_mon #(
 
     virtual task run_phase (uvm_phase phase);
         super.run_phase(phase);
+        
         @(negedge vif.rst_n);
         @(posedge vif.rst_n);
 
@@ -50,6 +53,14 @@ class rvvi_mon #(
             
             vif.collect_tr(tr);
             item_collected_port.write(tr);
+            
+            if (cfg.detect_insn) begin
+                if (tr.insn == cfg.detect_insn_val) begin
+                    `uvm_info("RVVI MONITOR", $sformatf("Detected instruction 0x%h.", tr.insn), UVM_MEDIUM)
+                    detected_insn_port.write(tr.insn);
+                end
+            end
+            
             vif.wait_clk();
 
             end_tr(tr);

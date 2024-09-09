@@ -1,4 +1,6 @@
-class riscx_vseqr #(int XLEN=32, int ALEN=32) extends uvm_sequencer#(bad_uvc_tr);
+class riscx_vseqr #(
+    parameter int ILEN   = 32  // Instruction length in bits
+) extends uvm_sequencer;
 
     // bad_uvc_cfg   cfg;
     // bad_uvc_cntxt cntxt;
@@ -11,9 +13,16 @@ class riscx_vseqr #(int XLEN=32, int ALEN=32) extends uvm_sequencer#(bad_uvc_tr)
     clknrst_sqr  sequencer_clknrst;
     bad_uvc_seqr instr_bad_uvc_seqr;
     bad_uvc_seqr data_bad_uvc_seqr;
+    
+    typedef riscx_vseqr this_type;
+    uvm_analysis_imp #(bit [ILEN-1:0], this_type) detected_insn_imp;
+    
+    bit rvvi_instr_detected = 0;
+    bit should_drop_objection = 0;
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
+        detected_insn_imp  = new("detected_insn_imp" , this);
     endfunction: new
 
     // function void build_phase (uvm_phase phase);
@@ -27,5 +36,11 @@ class riscx_vseqr #(int XLEN=32, int ALEN=32) extends uvm_sequencer#(bad_uvc_tr)
     //         `uvm_fatal("RISC-X V SEQUENCER", "Context handle is null.")
     //     end      
     // endfunction: build_phase
+    
+    virtual function void write (bit [ILEN-1:0] t);
+        rvvi_instr_detected = 1;
+        should_drop_objection = 1;
+        `uvm_info("RISC-X VSEQUENCER", $sformatf("Detected instruction 0x%h.", t), UVM_MEDIUM)
+    endfunction : write
 
 endclass: riscx_vseqr
