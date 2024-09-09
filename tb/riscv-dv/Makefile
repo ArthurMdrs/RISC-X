@@ -1,8 +1,13 @@
-export RTL_HOME := $(abspath $(shell pwd)/../../rtl)
-export RVFI_HOME := $(abspath $(shell pwd)/../../fv)
-export RVVI_HOME := $(abspath $(shell pwd)/../rvvi)
+export RISC_X_ROOT := $(abspath $(shell pwd)/../..)
+export RTL_HOME := $(abspath $(RISC_X_ROOT)/rtl)
+export RVFI_HOME := $(abspath $(RISC_X_ROOT)/fv)
 export TB_HOME := $(abspath $(shell pwd))
 export RISC_X_PATH := $(abspath $(shell pwd))
+export RVVI_HOME := $(abspath $(RISC_X_ROOT)/tb/rvvi)
+export RISCV_DV_ROOT := $(abspath $(RISC_X_ROOT)/tools/riscv-dv)
+
+echo:
+	echo $(RISCV_DV_ROOT)
 
 ISA := rv32ic_zicsr_zifencei
 
@@ -17,8 +22,8 @@ DV_SIM_TEST := $(DV_ALL_SIM_TESTS)
 DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) \
 					   --simulator xlm --noclean --csr_yaml $(TB_HOME)/csr_description.yaml \
 					   --custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi ilp32 
-DV_RUN_CMD := python3 run_mod.py
-DV_COV_CMD := python3 cov_mod.py
+DV_RUN_CMD := cd $(RISCV_DV_ROOT) && python3 run.py
+DV_COV_CMD := cd $(RISCV_DV_ROOT) && python3 cov.py
 
 MTVEC_ALIGNMENT_OPT := +tvec_alignment=8
 ifeq ($(strip $(MTVEC_ALIGNMENT_OPT)),)
