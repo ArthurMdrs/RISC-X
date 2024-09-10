@@ -48,8 +48,8 @@ instr_end:
 .popsection;
 
 # Define trap handlers
-.align 8
 .text
+.align 8
 mtvec_handler:
     j write_tohost
     # mret

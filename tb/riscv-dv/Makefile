@@ -6,9 +6,6 @@ export RISC_X_PATH := $(abspath $(shell pwd))
 export RVVI_HOME := $(abspath $(RISC_X_ROOT)/tb/rvvi)
 export RISCV_DV_ROOT := $(abspath $(RISC_X_ROOT)/tools/riscv-dv)
 
-echo:
-	echo $(RISCV_DV_ROOT)
-
 ISA := rv32ic_zicsr_zifencei
 
 DV_OUT_DIR := $(TB_HOME)/mytest

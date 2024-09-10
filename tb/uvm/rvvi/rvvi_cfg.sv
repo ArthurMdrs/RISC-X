@@ -12,6 +12,8 @@ class rvvi_cfg #(
     // Can be used to catch ecall and detect the end of a test
     bit            detect_insn;
     bit [ILEN-1:0] detect_insn_val;
+    
+    string log_file;
 
     `uvm_object_param_utils_begin(rvvi_cfg#(ILEN,XLEN,FLEN))
         `uvm_field_enum(uvm_active_passive_enum , is_active      , UVM_ALL_ON)
@@ -30,6 +32,14 @@ class rvvi_cfg #(
         
         detect_insn = 0;
         detect_insn_val = '0;
+        
+        if ($value$plusargs("rvvi_log=%s", log_file)) begin
+            `uvm_info("RVVI CONFIG", $sformatf("Got log file path from plusargs: %s.", log_file), UVM_LOW)
+        end
+        else begin
+            log_file = "rvvi_instr_trace.log";
+            `uvm_info("RVVI CONFIG", $sformatf("Instruction trace will be saved to: %s.", log_file), UVM_LOW)
+        end
     endfunction: new
 
 endclass: rvvi_cfg

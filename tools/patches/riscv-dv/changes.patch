@@ -32,7 +32,7 @@ index e9e1a9c..e67ce44 100644
          # Load configuration from the command line and the configuration file.
          cfg = load_config(args, cwd)
 diff --git a/run.py b/run.py
-index 5f364fc..5516ce5 100644
+index 5f364fc..de3babb 100644
 --- a/run.py
 +++ b/run.py
 @@ -16,6 +16,8 @@ limitations under the License.
@@ -65,16 +65,17 @@ index 5f364fc..5516ce5 100644
  from types import SimpleNamespace
  
  LOGGER = logging.getLogger()
-@@ -190,6 +199,8 @@ def get_iss_cmd(base_cmd, elf, log):
+@@ -190,6 +199,9 @@ def get_iss_cmd(base_cmd, elf, log):
        cmd      : Command for ISS simulation
      """
      cmd = re.sub("\<elf\>", elf, base_cmd)
 +    bin = elf[:-2] + ".bin"
 +    cmd = re.sub("\<bin\>", bin, cmd)
++    cmd = re.sub("\<log\>", log, cmd)
      cmd += (" &> {}".format(log))
      return cmd
  
-@@ -422,6 +433,8 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
+@@ -422,6 +434,8 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
        mabi       : MABI variant passed to GCC
        debug_cmd  : Produce the debug cmd log without running
      """
@@ -83,7 +84,7 @@ index 5f364fc..5516ce5 100644
      cwd = os.path.dirname(os.path.realpath(__file__))
      for test in test_list:
          for i in range(0, test['iterations']):
-@@ -461,6 +474,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
+@@ -461,6 +475,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
              if not re.search('mabi', cmd):
                  cmd += (" -mabi={}".format(mabi))
              logging.info("Compiling {}".format(asm))
@@ -91,8 +92,27 @@ index 5f364fc..5516ce5 100644
              run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
              # Convert the ELF to plain binary, used in RTL sim
              logging.info("Converting to {}".format(binary))
-@@ -484,10 +498,11 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+@@ -469,8 +484,8 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
+             run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
+ 
+ 
+-def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+-                 setting_dir, debug_cmd):
++def run_assembly(asm_test, iss_yaml, isa, mabi, priv, gcc_opts, iss_opts, output_dir,
++                 setting_dir, timeout_s, debug_cmd):
+     """Run a directed assembly test with ISS
+ 
+     Args:
+@@ -478,16 +493,19 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+       iss_yaml    : ISS configuration file in YAML format
+       isa         : ISA variant passed to the ISS
+       mabi        : MABI variant passed to GCC
++      priv:       : privilege modes
+       gcc_opts    : User-defined options for GCC compilation
+       iss_opts    : Instruction set simulators
+       output_dir  : Output directory of compiled test files
        setting_dir : Generator setting directory
++      timeout_s   : Timeout limit in seconds
        debug_cmd   : Produce the debug cmd log without running
      """
 -    if not asm_test.endswith(".S"):
@@ -104,8 +124,41 @@ index 5f364fc..5516ce5 100644
      asm_test = os.path.expanduser(asm_test)
      report = ("{}/iss_regr.log".format(output_dir)).rstrip()
      asm = re.sub(r"^.*\/", "", asm_test)
-@@ -545,7 +560,8 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
+@@ -521,17 +539,20 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+         run_cmd("mkdir -p {}/{}_sim".format(output_dir, iss))
+         log = ("{}/{}_sim/{}.log".format(output_dir, iss, asm))
+         log_list.append(log)
+-        base_cmd = parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd)
++        base_cmd = parse_iss_yaml(iss, iss_yaml, isa, priv, setting_dir, debug_cmd)
+         logging.info("[{}] Running ISS simulation: {}".format(iss, elf))
+         cmd = get_iss_cmd(base_cmd, elf, log)
+-        run_cmd(cmd, 10, debug_cmd=debug_cmd)
++        if iss == "risc-x":
++            logging.info("cmd = {}".format(cmd[:(cmd.index('&>')+3)]+log[:-4]+"_xrun.log"))
++            cmd = cmd[:(cmd.index('&>')+3)] + log[:-4] + "_xrun.log"
++        run_cmd(cmd, timeout_s, debug_cmd=debug_cmd)
+         logging.info("[{}] Running ISS simulation: {} ...done".format(iss, elf))
+     if len(iss_list) == 2:
+         compare_iss_log(iss_list, log_list, report)
+ 
+ 
+-def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
+-                          output_dir, setting_dir, debug_cmd):
++def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, priv, gcc_opts, iss,
++                          output_dir, setting_dir, timeout_s, debug_cmd):
+     """Run a directed assembly test from a directory with spike
+ 
+     Args:
+@@ -539,21 +560,24 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
+       iss_yaml        : ISS configuration file in YAML format
+       isa             : ISA variant passed to the ISS
+       mabi            : MABI variant passed to GCC
++      priv:       : privilege modes
+       gcc_opts        : User-defined options for GCC compilation
+       iss             : Instruction set simulators
+       output_dir      : Output directory of compiled test files
        setting_dir     : Generator setting directory
++      timeout_s   : Timeout limit in seconds
        debug_cmd       : Produce the debug cmd log without running
      """
 -    result = run_cmd("find {} -name \"*.S\"".format(asm_test_dir))
@@ -114,7 +167,17 @@ index 5f364fc..5516ce5 100644
      if result:
          asm_list = result.splitlines()
          logging.info("Found {} assembly tests under {}".format(
-@@ -581,6 +597,7 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+             len(asm_list), asm_test_dir))
+         for asm_file in asm_list:
+-            run_assembly(asm_file, iss_yaml, isa, mabi, gcc_opts, iss,
++            run_assembly(asm_file, iss_yaml, isa, mabi, priv, gcc_opts, iss,
+                          output_dir,
+-                         setting_dir, debug_cmd)
++                         setting_dir, timeout_s, debug_cmd)
+             if "," in iss:
+                 report = ("{}/iss_regr.log".format(output_dir)).rstrip()
+                 save_regr_report(report)
+@@ -581,6 +605,7 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
          logging.error("{} is not a .c file".format(c_test))
          return
      cwd = os.path.dirname(os.path.realpath(__file__))
@@ -122,7 +185,7 @@ index 5f364fc..5516ce5 100644
      c_test = os.path.expanduser(c_test)
      report = ("{}/iss_regr.log".format(output_dir)).rstrip()
      c = re.sub(r"^.*\/", "", c_test)
-@@ -602,6 +619,11 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+@@ -602,6 +627,11 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
      cmd += (" -march={}".format(isa))
      cmd += (" -mabi={}".format(mabi))
      run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
@@ -134,7 +197,17 @@ index 5f364fc..5516ce5 100644
      # Convert the ELF to plain binary, used in RTL sim
      logging.info("Converting to {}".format(binary))
      cmd = ("{} -O binary {} {}".format(
-@@ -713,6 +735,8 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error, exp, debug_cmd):
+@@ -683,6 +713,9 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, iss_opts,
+                     elf = prefix + ".o"
+                     log = ("{}/{}_{}.log".format(log_dir, test['test'], i))
+                     cmd = get_iss_cmd(base_cmd, elf, log)
++                    if iss == "risc-x":
++                        # logging.info("cmd = {}".format(cmd[:(cmd.index('&>')+3)]+log[:-4]+"_xrun.log"))
++                        cmd = cmd[:(cmd.index('&>')+3)] + log[:-4] + "_xrun.log"
+                     if 'iss_opts' in test:
+                         cmd += ' '
+                         cmd += test['iss_opts']
+@@ -713,6 +746,8 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error, exp, debug_cmd):
      report = ("{}/iss_regr.log".format(output_dir)).rstrip()
      run_cmd("rm -rf {}".format(report))
      for test in test_list:
@@ -143,7 +216,7 @@ index 5f364fc..5516ce5 100644
          for i in range(0, test['iterations']):
              elf = ("{}/asm_test/{}_{}.o".format(output_dir, test['test'], i))
              logging.info("Comparing ISS sim result {}/{} : {}".format(
-@@ -721,7 +745,7 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error, exp, debug_cmd):
+@@ -721,7 +756,7 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error, exp, debug_cmd):
              run_cmd(("echo 'Test binary: {}' >> {}".format(elf, report)))
              for iss in iss_list:
                  log_list.append(
@@ -152,7 +225,7 @@ index 5f364fc..5516ce5 100644
              compare_iss_log(iss_list, log_list, report, stop_on_first_error,
                              exp)
      save_regr_report(report)
-@@ -740,6 +764,8 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0,
+@@ -740,6 +775,8 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0,
              csv_list.append(csv)
              if iss == "spike":
                  process_spike_sim_log(log, csv)
@@ -161,7 +234,7 @@ index 5f364fc..5516ce5 100644
              elif iss == "ovpsim":
                  process_ovpsim_sim_log(log, csv, stop_on_first_error)
              elif iss == "sail":
-@@ -754,12 +780,20 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0,
+@@ -754,12 +791,20 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0,
          logging.info(result)
  
  
@@ -186,7 +259,7 @@ index 5f364fc..5516ce5 100644
      logging.info("ISS regression report is saved to {}".format(report))
  
  
-@@ -1003,6 +1037,8 @@ def main():
+@@ -1003,6 +1048,8 @@ def main():
      try:
          cwd = os.path.dirname(os.path.realpath(__file__))
          os.environ["RISCV_DV_ROOT"] = cwd
@@ -195,19 +268,45 @@ index 5f364fc..5516ce5 100644
  
          args = parse_args(cwd)
          setup_logging(args.verbose)
-diff --git a/yaml/iss.yaml b/yaml/iss.yaml
-index 1167d7f..3c9ff90 100644
---- a/yaml/iss.yaml
-+++ b/yaml/iss.yaml
-@@ -41,3 +41,11 @@
-   path_var: RENODE_PATH
-   cmd: >
-     python3 <scripts_path>/renode_wrapper.py --renode "<path_var>" --elf <elf> --isa <variant> --priv=<priv> --mem-size 0x80000000
-+
-+
-+
-+- iss: risc-x
-+  path_var: RISC_X_PATH
-+  riscv_dv_path: RISCV_DV_PATH
-+  cmd: >
-+    make -C <path_var> sim-elf ELF=<elf> BIN=<bin>
+@@ -1024,15 +1071,15 @@ def main():
+                 # path_asm_test is a directory
+                 if os.path.isdir(full_path):
+                     run_assembly_from_dir(full_path, args.iss_yaml, args.isa,
+-                                          args.mabi,
++                                          args.mabi, args.priv,
+                                           args.gcc_opts, args.iss, output_dir,
+-                                          args.core_setting_dir, args.debug)
++                                          args.core_setting_dir, args.iss_timeout, args.debug)
+                 # path_asm_test is an assembly file
+                 elif os.path.isfile(full_path) or args.debug:
+                     run_assembly(full_path, args.iss_yaml, args.isa, args.mabi,
+-                                 args.gcc_opts,
++                                 args.priv, args.gcc_opts,
+                                  args.iss, output_dir, args.core_setting_dir,
+-                                 args.debug)
++                                 args.iss_timeout, args.debug)
+                 else:
+                     logging.error('{} does not exist'.format(full_path))
+                     sys.exit(RET_FAIL)
+@@ -1108,17 +1155,18 @@ def main():
+                         # path_asm_test is a directory
+                         if os.path.isdir(path_asm_test):
+                             run_assembly_from_dir(path_asm_test, args.iss_yaml,
+-                                                  args.isa, args.mabi,
++                                                  args.isa, args.mabi, args.priv,
+                                                   gcc_opts, args.iss,
+                                                   output_dir,
+                                                   args.core_setting_dir,
++                                                  args.iss_timeout,
+                                                   args.debug)
+                         # path_asm_test is an assembly file
+                         elif os.path.isfile(path_asm_test):
+                             run_assembly(path_asm_test, args.iss_yaml, args.isa,
+-                                         args.mabi, gcc_opts,
++                                         args.mabi, args.priv, gcc_opts,
+                                          args.iss, output_dir,
+-                                         args.core_setting_dir, args.debug)
++                                         args.core_setting_dir, args.iss_timeout, args.debug)
+                         else:
+                             if not args.debug:
+                                 logging.error(

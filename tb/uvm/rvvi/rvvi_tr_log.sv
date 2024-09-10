@@ -11,6 +11,8 @@ class rvvi_tr_log #(
     `uvm_component_param_utils_begin(rvvi_tr_log#(ILEN,XLEN,FLEN))
         `uvm_field_object(cfg, UVM_ALL_ON)
     `uvm_component_utils_end
+    
+    int log_fd;
 
     function new (string name, uvm_component parent);
         super.new(name, parent);
@@ -23,6 +25,24 @@ class rvvi_tr_log #(
         else
             `uvm_fatal("RVVI TR LOGGER", "No configuration object was set!")
     endfunction: build_phase
+
+    virtual task run_phase (uvm_phase phase);
+        super.run_phase(phase);
+        
+        // @(negedge vif.rst_n);
+        // @(posedge vif.rst_n);
+        
+        log_fd = $fopen(cfg.log_file, "w");
+        
+        if (log_fd == 0)
+            // `uvm_info("RVVI TR LOGGER", $sformatf("Could not open %s for writing.", cfg.log_file), UVM_LOW)
+            `uvm_error("RVVI TR LOGGER", $sformatf("Could not open %s for writing.", cfg.log_file))
+        else
+            `uvm_info("RVVI TR LOGGER", $sformatf("Opened %s for writing.", cfg.log_file), UVM_LOW)
+        
+        fwrite("    Cycle | PC       | Assembly                   | Instr    |   GPR write    | CSR write            | Trap\n");
+        fwrite("-----------------------------------------------------------------------------------------------------------\n");
+    endtask : run_phase
 
     function void write(rvvi_tr t);      
         string       mnemonic, trace_str;
@@ -65,9 +85,15 @@ class rvvi_tr_log #(
                      $sformatf("%9d | %h | %-26s | %h | %-14s | %-20s | %b\n", 
                                t.order, t.pc_rdata, mnemonic, t.insn, rd_str, csr_str, t.trap)};
         
+        fwrite($sformatf( "%9d | %h | %-26s | %h | %-14s | %-20s | %b\n", 
+                          t.order, t.pc_rdata, mnemonic, t.insn, rd_str, csr_str, t.trap ));
         `uvm_info("RVVI TRANSACTION LOGGER", trace_str, UVM_MEDIUM)
         
     endfunction : write
+    
+    function void fwrite (string msg);
+        $fwrite(log_fd, msg);
+    endfunction : fwrite
 
     // Function to decode an instruction and return the mnemonic
     function string decode_instruction (logic [31:0] instruction);
