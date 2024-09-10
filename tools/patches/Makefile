@@ -9,3 +9,6 @@ create-patch:
 
 apply-patch:
 	cd $(TOOLS_ROOT)/riscv-dv && patch -p1 < $(PATCHES_ROOT)/riscv-dv/$(PATCH_NAME).patch
+
+revert-patch:
+	cd $(TOOLS_ROOT)/riscv-dv && patch -R < $(PATCHES_ROOT)/riscv-dv/$(PATCH_NAME).patch
