@@ -98,12 +98,19 @@ XRUN_SIM_FLAGS := $(XRUN_COMMON_FLAGS) \
 # BIN := $(DV_OUT_DIR)/asm_test/$(DV_SIM_TEST)_0.bin
 # SECTION_FILE = $(patsubst %.o,%.section,$(ELF))
 
-
-
-# Dependencies: some files are fetched from external repositories
-DEPS := $(RISCV_DV_ROOT) $(RVFI_HOME)/rvfi_macros.vh
-
 run: sim
+
+
+
+######################################################################################################################
+##########################                           DEPENDENCIES                           ##########################
+######################################################################################################################
+
+DEPS := $(RISCV_DV_ROOT)/.git $(RVFI_HOME)/rvfi_macros.vh
+
+$(RISCV_DV_ROOT)/.git:
+	@git submodule update --init --recursive
+	@cd $(TOOLS_HOME)/patches && make apply-patch 
 
 $(RVFI_HOME)/rvfi_macros.vh: 
 	@curl -L -o $(RVFI_HOME)/rvfi_macros.vh https://raw.githubusercontent.com/ArthurMdrs/riscv-formal/cv32e40p_v1.8.2/checks/original_checks/rvfi_macros.vh
@@ -132,14 +139,14 @@ gui: $(DEPS)
 riscv-dv-sim: $(DEPS)
 	$(MAKE) sim UVM_VERBOSITY=UVM_NONE
 
-compile-instr-generator:
+compile-instr-generator: $(DEPS)
 	@$(DV_RUN_CMD) --co --output $(DV_OUT_DIR) \
 		--custom_target $(DV_RISCX_TARGET) --simulator xlm
 
-gen-and-compile-asm:
+gen-and-compile-asm: $(DEPS)
 	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --so --steps gen,gcc_compile $(GENERATOR_SIM_OPTS)
 
-run-dv-steps:
+run-dv-steps: $(DEPS)
 	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --steps $(DV_STEPS) --iss=risc-x,spike
 
 sim-iss:
@@ -151,35 +158,35 @@ compare:
 sim-and-compare:
 	@$(MAKE) run-dv-steps DV_STEPS=iss_sim,iss_cmp
 
-gen-sim-cmp:
+gen-sim-cmp: $(DEPS)
 	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --so $(GENERATOR_SIM_OPTS) \
 		--iss=risc-x,spike
 
 # dv-full: compile-instr-generator gen-and-compile-asm sim-and-compare
 dv-full: compile-instr-generator gen-sim-cmp
 
-spike-sim:
+spike-sim: $(DEPS)
 	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --steps iss_sim --iss=spike
 
 # csr-test is WIP
-csr-test:
+csr-test: $(DEPS)
 	@python3 $(RISCV_DV_ROOT)/scripts/gen_csr_test.py --xlen 32 --iterations 1 --out $(DV_OUT_DIR)/asm_test --end_signature_addr 0 --csr_file $(TB_HOME)/csr_description.yaml
 
 # c-test does NOT work yet (run_c is not compiling correctly??)
-c-test:
+c-test: $(DEPS)
 	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm --noclean --iss_timeout 600 \
 		--custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi $(ABI) \
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike --gcc_opts="-I$(PROGS_PATH)/include" \
 		--c_test $(PROGS_PATH) --debug debug.log
 
 # asm-test IS WORKING!
-asm-test:
+asm-test: $(DEPS)
 	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm --noclean --iss_timeout 600 \
 		--custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi $(ABI) \
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike --gcc_opts="-I$(PROGS_PATH)/include" \
 		--asm_test $(PROGS_PATH)/$(ASM_TEST)
 
-asm-test-dir:
+asm-test-dir: $(DEPS)
 	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm --noclean --iss_timeout 600 \
 		--custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi $(ABI) \
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike --gcc_opts="-I$(PROGS_PATH)/include" \

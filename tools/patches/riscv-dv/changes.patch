@@ -32,7 +32,7 @@ index e9e1a9c..e67ce44 100644
          # Load configuration from the command line and the configuration file.
          cfg = load_config(args, cwd)
 diff --git a/run.py b/run.py
-index 5f364fc..de3babb 100644
+index 5f364fc..d998a69 100644
 --- a/run.py
 +++ b/run.py
 @@ -16,6 +16,8 @@ limitations under the License.
@@ -134,7 +134,7 @@ index 5f364fc..de3babb 100644
          cmd = get_iss_cmd(base_cmd, elf, log)
 -        run_cmd(cmd, 10, debug_cmd=debug_cmd)
 +        if iss == "risc-x":
-+            logging.info("cmd = {}".format(cmd[:(cmd.index('&>')+3)]+log[:-4]+"_xrun.log"))
++            # logging.info("cmd = {}".format(cmd[:(cmd.index('&>')+3)]+log[:-4]+"_xrun.log"))
 +            cmd = cmd[:(cmd.index('&>')+3)] + log[:-4] + "_xrun.log"
 +        run_cmd(cmd, timeout_s, debug_cmd=debug_cmd)
          logging.info("[{}] Running ISS simulation: {} ...done".format(iss, elf))
