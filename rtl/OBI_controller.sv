@@ -17,7 +17,7 @@
 //     - nas linhas [47] e [87 : 108] temos lógica ainda indefinida
 // quero ainda discutir a linha [124]
 
-module OBI_controler_if #(
+module OBI_controller #(
     parameter WIDTH = 32
 ) (
     
@@ -136,6 +136,12 @@ module OBI_controler_if #(
 
     always_comb begin
         core_ready_o = 0;
+        obi_addr_o   = core_addr_i;
+        obi_we_o     = core_we_i;
+        obi_be_o     = core_be_i;
+        obi_wdata_o  = core_wdata_i;
+        obi_req_o    = core_valid_i;
+        resp_rdata_o = obi_rdata_i;
         case(state)
             IDLE:       begin
                 

@@ -8,7 +8,7 @@ rvfi rvfi_inst (
     .valid_if    ( core_inst.valid_if ),
     .stall_if    ( core_inst.stall_if ),
     .pc_if       ( core_inst.pc_if ),
-    .next_pc_mux ( core_inst.if_stage_inst.pc_constroller_inst.next_pc_mux ),
+    .next_pc_mux ( core_inst.if_stage_inst.pc_controller_inst.next_pc_mux ),
     
     // Input from ID stage
     .valid_id         ( core_inst.valid_id ),

@@ -23,8 +23,17 @@ module rvfi_wrapper (
 (* keep *)               wire  [3:0] dmem_ben;
 
 // Instruction memory interface
-(* keep *) `rvformal_rand_reg [31:0] imem_rdata;
-(* keep *)               wire [31:0] imem_addr;
+// (* keep *) `rvformal_rand_reg [31:0] imem_rdata;
+// (* keep *)               wire [31:0] imem_addr;
+(* keep *)               wire        insn_obi_req;
+(* keep *) `rvformal_rand_reg        insn_obi_gnt;
+(* keep *)               wire [31:0] insn_obi_addr;
+(* keep *)               wire        insn_obi_we;
+(* keep *)               wire [ 3:0] insn_obi_be;
+(* keep *)               wire [31:0] insn_obi_wdata;
+(* keep *) `rvformal_rand_reg        insn_obi_rvalid;
+(* keep *)               wire        insn_obi_rready;
+(* keep *) `rvformal_rand_reg [31:0] insn_obi_rdata;
 
 (* keep *)               wire [31:0] hartid;
 (* keep *)               wire [23:0] mtvec;
@@ -51,8 +60,17 @@ core core_inst (
     .dmem_wen_o   ( dmem_wen ),
     .dmem_ben_o   ( dmem_ben ),
     
-    .imem_rdata_i ( imem_rdata ),
-    .imem_addr_o  ( imem_addr ),
+    // .imem_rdata_i ( imem_rdata ),
+    // .imem_addr_o  ( imem_addr ),
+    .insn_obi_req_o  ( insn_obi_req ),
+    .insn_obi_gnt_i  ( insn_obi_gnt ),
+    .insn_obi_addr_o  ( insn_obi_addr ),
+    .insn_obi_we_o  ( insn_obi_we ),
+    .insn_obi_be_o  ( insn_obi_be ),
+    .insn_obi_wdata_o  ( insn_obi_wdata ),
+    .insn_obi_rvalid_i  ( insn_obi_rvalid ),
+    .insn_obi_rready_o  ( insn_obi_rready ),
+    .insn_obi_rdata_i  ( insn_obi_rdata ),
     
     .hartid_i    ( hartid ),
     .mtvec_i     ( mtvec ),

@@ -4,8 +4,8 @@ module if_stage import core_pkg::*; (
     input  logic [29:0] boot_addr_i,
     
     // Interface with instruction memory
-    input  logic [31:0] imem_rdata_i,
-    output logic [31:0] imem_addr_o,
+    // input  logic [31:0] imem_rdata_i,
+    // output logic [31:0] imem_addr_o,
     
     // OBI interface for instruction memory
     output logic        insn_obi_req_o,
@@ -86,7 +86,7 @@ pc_controller pc_controller_inst (
     .mepc_i               ( mepc_i )
 );
 
-OBI_controler_if OBI_controler_inst (
+OBI_controller OBI_controller_inst (
     .clk                    ( clk_i ),
     .rst_n                  ( rst_n_i ),
 

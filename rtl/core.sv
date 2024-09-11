@@ -22,8 +22,8 @@ module core #(
     output logic  [3:0] dmem_ben_o,
 
     // Interface with instruction memory
-    input  logic [31:0] imem_rdata_i,
-    output logic [31:0] imem_addr_o,
+    // input  logic [31:0] imem_rdata_i,
+    // output logic [31:0] imem_addr_o,
     
     // OBI interface for instruction memory
     output logic        insn_obi_req_o,
@@ -114,8 +114,8 @@ if_stage if_stage_inst (
     .boot_addr_i ( boot_addr_i ),
     
     // Interface with instruction memory
-    .imem_rdata_i ( imem_rdata_i ),
-    .imem_addr_o  ( imem_addr_o ),
+    // .imem_rdata_i ( imem_rdata_i ),
+    // .imem_addr_o  ( imem_addr_o ),
     
     // OBI interface for instruction memory
     .insn_obi_req_o ( insn_obi_req_o ),
