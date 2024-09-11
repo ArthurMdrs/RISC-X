@@ -30,18 +30,19 @@ module tb();
         clock = 0;
         nreset = 1;
         in_valid_i = 1;
-        a= 59699056; 
-        b = 87783792;
-        $monitor(a,b,c);
-        #2000 $finish;
+       
+        a = 2127377573;
+        b =  1059699856; 
+        //out_ready_i = 0;
+        $monitor("%d %d %d",a,b,c);
+        #500 $finish;
      end
      always #2 clock = ~clock;
   always_ff@(negedge clock)begin
         //$display("%d %d %d %d %d %d %s",inst0opdiv.a_reg,inst0opdiv.b_reg,inst0opdiv.ena,inst0opdiv.Quatient,inst0opdiv.minuend,inst0opdiv.k ,str[inst0opdiv.state]);
         //if(temp=="START")begin 
         if(inst0opdiv.out_valid_o)begin out_ready_i <=1;
-                $display(inst0opdiv.c);
-                $finish;
+                $display("%d,%b, %b",inst0opdiv.c,inst0opdiv.Quatient,inst0opdiv.c_signal);
         end
 
         //end
