@@ -148,7 +148,7 @@ module opdiv(
 
 
     always_comb case(state) 
-        IDLE                        :                           {next,next_in_ready_o,next_out_valid_o} = in_valid_i ? {INITIALISE_AND_COUNTER_BITS,2'b00}:{IDLE,2'b10}                 ;
+        IDLE                        :                           {next,next_in_ready_o,next_out_valid_o} = in_valid_i && in_ready_o  ? {INITIALISE_AND_COUNTER_BITS,2'b00}:{IDLE,2'b10}  ;
         INITIALISE_AND_COUNTER_BITS :                           {next,next_in_ready_o,next_out_valid_o} = {SET_AK_MINUEND,2'b00}                                                        ;
         SET_AK_MINUEND              :                           {next,next_in_ready_o,next_out_valid_o} = {LOOP,2'b00}                                                                  ;
         LOOP                        :begin 
