@@ -25,6 +25,17 @@ module core #(
     input  logic [31:0] imem_rdata_i,
     output logic [31:0] imem_addr_o,
     
+    // OBI interface for instruction memory
+    output logic        insn_obi_req_o,
+    input  logic        insn_obi_gnt_i,
+    output logic [31:0] insn_obi_addr_o,
+    output logic        insn_obi_we_o,
+    output logic [ 3:0] insn_obi_be_o,
+    output logic [31:0] insn_obi_wdata_o,
+    input  logic        insn_obi_rvalid_i,
+    output logic        insn_obi_rready_o,
+    input  logic [31:0] insn_obi_rdata_i,
+    
     // Hart ID, defined by system
     input  logic [31:0] hartid_i,
     // mtvec initial address, defined by system
@@ -105,6 +116,17 @@ if_stage if_stage_inst (
     // Interface with instruction memory
     .imem_rdata_i ( imem_rdata_i ),
     .imem_addr_o  ( imem_addr_o ),
+    
+    // OBI interface for instruction memory
+    .insn_obi_req_o ( insn_obi_req_o ),
+    .insn_obi_gnt_i  ( insn_obi_gnt_i ),
+    .insn_obi_addr_o ( insn_obi_addr_o ),
+    .insn_obi_we_o  ( insn_obi_we_o ),
+    .insn_obi_be_o ( insn_obi_be_o ),
+    .insn_obi_wdata_o  ( insn_obi_wdata_o ),
+    .insn_obi_rvalid_i ( insn_obi_rvalid_i ),
+    .insn_obi_rready_o  ( insn_obi_rready_o ),
+    .insn_obi_rdata_i  ( insn_obi_rdata_i ),
     
     // Output to ID stage
     .pc_if_o    ( pc_if ),
