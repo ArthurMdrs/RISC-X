@@ -49,9 +49,10 @@ module if_stage import core_pkg::*; (
 ///////////////////////////////////////////////////////////////////////////////
 
 logic [31:0] pc_if_n;
+logic core_ready;
 
 // Instruction Memory Interface
-assign instr_if_o = imem_rdata_i; // Instruction read from memory
+//assign instr_if_o = imem_rdata_i; // Instruction read from memory
 assign imem_addr_o = pc_if_o;     // Address from which the instruction is fetched
 
 // Pipeline registers ->IF
@@ -66,7 +67,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
 end
 
 // Determine next instruction address (PC)
-pc_controller pc_constroller_inst (
+pc_controller pc_controller_inst (
     .next_pc_o            ( pc_if_n ),
     .curr_pc_i            ( pc_if_o ), 
     .valid_id_i           ( valid_id_i ),
@@ -85,24 +86,22 @@ pc_controller pc_constroller_inst (
     .mepc_i               ( mepc_i )
 );
 
-module OBI_controler_if #(
-    parameter WIDTH = 32
-) (
+OBI_controler_if OBI_controler_inst (
     .clk                    ( clk_i ),
     .rst_n                  ( rst_n_i ),
 
     // Transaction request interface
-    .core_rready_i          ( 1 ),
-    .core_valid_i           ( 1 ),
+    .core_rready_i          ( 1'b1 ),
+    .core_valid_i           ( 1'b1 ),
     .core_ready_o           ( core_ready ),
     .core_addr_i            ( pc_if_o ),
-    .core_we_i              ( 0 ),
+    .core_we_i              ( 1'b0 ),
     .core_be_i              ( 4'b1111 ),
-    .core_wdata_i           ( 0 ),
+    .core_wdata_i           ( 32'b0 ),
 
     // Transaction response interface
     .resp_valid_o           (  ),  // Note: Consumer is assumed to be 'ready' whenever resp_valid_o = 1
-    .resp_rdata_o           (  ),
+    .resp_rdata_o           ( instr_if_o ),
     .resp_err_o             (  ),
 
     // OBI interface
@@ -115,7 +114,7 @@ module OBI_controler_if #(
     .obi_atop_o             (  ),
     .obi_rdata_i            ( insn_obi_rdata_i ),
     .obi_rvalid_i           ( insn_obi_rvalid_i ),
-    .obi_err_i              ( 0 )
+    .obi_err_i              ( 1'b0 )
 
 );
 
