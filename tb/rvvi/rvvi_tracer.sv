@@ -5,7 +5,9 @@ module rvvi_tracer (
 );
 
 import core_pkg::*;
-import tb_pkg::*;
+// import tb_pkg::*;
+
+`include "riscv_decoder.sv"
 
 bit print_trace;
 bit dlyd_rst;

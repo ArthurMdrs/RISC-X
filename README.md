@@ -15,3 +15,7 @@ What's in plan for the future:
 - Debug mode;
 - AXI bus;
 - SoC.
+
+## Licensing
+
+RISC-X is available under the Apache License, Version 2.0. Please refer to the [Apache License](LICENSE) file for further information.

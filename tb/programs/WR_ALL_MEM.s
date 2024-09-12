@@ -1,11 +1,13 @@
-.globl main
+.include "init.s"
 
-.text
+.section .text
+.globl main
 main:
 	# Load initial values
     addi x1, x0, 1      # x1 will hold the wdata
-    addi x31, x0, 0     # x31 will hold the waddr
-    addi x30, x0, 1024  # x30 should be the mem size
+    la x15, .data       # x15 will hold the addr of .data
+    mv x31, x15         # x31 will hold the waddr
+    addi x30, x15, 1024  # 1024 should be the mem size
 
 loop:
     sw x1, 0(x31)
@@ -14,7 +16,7 @@ loop:
     bne x31, x30, loop
 
     # Read all the values back
-    addi x31, x0, 0
+    mv x31, x15
 loop_read:
     lw x1, 0(x31)
     srli x2, x31, 2     # x2 = x31 / 4
@@ -25,9 +27,11 @@ loop_read:
     j finish
 
 error:
-    sw x30, 0(x0)
+    sw x30, 0(x15)
 
 finish:
     slli gp, sp, 10
     
     ecall
+    nop
+    j _exit
