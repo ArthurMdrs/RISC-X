@@ -72,10 +72,10 @@ always @ (negedge clk_i) begin
                 rd_mnemonic = dec.translate_register(i, .is_f(1));
                 rd_wdata = rvvi.f_wdata[0][0][i];
                 rd_str = $sformatf("%4s: %h", rd_mnemonic, rd_wdata);
-                if (!got_first_fp_instr) begin
-                    rd_str = " ";
-                    got_first_fp_instr = 1;
-                end
+                // if (!got_first_fp_instr) begin
+                //     rd_str = " ";
+                //     got_first_fp_instr = 1;
+                // end
             end
         end
         

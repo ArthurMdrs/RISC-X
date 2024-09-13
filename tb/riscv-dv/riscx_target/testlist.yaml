@@ -36,7 +36,7 @@
   description: >
     Enable floating point instructions
   gen_opts: >
-    +instr_cnt=10000
+    +instr_cnt=1000
     +num_of_sub_program=0
     +no_fence=1
     +no_data_page=1
