@@ -84,7 +84,6 @@ class apb_sequence extends uvm_sequence #(apb_tr);
       //Finish the generation of the item
         finish_item(m_item_6);
 
-
       //Start the generation of the item2 
     	  start_item(m_item_7);
       //Randomize

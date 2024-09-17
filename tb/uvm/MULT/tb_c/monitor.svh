@@ -23,15 +23,15 @@ class monitor extends uvm_monitor;
       forever begin
          wait (a_vi.reset === 0);
          tr = a_tr::type_id::create("tr");
-         // start transaction recording
 
-         `bvm_begin_tr(tr) 
+         `bvm_begin_tr(tr)          // start transaction recording
          while (!(a_vi.out_valid_o === 1 && a_vi.out_ready_i === 1))
+
             @(posedge a_vi.clock);
-   
-         tr.c = a_vi.c;
-               @(posedge a_vi.clock);
-         `bvm_end_tr(tr) // end transaction recording
+            tr.c = a_vi.c;
+            @(posedge a_vi.clock);
+
+         `bvm_end_tr(tr)           // end transaction recording
          out.write(tr);
          
       end
@@ -62,22 +62,15 @@ class apb_monitor extends uvm_monitor;
       forever begin
          wait (apb_vi.PRESETn === 1);
          tr = apb_tr::type_id::create("tr");
-         
-         `bvm_begin_tr(tr) // start transaction recording
-
-         //@(posedge apb_vi.PCLK);
+         `bvm_begin_tr(tr)          // start transaction recording
          while (!(apb_vi.in_ready_o === 1 && apb_vi.in_valid_i === 1))
+
             @(posedge apb_vi.PCLK);
-         //wait (apb_vi.valid === 1 && apb_vi.out_ready === 1);
+            tr.divisor = apb_vi.divisor;
+            tr.dividendo = apb_vi.dividendo;
+            @(posedge apb_vi.PCLK);
 
-         //`bvm_begin_tr(tr) // start transaction recording
-         tr.divisor = apb_vi.divisor;
-         tr.dividendo = apb_vi.dividendo;
-         
-        
-          @(posedge apb_vi.PCLK);
-         `bvm_end_tr(tr) // end transaction recording
-
+         `bvm_end_tr(tr)          // end transaction recording
          out.write(tr);
       end
    endtask

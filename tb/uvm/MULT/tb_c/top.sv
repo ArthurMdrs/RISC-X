@@ -13,21 +13,19 @@ module top;
    logic reset;
    initial begin
      reset = 1;
-     #32 reset = 0; //
-     #10 reset = 1; //m 
      repeat(2) @(negedge clock);
      reset = 0;
    end
 
-  // initial begin
+  //Reset generator 1 (test)
+  //  initial begin
   //    reset = 1;
-  //    #10 reset = 0;
-  //    #20 reset = 1;
+  //    #32 reset = 0; //i
+  //    #10 reset = 1; //m 
   //    repeat(2) @(negedge clock);
   //    reset = 0;
   //  end
 
-   
   //Reset generator 2
 
   // initial begin
@@ -66,8 +64,7 @@ module top;
     .a(in.dividendo)              ,
     .b(in.divisor)                ,
     .in_valid_i(in.in_valid_i)    ,
-    .in_ready_o(in.in_ready_o)    ,
-    .nclocks (32'd32)             ,         
+    .in_ready_o(in.in_ready_o)    ,         
     .resultado(out.c)             ,
     .out_valid_o(out.out_valid_o) ,
     .out_ready_i(out.out_ready_i)   

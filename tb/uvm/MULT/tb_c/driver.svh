@@ -1,3 +1,4 @@
+//Driver out
 class driver_master extends uvm_driver #(a_tr);
   `uvm_component_utils(driver_master)
 
@@ -27,10 +28,8 @@ class driver_master extends uvm_driver #(a_tr);
    task reset_signals();
       forever begin
          wait (a_vi.reset === 1);
-
-         a_vi.out_ready_i <= 0;
-
-        wait (a_vi.reset === 0);
+          a_vi.out_ready_i <= 0;
+         wait (a_vi.reset === 0);
       end
   endtask
 
@@ -43,14 +42,11 @@ class driver_master extends uvm_driver #(a_tr);
          
          //seq_item_port.get_next_item(tr_sequencer); // get transaction
 
-         a_vi.out_ready_i = 1;
-        
-      @(posedge a_vi.clock);
+         a_vi.out_ready_i = 1; 
+        @(posedge a_vi.clock);
         while (!(a_vi.out_valid_o === 1))
-        //wait (a_vi.out_valid_o === 1);
         @(posedge a_vi.clock);
         a_vi.out_ready_i = 0;
-      
         @(posedge a_vi.clock);
          //seq_item_port.item_done(); // notify sequencer that transaction is completed
 
@@ -59,8 +55,7 @@ class driver_master extends uvm_driver #(a_tr);
 
 endclass
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//Driver In
 class apb_driver_master extends uvm_driver #(apb_tr);
   `uvm_component_utils(apb_driver_master)
 
@@ -105,25 +100,18 @@ class apb_driver_master extends uvm_driver #(apb_tr);
    task get_and_drive();
 
       apb_tr tr_sequencer; // transaction coming from sequencer
-      // Forking a process to randomly toggle in_valid_i and out_ready
-/*
-    fork
-
-      forever begin
-      // Random delay before each toggle
-      #(5 + $urandom_range(0, 10)); // Random delay between 5 and 15 time units
-      apb_vi.in_valid_i <= $urandom_range(0, 1);
-      end
-
-    join_none*/
 
       forever begin
         wait (apb_vi.PRESETn === 1);
-  
         seq_item_port.get_next_item(tr_sequencer); // get transaction
-        
+      
+        // Old
         apb_vi.in_valid_i <= 1;
-        #10 apb_vi.in_valid_i <= 0;
+
+        // New
+        // apb_vi.in_valid_i <= 1;
+         #10 apb_vi.in_valid_i <= 0;
+
         apb_vi.dividendo  <= tr_sequencer.dividendo; 
         apb_vi.divisor    <= tr_sequencer.divisor;
         @(posedge apb_vi.PCLK);
