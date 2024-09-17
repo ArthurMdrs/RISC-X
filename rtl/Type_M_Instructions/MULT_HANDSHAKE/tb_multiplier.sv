@@ -5,40 +5,54 @@
 // ----------------------------------------------------------------------------------------------------
 // RELEASE HISTORY  :
 // DATA                 VERSÃO      AUTOR  				    DESCRÇÃO
-// 2024-08-16           0.01        André Medeiros     	    		    Versão inicial.
-// ----------------------------------------------------------------------------------------------------
+// 2024-09-16           0.11        André Medeiros     	    Versão inicial.
+// ------------------------------------------------------------------------------------------------
 
 module tb_booth_multiplier;
 
     // Declaração dos sinais
     logic clk;                // Sinal de clock
-    logic reset_n;            // Sinal de reset ativo baixo
+    logic rst_n;              // Sinal de reset ativo baixo
     logic [31:0] a;           // 1º Operando de 32 bits
     logic [31:0] b;           // 2º Operando de 32 bits
-    logic valid_in;           // Sinal valid de entrada
-    logic ready;              // Sinal ready
-    logic [31:0] nclocks;     // Sinal para contar número de clocks
-    logic [63:0] c;           // Resultado da multiplicação, 64 bits
-    logic valid_out;          // Sinal valid de saída
+    logic in_valid_i;         // Sinal valid de entrada
+    logic in_ready_o;         // Sinal ready (saída)
+    logic out_ready_i;        // Sinal ready de saída (entrada)
+    logic [63:0] resultado;   // Resultado da multiplicação, 64 bits
+    logic out_valid_o;        // Sinal valid de saída
 
-    always #5 clk = ~clk;  // Clock de 10 ns de período (100 MHz)
+    // Clock de 10 ns de período (100 MHz)
+    initial begin
+        clk = 0;
+        forever #5 clk = ~clk;
+    end
+
+    // Gerar reset
+    initial begin
+        // Aplicar reset
+        rst_n = 0;
+        in_valid_i = 0;
+        out_ready_i = 1; // Inicialmente assume-se que o receptor está pronto
+        @(posedge clk);
+        rst_n = 1;
+        @(posedge clk); // Aguarda um ciclo após desativar o reset
+    end
 
     // Instancia o módulo a ser testado
     booth_multiplier_32x32 dut (
         .clk(clk),
-        .reset_n(reset_n),
+        .rst_n(rst_n),
         .a(a),
         .b(b),
-        .valid_in(valid_in),
-        .ready(ready),
-        .nclocks(nclocks),
-        .c(c),
-        .valid_out(valid_out)
+        .in_valid_i(in_valid_i),
+        .in_ready_o(in_ready_o),
+        .out_ready_i(out_ready_i),
+        .resultado(resultado),
+        .out_valid_o(out_valid_o)
     );
 
     // Procedimento inicial do testbench
     initial begin
-
         `ifdef XCELIUM
             $shm_open("waves.shm");
             $shm_probe("AS");
@@ -54,14 +68,7 @@ module tb_booth_multiplier;
 
         $display("Simulação iniciada...");
 
-        // Inicializa os sinais
-        clk = 0;
-        a = 32'b0;
-        b = 32'b0;
-        valid_in = 0;
-        ready = 1;              // Inicializa ready sempre como 1 (Multiplicador pronto para iniciar)
-        nclocks = 32'd32;       // Valor para o número esperado de ciclos (Número do maior operando = 32 cíclos)
-
+        // Testes de valor fixo
         $display("Executando testes de valor fixo...");
         a = 32'h0000_0002; // Valor de exemplo para a = 2
         b = 32'h0000_0004; // Valor de exemplo para b = 4
@@ -101,7 +108,7 @@ module tb_booth_multiplier;
         start_test();
 
         // Teste para valores negativos
-      	$display("Teste para valores negativos...");
+        $display("Teste para valores negativos...");
         a = 32'h80000000;
         b = 32'h80000000;
         start_test();
@@ -123,16 +130,19 @@ module tb_booth_multiplier;
     // Função para iniciar e aguardar o término do teste
     task start_test();
         begin
-            reset_n = 0;
-            #100;              // Mantém o reset por um tempo mais longo
-            reset_n = 1;
-            valid_in = 1;
-            #10;                // Espera um ciclo de clock
-            valid_in = 0;
-            wait(valid_out);
-            #50;                // Espera que o resultado esteja disponível
-            $display("Time: %0t | a: %d | b: %d | c: %d | valid_in: %b | valid_out: %b | ready: %b | nclocks: %d", 
-                $time, a, b, c, valid_in, valid_out, ready, nclocks);
+            // Inicia o teste
+            in_valid_i = 0;
+            @(posedge clk);       // Aguarda um ciclo de clock antes de começar
+            in_valid_i = 1;       // Envia os dados válidos
+            @(posedge clk);       // Aguarda um ciclo de clock
+            in_valid_i = 0;       // Dados não são mais válidos após o ciclo de clock
+
+            // Aguarda até o resultado estar pronto (out_valid_o = 1)
+            wait(out_valid_o);   
+            @(posedge clk);
+            
+            $display("Time: %0t | a: %d | b: %d | resultado: %d | in_valid_i: %b | out_valid_o: %b | in_ready_o: %b | out_ready_i: %b", 
+                $time, a, b, resultado, in_valid_i, out_valid_o, in_ready_o, out_ready_i);
         end
     endtask
 
