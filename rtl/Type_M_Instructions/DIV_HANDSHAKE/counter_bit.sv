@@ -1,8 +1,7 @@
 module counter_bit(
     input   logic       ena ,
     input   logic [30:0] A  ,
-    output  logic [10:0] nBits,
-    output logic [30:0] mask
+    output  logic [10:0] nBits
 );
     always_comb begin
         if(ena)
