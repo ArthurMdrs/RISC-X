@@ -1,3 +1,4 @@
+//Driver out
 class driver_master extends uvm_driver #(a_tr);
   `uvm_component_utils(driver_master)
 
@@ -27,10 +28,8 @@ class driver_master extends uvm_driver #(a_tr);
    task reset_signals();
       forever begin
          wait (a_vi.reset === 1);
-
-         a_vi.out_ready_i <= 0;
-
-        wait (a_vi.reset === 0);
+          a_vi.out_ready_i <= 0;
+         wait (a_vi.reset === 0);
       end
   endtask
 
@@ -43,14 +42,11 @@ class driver_master extends uvm_driver #(a_tr);
          
          //seq_item_port.get_next_item(tr_sequencer); // get transaction
 
-         a_vi.out_ready_i = 1;
-        
-      @(posedge a_vi.clock);
+         a_vi.out_ready_i = 1; 
+        @(posedge a_vi.clock);
         while (!(a_vi.out_valid_o === 1))
-        //wait (a_vi.out_valid_o === 1);
         @(posedge a_vi.clock);
         a_vi.out_ready_i = 0;
-      
         @(posedge a_vi.clock);
          //seq_item_port.item_done(); // notify sequencer that transaction is completed
 
@@ -59,8 +55,7 @@ class driver_master extends uvm_driver #(a_tr);
 
 endclass
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//Driver In
 class apb_driver_master extends uvm_driver #(apb_tr);
   `uvm_component_utils(apb_driver_master)
 
@@ -105,29 +100,20 @@ class apb_driver_master extends uvm_driver #(apb_tr);
    task get_and_drive();
 
       apb_tr tr_sequencer; // transaction coming from sequencer
-      // Forking a process to randomly toggle in_valid_i and out_ready
-/*
-    fork
-
-      forever begin
-      // Random delay before each toggle
-      #(5 + $urandom_range(0, 10)); // Random delay between 5 and 15 time units
-      apb_vi.in_valid_i <= $urandom_range(0, 1);
-      end
-
-    join_none*/
 
       forever begin
         wait (apb_vi.PRESETn === 1);
-  
         seq_item_port.get_next_item(tr_sequencer); // get transaction
-        
+      
+        // Old
         apb_vi.in_valid_i <= 1;
-     
+
+        // New
+        // apb_vi.in_valid_i <= 1;
+
         apb_vi.dividendo  <= tr_sequencer.dividendo; 
         apb_vi.divisor    <= tr_sequencer.divisor;
-  @(posedge apb_vi.PCLK);
-        // Keep in_valid_i high until ready goes low
+        @(posedge apb_vi.PCLK);
         @(posedge apb_vi.PCLK);
         wait (apb_vi.in_ready_o === 1); 
         apb_vi.in_valid_i = 0;
@@ -138,13 +124,4 @@ class apb_driver_master extends uvm_driver #(apb_tr);
 
 endclass
 
-/*
-Quero que dentro do forever os dados iniciem in_valid_i = 1 depois de 10 pulsos de clock e se mantenha constante até que o ready for 0, para cada borda positiva do clock.
-Também que o out_ready se iniciei em 1 e se matenha constante ate que oub_valid for igual a zero.
-
-Coloque essa lógica dentro do forever, pode apagar o que achar pertinente. Menos a linha wait... e seq_item_port.item_done. A linguagem é sytemverilog e também esse arquivo é o driver de uvm
-*/
-//TRansações apnes com out_READY = 1 ;
-
-// A comparação do dut com ref mod deve ser quando o out_valid/out_valid_o/valid0
 

@@ -26,21 +26,17 @@ module top;
    apb_if in(.*);
    a_if out(.*);
 
-   div testediv( 
-    .clock(clock)                ,
-    .nreset(~reset)              ,
-    .in_valid_i(in.in_valid_i)   ,
-    .in_ready_o(in.in_ready_o)     ,
-    .a(in.dividendo)             ,
-    .b(in.divisor)               ,
-    .c(out.c)                    ,
-    .nclocks(out.nclocks)         , 
+   opdiv testediv( 
+    .clock(clock)                       ,
+    .nreset(~reset)                     ,
+    .a(in.dividendo)                    ,
+    .b(in.divisor)                      ,
+    .c(out.c)                           ,
+    .in_valid_i(in.in_valid_i)          ,
+    .in_ready_o(in.in_ready_o)          ,
     .out_valid_o(out.out_valid_o)       ,
     .out_ready_i(out.out_ready_i)   
   );
-
-
-
 
    initial begin
       // vendor dependent waveform recording

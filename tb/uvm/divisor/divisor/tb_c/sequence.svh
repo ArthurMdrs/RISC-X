@@ -17,68 +17,83 @@ endclass
 
 class apb_sequence extends uvm_sequence #(apb_tr);
     `uvm_object_utils(apb_sequence)
-    
+    //Constructor
     function new (string name = "apb_sequence");
       super.new(name);
     endfunction: new
-
-
-
-
+    
     task body;
       apb_tr tr;
-      int repeat_count = 10000; 
-  // Iniciando transações específicas
-        `uvm_info(get_type_name(), "Iniciando transações específicas", UVM_MEDIUM)
+      item m_item;
+      item2 m_item_2;
+      item3 m_item_3;
+      item4 m_item_4;
+      item5 m_item_5;
+      item6 m_item_6;
+      item7 m_item_7;
+      
+      forever begin
+       `uvm_do(tr)
+        m_item = item::type_id::create("m_item");
+        m_item_2 = item2::type_id::create("m_item_2");
+        m_item_3 = item3::type_id::create("m_item_3");
+        m_item_4 = item4::type_id::create("m_item_4");
+        m_item_5 = item5::type_id::create("m_item_5");
+        m_item_6 = item6::type_id::create("m_item_6");
+        m_item_7 = item7::type_id::create("m_item_7");
 
-`uvm_info(get_type_name(), "Iniciando transações zero", UVM_MEDIUM)
-       // Transação 1: Divisão por zero
-        repeat (repeat_count) begin
-            tr = apb_tr::type_id::create("tr");
-            tr.dividendo = 32'h00000010;
-            tr.divisor = 32'h00000000; // Divisor igual a zero
-            `uvm_do(tr)
-        end
-`uvm_info(get_type_name(), "Iniciando transações um", UVM_MEDIUM)
-        // Transação 2: Divisão por um
-        repeat (repeat_count) begin
-            tr = apb_tr::type_id::create("tr");
-            tr.dividendo = 32'h00000010;
-            tr.divisor = 32'h00000001; // Divisor igual a um
-            `uvm_do(tr)
-        end
-`uvm_info(get_type_name(), "Iniciando transações igual", UVM_MEDIUM)
-        // Transação 3: Dividendo igual ao divisor
-        repeat (repeat_count) begin
-            tr = apb_tr::type_id::create("tr");
-            tr.dividendo = 32'h00000020;
-            tr.divisor = 32'h00000020; // Dividendo igual ao divisor
-            `uvm_do(tr)
-        end
+      //Start the generation of the item 
+    	  start_item(m_item);
+      //Randomize
+        void'(m_item.randomize());
+      //Finish the generation of the item
+        finish_item(m_item);
 
-        // Transação 4: Dividendo negativo, divisor positivo
-        repeat (repeat_count) begin
-            tr = apb_tr::type_id::create("tr");
-            tr.dividendo = 32'hFFFFFFF0; // Valor negativo
-            tr.divisor = 32'h00000010;   // Valor positivo
-            `uvm_do(tr)
-        end
+      //Start the generation of the item2 
+    	  start_item(m_item_2);
+      //Randomize
+        void'(m_item_2.randomize());
+      //Finish the generation of the item
+        finish_item(m_item_2);
 
-        // Transação 5: Dividendo e divisor negativos
-        repeat (repeat_count) begin
-            tr = apb_tr::type_id::create("tr");
-            tr.dividendo = 32'hFFFFFFF0; // Valor negativo
-            tr.divisor = 32'hFFFFFFF0;   // Valor negativo
-            `uvm_do(tr)
-        end
-/*
-        forever begin
-            tr = apb_tr::type_id::create("tr");
-            start_item(tr);
-            tr.randomize();  // Gerar valores aleatórios
-            finish_item(tr);
-        end*/
+      //Start the generation of the item2 
+    	  start_item(m_item_3);
+      //Randomize
+        void'(m_item_3.randomize());
+      //Finish the generation of the item
+        finish_item(m_item_3);
+
+      //Start the generation of the item2 
+    	  start_item(m_item_4);
+      //Randomize
+        void'(m_item_4.randomize());
+      //Finish the generation of the item
+        finish_item(m_item_4);
+
+      //Start the generation of the item2 
+    	  start_item(m_item_5);
+      //Randomize
+        void'(m_item_5.randomize());
+      //Finish the generation of the item
+        finish_item(m_item_5);
+
+      //Start the generation of the item2 
+    	  start_item(m_item_6);
+      //Randomize
+        void'(m_item_6.randomize());
+      //Finish the generation of the item
+        finish_item(m_item_6);
+
+
+      //Start the generation of the item2 
+    	  start_item(m_item_7);
+      //Randomize
+        void'(m_item_7.randomize());
+      //Finish the generation of the item
+        finish_item(m_item_7);
+
+      end
+        `uvm_info("SEQ", $sformatf("Done generation of items"), UVM_LOW)
     endtask
    
 endclass
-

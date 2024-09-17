@@ -1,4 +1,4 @@
-# SimVision Command Script (Thu Aug 29 16:56:39 -03 2024)
+# SimVision Command Script (Wed Sep 11 11:21:42 -03 2024)
 #
 # Version 24.03.s005
 #
@@ -24,7 +24,7 @@ preferences set plugin-enable-waveformfrequencyplot 0
 array set dbNames ""
 set dbNames(realName1) [ database require waves -hints {
 	file ./waves.shm/waves.trn
-	file /home/xmen/Downloads/divisor/tb_c/waves.shm/waves.trn
+	file /home/xmen/Desktop/RISC-X/tb/uvm/divisor/divisor/tb_c/waves.shm/waves.trn
 }]
 if {$dbNames(realName1) == ""} {
     set dbNames(realName1) waves
@@ -60,7 +60,7 @@ waveform baseline set -time 0
 set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.clock}]}
 	} ]]
-waveform format $id -color #ff0000
+waveform format $id -color #ff0099 -namecolor #ff0099
 set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.a[31:0]}]}
 	} ]]
@@ -74,55 +74,39 @@ set id [waveform add -signals [subst  {
 	} ]]
 waveform format $id -color #ffffff
 set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.a_internal[30:0]}]}
+	{$dbNames(realName1)::[format {top.testediv.a_reg[31:0]}]}
 	} ]]
-waveform format $id -radix %d -color #ff9900
 set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.b_internal[30:0]}]}
+	{$dbNames(realName1)::[format {top.testediv.b_reg[31:0]}]}
 	} ]]
-waveform format $id -radix %d -color #ff9900
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.next[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.next_k[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.minuend[31:0]}]}
+	} ]]
 set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.nreset}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.stateCurrents}]}
-	} ]]
-set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.remeinder[30:0]}]}
-	} ]]
-waveform format $id -radix %d
-set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.stateCurrent}]}
-	} ]]
-set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.in_valid_i}]}
 	} ]]
+waveform format $id -color #99ff00 -bgcolor #000000
 set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.in_ready_o}]}
 	} ]]
+waveform format $id -color #99ff00 -bgcolor #000000
 set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.out_valid_o}]}
 	} ]]
+waveform format $id -color #0000ff
 set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.out_ready_i}]}
 	} ]]
-set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.nextState[31:0]}]}
-	} ]]
-waveform format $id -radix %d
-set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.nclocks[31:0]}]}
-	} ]]
-waveform format $id -radix %d
-set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.c_signal}]}
-	} ]]
-set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.b_signal}]}
-	} ]]
-set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.a_signal}]}
-	} ]]
+waveform format $id -color #0000ff
 set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {Transactions.tr_out}]}
 	} ]]
@@ -145,7 +129,7 @@ set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {$uvm:{uvm_test_top.env_h.refmod_h}.tr_out}]}
 	} ]]
 
-waveform xview limits 10.625ns 260.625ns
+waveform xview limits 0 500ns
 
 #
 # Waveform Window Links
