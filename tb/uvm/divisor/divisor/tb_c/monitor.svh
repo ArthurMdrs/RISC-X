@@ -25,14 +25,16 @@ class monitor extends uvm_monitor;
          tr = a_tr::type_id::create("tr");
 
          `bvm_begin_tr(tr)          // start transaction recording
-         while (!(a_vi.out_valid_o === 1 && a_vi.out_ready_i === 1))
-
+         while (!(a_vi.out_valid_o === 1 && a_vi.out_ready_i === 1)) begin
             @(posedge a_vi.clock);
-            tr.c = a_vi.c;
-            @(posedge a_vi.clock);
+        // `uvm_info("OUT MON", $sformatf("\ntime = %t\t\t\tDEBUG", $realtime), UVM_NONE)
+         end
+        tr.c = a_vi.c;
+        @(posedge a_vi.clock);
 
-         `bvm_end_tr(tr)           // end transaction recording
+        `uvm_info("OUT MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_NONE)
          out.write(tr);
+         `bvm_end_tr(tr)           // end transaction recording
          
       end
    endtask
@@ -69,9 +71,12 @@ class apb_monitor extends uvm_monitor;
             @(posedge apb_vi.PCLK);
             tr.divisor = apb_vi.divisor;
             tr.dividendo = apb_vi.dividendo;        
+        // `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_NONE)
+        // `uvm_info("IN MON", $sformatf("\n\ndivisor = 32'h%h\ndividendo = 32'h%h\n\n", apb_vi.divisor, apb_vi.dividendo), UVM_NONE)
             @(posedge apb_vi.PCLK);
-         `bvm_end_tr(tr) // end transaction recording
+        `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_NONE)
          out.write(tr);
+         `bvm_end_tr(tr) // end transaction recording
       end
    endtask
 

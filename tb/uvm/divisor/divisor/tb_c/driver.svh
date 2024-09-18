@@ -110,13 +110,17 @@ class apb_driver_master extends uvm_driver #(apb_tr);
 
         // New
         // apb_vi.in_valid_i <= 1;
+        
+        `uvm_info("IN DRV", $sformatf("\n*************************\nDriving tr:\n%s\n*************************", tr_sequencer.convert2string()), UVM_HIGH)
 
         apb_vi.dividendo  <= tr_sequencer.dividendo; 
         apb_vi.divisor    <= tr_sequencer.divisor;
+        
+        while (apb_vi.in_ready_o !== 1)
+            @(posedge apb_vi.PCLK);
+        
         @(posedge apb_vi.PCLK);
-        @(posedge apb_vi.PCLK);
-        wait (apb_vi.in_ready_o === 1); 
-        apb_vi.in_valid_i = 0;
+        apb_vi.in_valid_i <= 0;
 
         seq_item_port.item_done(); // notify sequencer that transaction is completed
       end

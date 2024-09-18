@@ -23,7 +23,8 @@ class refmod extends uvm_component;
    // a register file for APB interaction
    int m_matches, m_mismatches; // used for APB read operations
    int register_file;
-   int  result;
+//    int  result;
+   logic [31:0]  result;
    task run_phase (uvm_phase phase);
    
      apb_tr tr_in;
@@ -35,7 +36,16 @@ class refmod extends uvm_component;
        
          tr_out = a_tr::type_id::create("tr_out", this);	
           `bvm_begin_tr(tr_out)
-           result =  tr_in.dividendo / tr_in.divisor;
+        //    result =  tr_in.dividendo / tr_in.divisor;
+        if (tr_in.divisor == '0) begin
+            result = 2**32 - 1;
+        end
+        else if (tr_in.divisor == '1 && tr_in.dividendo == 2**32 - 1) begin
+            result = -(2**31);
+        end
+        else begin
+            result = $signed(tr_in.dividendo) / $signed(tr_in.divisor);
+        end
            tr_out.c = result;
           out.put(tr_out);
           `bvm_end_tr(tr_out)
