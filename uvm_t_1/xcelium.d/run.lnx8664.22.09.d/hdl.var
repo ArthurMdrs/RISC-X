@@ -1,4 +1,0 @@
-define XMSIMRC	( /opt/cadence/XCELIUM2209/tools/xcelium/files/xmsimrc, ~/.xmsimrc )
-define AMSRC	( /opt/cadence/XCELIUM2209/tools/xcelium/files/amsrc, ~/.amsrc )
-include ./hdlrun.var
-define SNAPSHOT worklib.div:sv

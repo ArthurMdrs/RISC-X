@@ -1,0 +1,124 @@
+# SimVision Command Script (Tue Sep 10 13:56:35 -03 2024)
+#
+# Version 24.03.s005
+#
+# You can restore this configuration with:
+#
+#     simvision -input simvision.svcf
+#  or simvision -input simvision.svcf database1 database2 ...
+#
+
+
+#
+# Preferences
+#
+preferences set expand-attributes begin_time
+preferences set plugin-enable-svdatabrowser-new 1
+preferences set plugin-enable-groupscope 0
+preferences set plugin-enable-interleaveandcompare 0
+preferences set plugin-enable-waveformfrequencyplot 0
+
+#
+# Databases
+#
+array set dbNames ""
+set dbNames(realName1) [ database require waves -hints {
+	file ./waves.shm/waves.trn
+	file /home/xmen/Desktop/RISC-X/tb/uvm/MULT/tb_c/waves.shm/waves.trn
+}]
+if {$dbNames(realName1) == ""} {
+    set dbNames(realName1) waves
+}
+
+#
+# Mnemonic Maps
+#
+mmap new  -reuse -name {Boolean as Logic} -radix %b -contents {{%c=FALSE -edgepriority 1 -shape low}
+{%c=TRUE -edgepriority 1 -shape high}}
+mmap new  -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor orange -label REG:%x -linecolor yellow -shape bus}
+{%x=1F -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=2C -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=* -label %x -linecolor gray -shape bus}}
+
+#
+# Waveform windows
+#
+if {[catch {window new WaveWindow -name "Waveform 1" -geometry 2560x1367+-10+59}] != ""} {
+    window geometry "Waveform 1" 2560x1367+-10+59
+}
+window target "Waveform 1" on
+waveform using {Waveform 1}
+waveform sidebar select designbrowser
+waveform set \
+    -primarycursor TimeA \
+    -signalnames name \
+    -signalwidth 175 \
+    -units ns \
+    -valuewidth 75
+waveform baseline set -time 0
+
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.clk}]}
+	} ]]
+waveform format $id -color #ff0000
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.a[31:0]}]}
+	} ]]
+waveform format $id -color #9900ff -bgcolor #000000
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.b[31:0]}]}
+	} ]]
+waveform format $id -color #9900ff -bgcolor #000000
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.rst_n}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.in_valid_i}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.in_ready_o}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.out_valid_o}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.out_ready_i}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.resultado[63:0]}]}
+	} ]]
+waveform format $id -color #ff9900 -namecolor #ff9900
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {Transactions.tr_out}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {Transactions.tr}]}
+	} ]]
+waveform format $id -height 100
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {$uvm:{uvm_test_top.env_h.refmod_h}.tr_out}]}
+	} ]]
+waveform format $id -height 132
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {$uvm:{uvm_test_top.env_h.agent_in_h.monitor_h}.tr}]}
+	} ]]
+waveform format $id -height 90
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {$uvm:{uvm_test_top.env_h.agent_out_h.monitor_h}.tr}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {$uvm:{uvm_test_top.env_h.refmod_h}.tr_out}]}
+	} ]]
+
+waveform xview limits 0 500ns
+
+#
+# Waveform Window Links
+#
+
+#
+# Console windows
+#
+console set -windowname Console
+window geometry Console 600x250+960+564
+
