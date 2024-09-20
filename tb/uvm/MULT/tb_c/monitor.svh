@@ -1,3 +1,15 @@
+// ----------------------------------------------------------------------------------------------------
+// DESCRIÇÃO: Classe `monitor` para verificação UVM do multiplicador binário de 32x32 bits
+//             - Captura e observa sinais do DUT.
+//             - Converte sinais de back-to-back em transações UVM para o scoreboard.
+//             - Verifica aderência ao protocolo de handshake e sequencialidade das operações.
+// ----------------------------------------------------------------------------------------------------
+// RELEASE HISTORY  :
+// DATA                 VERSÃO      AUTOR                    DESCRIÇÃO
+// 2024-09-20           0.1         Cleisson                 Versão inicial.
+//                                  Pedro Henrique
+//                                  
+// ----------------------------------------------------------------------------------------------------
 //Monitor in
 class monitor extends uvm_monitor;  
    `uvm_component_utils(monitor)

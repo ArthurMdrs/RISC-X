@@ -1,3 +1,17 @@
+// ----------------------------------------------------------------------------------------------------
+// DESCRIÇÃO: Classe `driver` para verificação UVM do multiplicador binário de 32x32 bits
+//             - Recebe as transações do sequencer.
+//             - Converte transações UVM em estímulos de sinal (estímulo do handshake e dados).
+//             - Usa lógica de controle baseada no protocolo (valid e ready).
+// ----------------------------------------------------------------------------------------------------
+// RELEASE HISTORY  :
+// DATA                 VERSÃO      AUTOR                    DESCRIÇÃO
+// 2024-09-20           0.1         Cleisson                 Versão inicial.
+//                                  Pedro Henrique
+//                                  
+// ----------------------------------------------------------------------------------------------------
+
+
 //Driver out
 class driver_master extends uvm_driver #(a_tr);
   `uvm_component_utils(driver_master)

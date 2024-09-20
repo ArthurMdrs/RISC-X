@@ -1,3 +1,16 @@
+
+// ----------------------------------------------------------------------------------------------------
+// DESCRIÇÃO: Classe `refmod` para verificação UVM do multiplicador binário de 32x32 bits
+//             - Compara a saída observada do DUT com os resultados esperados.
+//             - Calcula valores de referência com base no algoritmo de multiplicação de Booth.
+//             - Verifica precisão dos cálculos parciais e do resultado final.
+// ----------------------------------------------------------------------------------------------------
+// RELEASE HISTORY  :
+// DATA                 VERSÃO      AUTOR                    DESCRIÇÃO
+// 2024-09-20           0.1         Cleisson                 Versão inicial.
+//                                  Pedro Henrique
+//                                  
+// ----------------------------------------------------------------------------------------------------
 class refmod extends uvm_component;
    `uvm_component_utils(refmod)
 

@@ -1,3 +1,18 @@
+// ----------------------------------------------------------------------------------------------------
+// DESCRIÇÃO: Classe `top` para verificação UVM do multiplicador binário de 32x32 bits
+//             - Classe principal que instancia o ambiente de verificação completo.
+//             - Conecta os componentes principais: `env`, `coverage_in`, `coverage_out`, driver, sequencer, monitor, scoreboard.
+//             - Inicializa o DUT e gerencia os testes UVM, incluindo a geração de relatórios e logs.
+//             - Executa os cenários de teste, coordenando o fluxo de simulação.
+// ----------------------------------------------------------------------------------------------------
+// / RELEASE HISTORY  :
+// DATA                 VERSÃO      AUTOR                    DESCRIÇÃO
+// 2024-09-20           0.1         Cleisson                 Versão inicial.
+//                                  Pedro Henrique
+//                                  
+// ----------------------------------------------------------------------------------------------------
+
+
 module top;
    import uvm_pkg::*;
    import test_pkg::*;

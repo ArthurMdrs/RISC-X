@@ -1,3 +1,15 @@
+// ----------------------------------------------------------------------------------------------------
+// DESCRIÇÃO: Classe `env` para verificação UVM do multiplicador binário de 32x32 bits
+//             - Integra os componentes de verificação: driver, sequencer, monitor, scoreboard.
+//             - Controla o fluxo de dados e a integração de diferentes agentes.
+// ----------------------------------------------------------------------------------------------------
+// RELEASE HISTORY  :
+// DATA                 VERSÃO      AUTOR                    DESCRIÇÃO
+// 2024-09-20           0.1         Cleisson                 Versão inicial.
+//                                  Pedro Henrique
+//                                  
+// ----------------------------------------------------------------------------------------------------
+
 class env extends uvm_env;
    `uvm_component_utils(env)
     

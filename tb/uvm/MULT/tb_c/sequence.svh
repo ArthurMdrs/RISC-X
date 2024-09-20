@@ -1,3 +1,15 @@
+// ----------------------------------------------------------------------------------------------------
+// DESCRIÇÃO: Classe `sequencer` para verificação UVM do multiplicador binário de 32x32 bits
+//             - Gera sequência de transações para estimular o DUT.
+//             - Configura cenários de teste, como valores limites e casos de corner.
+// ----------------------------------------------------------------------------------------------------
+// RELEASE HISTORY  :
+// DATA                 VERSÃO      AUTOR                    DESCRIÇÃO
+// 2024-09-20           0.1         Cleisson                 Versão inicial.
+//                                  Pedro Henrique
+//                                  
+// ----------------------------------------------------------------------------------------------------
+
 class a_sequence extends uvm_sequence #(a_tr);
     `uvm_object_utils(a_sequence)
     
