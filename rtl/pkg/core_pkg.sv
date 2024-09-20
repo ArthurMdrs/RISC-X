@@ -59,7 +59,7 @@ typedef enum logic [2:0] {
     NPC_P_2,
     NPC_JUMP,
     NPC_BRANCH,
-    NPC_EXCEPTION,
+    NPC_EXCEPTION//,
     // NPC_REPEAT
 } next_pc_mux_t;
 
