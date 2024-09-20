@@ -100,7 +100,7 @@ OBI_controller OBI_controller_inst (
     .core_wdata_i           ( 32'b0 ),
 
     // Transaction response interface
-    .resp_valid_o           (  ),  // Note: Consumer is assumed to be 'ready' whenever resp_valid_o = 1
+    .resp_valid_o           ( valid_if_o ),  // Note: Consumer is assumed to be 'ready' whenever resp_valid_o = 1
     .resp_rdata_o           ( instr_if_o ),
     .resp_err_o             (  ),
 
@@ -122,7 +122,7 @@ OBI_controller OBI_controller_inst (
 
 
 // Resolve validness. Not valid implies inserting bubble
-assign valid_if_o = 1'b1;
+// assign valid_if_o = 1'b1;
 
 
 `ifdef SVA_ON
