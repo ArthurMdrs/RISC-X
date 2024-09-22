@@ -11,28 +11,30 @@ module tb();
 		logic 					out_valid_o	;
 		logic					out_ready_i	;
 		logic 	[31:0]			nclocks		;
-		 opdiv inst0opdiv(
+		opdiv inst0opdiv(
 		
-				.clock		(	clock		),	
-				.nreset		(	nreset		),
-				.in_valid_i	(	in_valid_i	),
-				.in_ready_o	(	in_ready_o	),
-				.a			(	a			),
-				.b			(	b			),
-				.c			(	c			),
-				.out_valid_o(	out_valid_o	),
-				.out_ready_i(	out_ready_i	)
+				.clock		      (	clock		    ),	
+				.nreset		      (	nreset		  ),
+				.in_valid_i	    (	in_valid_i	),
+				.in_ready_o	    (	in_ready_o	),
+				.a			        (	a			      ),
+				.b			        (	b			      ),
+				.c			        (	c			      ),
+				.out_valid_o    (	out_valid_o	),
+				.out_ready_i    (	out_ready_i	)
+//        .signal_division( 0     )
 		
 		);	
-    string str [] = {"START","INITIALISE_AND_COUNTER_BITS","SET_AK_MINUEND","LOOP","UPDATE_MINUEND_RIGHT","UPDATE_MINUEND_LEFT","INCREASE_K","DONE"};
+    string str [] = {"IDLE","INITIALISE_AND_COUNTER_BITS","SET_AK_MINUEND","LOOP,UPDATE_MINUEND_RIGHT","UPDATE_MINUEND_LEFT","INCREASE_K,DONE"};
     string temp;
     initial begin
         clock = 0;
+        nreset = 0;
+        #2
         nreset = 1;
-        in_valid_i = 1;
-       
-        a = 2127377573;
-        b =  1059699856; 
+        in_valid_i = 1;      
+        a = -45;
+        b =  9; 
         //out_ready_i = 0;
         $monitor("%d %d %d",a,b,c);
         #500 $finish;
