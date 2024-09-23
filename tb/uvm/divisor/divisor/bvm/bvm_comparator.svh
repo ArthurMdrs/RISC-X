@@ -48,7 +48,7 @@ class bvm_comparator #( type T = int ) extends uvm_scoreboard;
        `uvm_info("Match", {"\n", exp.sprint()}, UVM_HIGH);
        m_matches++;
        `uvm_info("Match", {"received\n", rec.sprint(),
-                                 "equals to expected\n", exp.sprint()}, UVM_LOW);
+                                 "equals to expected\n", exp.sprint()}, UVM_HIGH);
      end
      else begin
        `uvm_warning("Mismatch", {"received\n", rec.sprint(),

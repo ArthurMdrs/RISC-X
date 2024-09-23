@@ -49,9 +49,9 @@ class apb_sequence extends uvm_sequence #(apb_tr);
       //Finish the generation of the item
         finish_item(m_item);
 
-    	//   start_item(m_item_2);
-        // void'(m_item_2.randomize());
-        // finish_item(m_item_2);
+    	  start_item(m_item_2);
+        void'(m_item_2.randomize());
+        finish_item(m_item_2);
 
     	  start_item(m_item_3);
         void'(m_item_3.randomize());

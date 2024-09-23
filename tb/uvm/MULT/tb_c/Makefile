@@ -1,5 +1,9 @@
 sim:
-	irun -access +r -uvm +uvm_set_config_int="*",recording_detail,1 -coverage all -covoverwrite -DSYSTEM_CLOCK_UNITS_PER_SECOND=100 ../bvm/system_clock.c +incdir+../bvm ../bvm/*.sv *.sv +UVM_VERBOSITY=LOW
+	xrun -access +r -uvm +uvm_set_config_int="*",recording_detail,1 -coverage all -covoverwrite \
+		-top top +UVM_VERBOSITY=LOW \
+		-DSYSTEM_CLOCK_UNITS_PER_SECOND=100 ../bvm/system_clock.c +incdir+../bvm \
+		../bvm/*.sv *.sv \
+		../../../../../rtl/Type_M_Instructions/DIV_HANDSHAKE/multiplier.sv 
 
 wave:
 	simvision -NOCOPYRIGHT -input simvision.svcf
@@ -8,7 +12,7 @@ cover:
 	imc -load cov_work/scope/test
 
 clean:
-	rm -rf cov_work waves.shm xcelium.d xrun.* *.log .simvision
+	rm -rf cov_work waves.shm xcelium.d xrun.* *.log .simvision .bpad *.err
 
 help:
 	@echo "Xcelium and VManager need to be installed and environment needs to be set up to use this Makefile."
