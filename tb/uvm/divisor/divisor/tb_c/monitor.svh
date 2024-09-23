@@ -32,7 +32,7 @@ class monitor extends uvm_monitor;
         tr.c = a_vi.c;
         @(posedge a_vi.clock);
 
-        `uvm_info("OUT MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_NONE)
+        `uvm_info("OUT MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_MEDIUM)
          out.write(tr);
          `bvm_end_tr(tr)           // end transaction recording
          
@@ -74,7 +74,7 @@ class apb_monitor extends uvm_monitor;
         // `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_NONE)
         // `uvm_info("IN MON", $sformatf("\n\ndivisor = 32'h%h\ndividendo = 32'h%h\n\n", apb_vi.divisor, apb_vi.dividendo), UVM_NONE)
             @(posedge apb_vi.PCLK);
-        `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_NONE)
+        `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_MEDIUM)
          out.write(tr);
          `bvm_end_tr(tr) // end transaction recording
       end

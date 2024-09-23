@@ -29,10 +29,15 @@ class apb_tr extends uvm_sequence_item;
      `uvm_field_int(dividendo, UVM_ALL_ON | UVM_DEC)
   `uvm_object_utils_end
   
-  constraint positive_operands {
-    divisor  [31] == 1'b0;
-    dividendo[31] == 1'b0;
+//   constraint positive_operands {
+//     divisor  [31] == 1'b0;
+//     dividendo[31] == 1'b0;
+//   }
+  
+  constraint non_zero_divisor {
+    divisor != 32'b0;
   }
+
 
 function string convert2string();
     string my_str = {$sformatf("divisor = 32'h%h\ndividendo = 32'h%h\n", divisor, dividendo), 
