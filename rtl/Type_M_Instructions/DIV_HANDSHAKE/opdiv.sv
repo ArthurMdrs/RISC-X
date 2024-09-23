@@ -1,4 +1,4 @@
-`include "./counter_bit.sv"
+
 module opdiv(
     input  logic                clock           ,
     input  logic                nreset          ,

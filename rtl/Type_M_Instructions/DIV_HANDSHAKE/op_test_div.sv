@@ -1,5 +1,5 @@
 
-`include "./opdiv.sv"
+
 module tb();
 		logic 					clock		;
 		logic 					nreset		;
