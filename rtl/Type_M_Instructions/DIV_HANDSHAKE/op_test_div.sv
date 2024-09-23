@@ -33,8 +33,8 @@ module tb();
         #2
         nreset = 1;
         in_valid_i = 1;      
-        a = -45;
-        b =  9; 
+        a = 1;
+        b =  0; 
         //out_ready_i = 0;
         $monitor("%d %d %d",a,b,c);
         #500 $finish;

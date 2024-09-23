@@ -171,12 +171,17 @@ module opdiv(
     //always_comb c = out_valid_o && out_ready_i ?  Quatient[30:0]: 'x;
     always_comb 
         if(out_valid_o && out_ready_i)
-            case({a_signal,b_signal})
-                2'b00: c = {1'b0,Quatient[30:0]};
-                2'b11: c = {1'b0,Quatient[30:0]};
-                2'b10: c = {1'b1,~Quatient[30:0]+1};
-                2'b01: c = {1'b1,~Quatient[30:0]+1};
-            endcase
+            if(b_reg[30:0] == 0)
+                c = {31{1'b1}};
+            else if(a_reg[30:0] == 0)
+                c = {31{1'b0}};
+            else  
+                case({a_signal,b_signal})
+                    2'b00: c = {1'b0,Quatient[30:0]};
+                    2'b11: c = {1'b0,Quatient[30:0]};
+                    2'b10: c = {1'b1,~Quatient[30:0]+1};
+                    2'b01: c = {1'b1,~Quatient[30:0]+1};
+                endcase
         else
             c = 'x;
 
