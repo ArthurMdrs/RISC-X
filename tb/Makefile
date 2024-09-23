@@ -10,7 +10,7 @@ TOOLS_HOME := $(abspath $(RISC_X_ROOT)/tools)
 
 export RISCX_UVM_SRC := $(abspath $(TB_HOME)/uvm)
 export RISCV_DV_ROOT := $(abspath $(TOOLS_HOME)/riscv-dv)
-RISCV_DV_ADDS := $(abspath $(TOOLS_HOME)/additions/riscv-dv)
+export RISCV_DV_ADDS := $(abspath $(TOOLS_HOME)/additions/riscv-dv)
 
 # export RVVI_HOME := $(abspath $(shell pwd)/rvvi)
 

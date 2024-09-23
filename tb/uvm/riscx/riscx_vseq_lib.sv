@@ -63,6 +63,7 @@ class riscx_random_vseq extends riscx_base_vseq;
 
     `uvm_object_utils(riscx_random_vseq)
     
+    clknrst_reset_and_start_clk_seq clknrst_reset_and_start_clk_seq_inst;
     obi_load_mem_seq obi_load_mem_seq_inst;
     obi_random_seq   obi_random_seq_inst;
 
@@ -73,6 +74,9 @@ class riscx_random_vseq extends riscx_base_vseq;
     // If a sequence is called via a `uvm_do variant, then it is defined as a 
     // subsequence and it's pre/post_body() methods are not executed
     virtual task body();
+    
+        `uvm_do_on(clknrst_reset_and_start_clk_seq_inst, p_sequencer.sequencer_clknrst);
+        
         `uvm_do_on(obi_load_mem_seq_inst, p_sequencer.instr_obi_seqr);
         `uvm_do_on(obi_random_seq_inst  , p_sequencer.instr_obi_seqr);
     endtask: body
