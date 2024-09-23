@@ -32,7 +32,7 @@ index e9e1a9c..e67ce44 100644
          # Load configuration from the command line and the configuration file.
          cfg = load_config(args, cwd)
 diff --git a/run.py b/run.py
-index 5f364fc..d998a69 100644
+index 5f364fc..f1f6d0b 100644
 --- a/run.py
 +++ b/run.py
 @@ -16,6 +16,8 @@ limitations under the License.
@@ -48,8 +48,8 @@ index 5f364fc..d998a69 100644
  import sys
  import logging
  
-+# riscv_dv_root = os.environ.get('RISCV_DV_ROOT')
-+# sys.path.append(f'{riscv_dv_root}')
++riscv_dv_additions = os.environ.get('RISCV_DV_ADDS')
++sys.path.append(riscv_dv_additions)
 +
  from scripts.lib import *
  from scripts.spike_log_to_trace_csv import *
