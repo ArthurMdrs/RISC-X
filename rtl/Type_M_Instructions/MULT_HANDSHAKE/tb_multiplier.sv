@@ -5,7 +5,7 @@
 // ----------------------------------------------------------------------------------------------------
 // RELEASE HISTORY  :
 // DATA                 VERSÃO      AUTOR  				    DESCRÇÃO
-// 2024-09-16           0.11        André Medeiros     	    Versão inicial.
+// 2024-09-23           0.11        André Medeiros     	    Versão inicial.
 // ------------------------------------------------------------------------------------------------
 
 module tb_booth_multiplier;
@@ -20,6 +20,7 @@ module tb_booth_multiplier;
     logic out_ready_i;        // Sinal ready de saída (entrada)
     logic [63:0] resultado;   // Resultado da multiplicação, 64 bits
     logic out_valid_o;        // Sinal valid de saída
+    logic [1:0] op_sel;      // Tipo de operação: 00=MUL, 01=MULH, 10=MULHSU, 11=MULHU
 
     // Clock de 10 ns de período (100 MHz)
     initial begin
@@ -48,7 +49,8 @@ module tb_booth_multiplier;
         .in_ready_o(in_ready_o),
         .out_ready_i(out_ready_i),
         .resultado(resultado),
-        .out_valid_o(out_valid_o)
+        .out_valid_o(out_valid_o),
+        .op_sel(op_sel)
     );
 
     // Procedimento inicial do testbench
@@ -68,30 +70,33 @@ module tb_booth_multiplier;
 
         $display("Simulação iniciada...");
 
-        // Testes de valor fixo
+        // Testes de valor fixo com diferentes tipos de operação
         $display("Executando testes de valor fixo...");
-        a = 32'h0000_0002; // Valor de exemplo para a = 2
-        b = 32'h0000_0004; // Valor de exemplo para b = 4
+        a = 32'h0000_0002; 
+        b = 32'h0000_0004; 
+
+        // Teste com MUL (op_sel = 00)
+        op_sel = 2'b00; // MUL: Multiplicação com sinal
         start_test();
 
-        a = 32'h0000_0002; // Valor de exemplo para a = 2
-        b = 32'h0000_0006; // Valor de exemplo para b = 6
+        // Teste com MULH (op_sel = 01)
+        op_sel = 2'b01; // MULH: Parte alta da multiplicação com sinal
         start_test();
 
-        a = 32'h0000_0002; // Valor de exemplo para a = 2
-        b = 32'h0000_000A; // Valor de exemplo para b = 10
+        // Teste com MULHSU (op_sel = 10)
+        op_sel = 2'b10; // MULHSU: Parte alta com a com sinal e b sem sinal
         start_test();
 
-        a = 32'h0000_0002; // Valor de exemplo para a = 2
-        b = 32'h0000_0014; // Valor de exemplo para b = 20
+        // Teste com MULHU (op_sel = 11)
+        op_sel = 2'b11; // MULHU: Parte alta sem sinal
         start_test();
 
         // Testes aleatórios
         $display("Executando testes aleatórios...");
         repeat (10) begin
-            // Gera valores aleatórios para a e b
             a = $random;
             b = $random;
+            op_sel = $random % 4; // Gera valores aleatórios para o tipo de operação
             start_test();
         end
 
@@ -99,31 +104,30 @@ module tb_booth_multiplier;
         $display("Executando teste para valores máximos...");
         a = 32'hFFFFFFFF;
         b = 32'hFFFFFFFF;
+        op_sel = 2'b00; // Multiplicação normal
         start_test();
 
         // Teste para um valor pequeno e um valor grande
         $display("Teste para valor pequeno e um grande...");
         a = 32'h00000001;
         b = 32'h7FFFFFFF;
+        op_sel = 2'b00; // Multiplicação normal
         start_test();
 
         // Teste para valores negativos
         $display("Teste para valores negativos...");
         a = 32'h80000000;
         b = 32'h80000000;
+        op_sel = 2'b00; // Multiplicação normal
         start_test();
-        
+
         // Teste para valores mínimos
         $display("Teste de valores mínimos...");
         a = 32'h00000000;
         b = 32'h00000000;
-        start_test();
-        
-        a = 32'h00000000;
-        b = 32'h00000001;
+        op_sel = 2'b00; // Multiplicação normal
         start_test();
 
-        // Finaliza a simulação
         $finish;
     end
 
@@ -141,8 +145,8 @@ module tb_booth_multiplier;
             wait(out_valid_o);   
             @(posedge clk);
             
-            $display("Time: %0t | a: %d | b: %d | resultado: %d | in_valid_i: %b | out_valid_o: %b | in_ready_o: %b | out_ready_i: %b", 
-                $time, a, b, resultado, in_valid_i, out_valid_o, in_ready_o, out_ready_i);
+            $display("Time: %0t | a: %d | b: %d | resultado: %d | op_sel: %b | in_valid_i: %b | out_valid_o: %b | in_ready_o: %b | out_ready_i: %b", 
+                $time, a, b, resultado, op_sel, in_valid_i, out_valid_o, in_ready_o, out_ready_i);
         end
     endtask
 
