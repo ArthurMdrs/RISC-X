@@ -137,7 +137,7 @@ gui: $(DEPS)
 # 	$(MAKE) sim RVVI_LOG=$(subst /asm_test/,/risc-x_sim/,$(BIN:.bin=.log)) UVM_VERBOSITY=UVM_NONE
 
 riscv-dv-sim: $(DEPS)
-	$(MAKE) sim UVM_VERBOSITY=UVM_NONE
+	$(MAKE) sim UVM_VERBOSITY=UVM_NONE UVM_TEST=vseqr_test
 
 compile-instr-generator: $(DEPS)
 	@$(DV_RUN_CMD) --co --output $(DV_OUT_DIR) \

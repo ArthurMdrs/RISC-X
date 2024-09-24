@@ -52,8 +52,8 @@ class base_test extends uvm_test;
             `uvm_info("BASE TEST", "Virtual interface for clknrst was successfully set!", UVM_HIGH)
         else
             `uvm_error("BASE TEST", "No interface for clknrst was set!")
-        if(uvm_config_db#(obi_vif)::get(this, "", "vif", instr_obi_vif))
-            `uvm_info("BASE TEST", "Virtual interface for Instr OBI was successfully set!", UVM_MEDIUM)
+        if(uvm_config_db#(obi_vif)::get(this, "", "instr_obi_vif", instr_obi_vif))
+            `uvm_info("BASE TEST", "Virtual interface for Instr OBI was successfully set!", UVM_HIGH)
         else
             `uvm_error("BASE TEST", "No interface for Instr OBI was set!")
         if(uvm_config_db#(rvvi_vif)::get(this, "", "vif_rvvi", vif_rvvi))
@@ -61,9 +61,9 @@ class base_test extends uvm_test;
         else
             `uvm_error("BASE TEST", "No interface for RVVI was set!")
         
-        uvm_config_db#(clknrst_vif)::set(this, "riscx_env_inst", "vif_clknrst"      , vif_clknrst      );
-        uvm_config_db#(obi_vif)::set(this, "riscx_env_inst", "instr_obi_vif", instr_obi_vif);
-        uvm_config_db#(rvvi_vif   )::set(this, "riscx_env_inst", "vif_rvvi"         , vif_rvvi         );
+        uvm_config_db#(clknrst_vif)::set(this, "riscx_env_inst", "vif_clknrst"  , vif_clknrst  );
+        uvm_config_db#(obi_vif    )::set(this, "riscx_env_inst", "instr_obi_vif", instr_obi_vif);
+        uvm_config_db#(rvvi_vif   )::set(this, "riscx_env_inst", "vif_rvvi"     , vif_rvvi     );
         
         riscx_env_inst = riscx_env::type_id::create("riscx_env_inst", this);
 

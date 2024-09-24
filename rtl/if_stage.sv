@@ -82,11 +82,11 @@ logic [31:0] pc_if_n;
 logic core_ready;
 
 // Indicator of compressed instructions
-assign is_compressed_if_o = ~(imem_rdata_i[1] && imem_rdata_i[0]);
+assign is_compressed_if_o = ~(instr_if_o[1] && instr_if_o[0]);
     
 // Instruction Memory Interface
 //assign instr_if_o = imem_rdata_i; // Instruction read from memory
-assign imem_addr_o = pc_if_o;     // Address from which the instruction is fetched
+// assign imem_addr_o = pc_if_o;     // Address from which the instruction is fetched
 
 // Pipeline registers ->IF
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -161,19 +161,19 @@ OBI_controller OBI_controller_inst (
 `ifdef SVA_ON
 
     // Instruction interface assertions
-    assert property (@(posedge clk_i) disable iff (!rst_ni) insn_obi_req_o |-> ##[1:$] insn_obi_gnt_i);
-    assert property (@(posedge clk_i) disable iff (!rst_ni) (insn_obi_req_o && !insn_obi_gnt_i |=> $stable(insn_obi_addr_o)));
-    // assert property (@(posedge clk_i) disable iff (!rst_ni) (insn_obi_req_o && !insn_obi_gnt_i |=> $stable(insn_obi_we_o)));
-    // assert property (@(posedge clk_i) disable iff (!rst_ni) (insn_obi_req_o && !insn_obi_gnt_i |=> $stable(insn_obi_be_o)));
-    // assert property (@(posedge clk_i) disable iff (!rst_ni) (insn_obi_req_o && !insn_obi_gnt_i |=> $stable(insn_obi_wdata_o)));
-    assert property (@(posedge clk_i) disable iff (!rst_ni) (insn_obi_req_o && !insn_obi_gnt_i |=> insn_obi_req_o));
+    assert property (@(posedge clk_i) disable iff (!rst_n_i) insn_obi_req_o |-> ##[1:$] insn_obi_gnt_i);
+    assert property (@(posedge clk_i) disable iff (!rst_n_i) (insn_obi_req_o && !insn_obi_gnt_i |=> $stable(insn_obi_addr_o)));
+    // assert property (@(posedge clk_i) disable iff (!rst_n_i) (insn_obi_req_o && !insn_obi_gnt_i |=> $stable(insn_obi_we_o)));
+    // assert property (@(posedge clk_i) disable iff (!rst_n_i) (insn_obi_req_o && !insn_obi_gnt_i |=> $stable(insn_obi_be_o)));
+    // assert property (@(posedge clk_i) disable iff (!rst_n_i) (insn_obi_req_o && !insn_obi_gnt_i |=> $stable(insn_obi_wdata_o)));
+    assert property (@(posedge clk_i) disable iff (!rst_n_i) (insn_obi_req_o && !insn_obi_gnt_i |=> insn_obi_req_o));
 
-    assert property (@(posedge clk_i) disable iff (!rst_ni) insn_obi_rvalid_i |-> ##[1:$] insn_obi_rready_o);
+    assert property (@(posedge clk_i) disable iff (!rst_n_i) insn_obi_rvalid_i |-> ##[1:$] insn_obi_rready_o);
     // Asserts below should be assumes?
-    // assert property (@(posedge clk_i) disable iff (!rst_ni) (insn_obi_rvalid_i && !insn_obi_rready_o |=> $stable(insn_obi_rdata)));
-    // assert property (@(posedge clk_i) disable iff (!rst_ni) (insn_obi_rvalid_i && !insn_obi_rready_o |=> insn_obi_rvalid_i));
+    // assert property (@(posedge clk_i) disable iff (!rst_n_i) (insn_obi_rvalid_i && !insn_obi_rready_o |=> $stable(insn_obi_rdata)));
+    // assert property (@(posedge clk_i) disable iff (!rst_n_i) (insn_obi_rvalid_i && !insn_obi_rready_o |=> insn_obi_rvalid_i));
 
-    // assert property (@(posedge clk_i) disable iff (!rst_ni) (insn_obi_req_o && insn_obi_gnt_i && insn_obi_we |-> insn_obi_be != '0));
+    // assert property (@(posedge clk_i) disable iff (!rst_n_i) (insn_obi_req_o && insn_obi_gnt_i && insn_obi_we |-> insn_obi_be != '0));
 
 `endif
 

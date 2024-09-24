@@ -87,8 +87,10 @@ assign rd_ex_is_rs2_id  = (rd_addr_ex_i  == rs2_addr_id_i) && (rs2_addr_id_i != 
 assign rd_mem_is_rs2_id = (rd_addr_mem_i == rs2_addr_id_i) && (rs2_addr_id_i != '0);
 assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0);
 
+logic id_is_jump;
 logic ctrl_transfer;
 
+assign id_is_jump = pc_source_id_i == PC_JAL || pc_source_id_i == PC_JALR;
 assign ctrl_transfer = branch_decision_ex_i || id_is_jump || trap_id_i;
 
 // Resolve forwarding for rs1
@@ -142,10 +144,6 @@ always_comb begin
     stall_ex_o = 1'b0;
     stall_mem_o = 1'b0;
 end
-
-logic id_is_jump;
-assign id_is_jump = pc_source_id_i == PC_JAL || pc_source_id_i == PC_JALR;
-
 
 // Resolve flushing
 always_comb begin

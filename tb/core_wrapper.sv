@@ -39,6 +39,7 @@ module core_wrapper #(
     // clknrst_if if_clknrst,
     bad_uvc_if if_instr_bad_uvc,
     bad_uvc_if if_data_bad_uvc,
+    obi_if     if_instr_obi,
     rvvi_if    if_rvvi,
     
     input  logic [31:0] hartid_i,
@@ -68,8 +69,19 @@ core #(
     .dmem_wen_o   ( if_data_bad_uvc.we ),
     .dmem_ben_o   ( if_data_bad_uvc.be ),
     
-    .imem_rdata_i ( if_instr_bad_uvc.rdata ),
-    .imem_addr_o  ( if_instr_bad_uvc.addr ),
+    // Bad instr interface
+    // .imem_rdata_i ( if_instr_bad_uvc.rdata ),
+    // .imem_addr_o  ( if_instr_bad_uvc.addr ),
+    
+    .insn_obi_req_o     ( if_instr_obi.req ),
+    .insn_obi_gnt_i     ( if_instr_obi.gnt ),
+    .insn_obi_addr_o    ( if_instr_obi.addr ),
+    .insn_obi_we_o      ( if_instr_obi.we ),
+    .insn_obi_be_o      ( if_instr_obi.be ),
+    .insn_obi_wdata_o   ( if_instr_obi.wdata ),
+    .insn_obi_rvalid_i  ( if_instr_obi.rvalid ),
+    .insn_obi_rready_o  ( if_instr_obi.rready ),
+    .insn_obi_rdata_i   ( if_instr_obi.rdata ),
     
     .hartid_i    ( hartid_i ),
     .mtvec_i     ( mtvec_i ),

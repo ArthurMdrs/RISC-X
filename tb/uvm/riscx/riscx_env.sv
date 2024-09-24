@@ -98,13 +98,13 @@ class riscx_env extends uvm_env;
         // uvm_config_db#(obi_vif    )::set(this, "data_obi_agent" , "vif", data_obi_vif );
         uvm_config_db#(rvvi_vif   )::set(this, "agent_rvvi"         , "vif", vif_rvvi         );
         
-        cfg_clknrst         = clknrst_cfg                            ::type_id::create("cfg_clknrst"        );
+        cfg_clknrst     = clknrst_cfg                        ::type_id::create("cfg_clknrst"    );
         // cntxt_clknrst       = clknrst_cntxt                          ::type_id::create("cntxt_clknrst"      );
         instr_obi_cfg   = obi_cfg  #(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("instr_obi_cfg"  );
         instr_obi_cntxt = obi_cntxt#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("instr_obi_cntxt");
         // data_obi_cfg    = obi_cfg  #(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("data_obi_cfg"   );
         // data_obi_cntxt  = obi_cntxt#(.XLEN(XLEN),.ALEN(ALEN))::type_id::create("data_obi_cntxt" );
-        cfg_rvvi            = rvvi_cfg#(ILEN,XLEN,FLEN)              ::type_id::create("cfg_rvvi"           );
+        cfg_rvvi        = rvvi_cfg#(ILEN,XLEN,FLEN)          ::type_id::create("cfg_rvvi"       );
         
         instr_obi_cfg.gnt_latency_min = 0;
         instr_obi_cfg.gnt_latency_max = 10;

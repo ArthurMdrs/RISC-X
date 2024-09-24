@@ -6,6 +6,7 @@ ${RTL_HOME}/controller.sv
 ${RTL_HOME}/decoder.sv
 ${RTL_HOME}/imm_extender.sv
 ${RTL_HOME}/pc_controller.sv
+${RTL_HOME}/OBI_controller.sv
 ${RTL_HOME}/register_file.sv
 ${RTL_HOME}/csr.sv
 
@@ -50,15 +51,15 @@ ${RISCX_UVM_SRC}/rvvi/rvvi_if.sv
 ////////////////////////////////////////////////////////////
 
 // RISC-X ENV
-+incdir+${RISCX_UVM_SRC}/bad_riscx
-${RISCX_UVM_SRC}/bad_riscx/riscx_pkg.sv
-//+incdir+${RISCX_UVM_SRC}/riscx
-//${RISCX_UVM_SRC}/riscx/riscx_pkg.sv
+//+incdir+${RISCX_UVM_SRC}/bad_riscx
+//${RISCX_UVM_SRC}/bad_riscx/riscx_pkg.sv
++incdir+${RISCX_UVM_SRC}/riscx
+${RISCX_UVM_SRC}/riscx/riscx_pkg.sv
 
 ////////////////////////////////////////////////////////////
 
 // Testbench files
 ${TB_HOME}/core_wrapper.sv
-${TB_HOME}/bad_tb_top.sv
+//${TB_HOME}/bad_tb_top.sv
 //${TB_HOME}/rtl/stub.sv
-//${TB_HOME}/tb_top.sv
+${TB_HOME}/tb_top.sv

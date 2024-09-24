@@ -56,26 +56,31 @@ assign rst_n = if_clknrst.rst_n;
 
 // Interfaces instances - begin
     clknrst_if                  if_clknrst          ();
-    obi_if if_obi(.clk(clk), .rst_n(rst_n));
+    obi_if                      if_instr_obi        (.clk(clk), .rst_n(rst_n));
+    bad_uvc_if                  if_instr_bad_uvc    (.clk(clk), .rst_n(rst_n));
+    bad_uvc_if                  if_data_bad_uvc     (.clk(clk), .rst_n(rst_n));
     rvvi_if#(ILEN,XLEN,FLEN)    if_rvvi             (.clk(clk), .rst_n(rst_n));
 // Interfaces instances - end
 
 //==============   Module instantiations - BEGIN   ==============//
-assign if_obi.rready = 1'b1;
 
-stub dut(
-    .clk(clk),
-    .rst_n(rst_n),
-    // Signals from obi's interface - begin
-        .req_o(if_obi.req),
-        .gnt_i(if_obi.gnt),
-        .addr_o(if_obi.addr),
-        .we_o(if_obi.we),
-        .be_o(if_obi.be),
-        .wdata_o(if_obi.wdata),
-        .rvalid_i(if_obi.rvalid),
-        .rdata_i(if_obi.rdata)
-    // Signals from obi's interface - end
+core_wrapper #(
+    .ISA_M(ISA_M),
+    .ISA_C(ISA_C),
+    .ISA_F(ISA_F)
+) wrapper_inst (
+    .clk_i      ( clk ),
+    .rst_n_i    ( dlyd_rst_n ),
+    
+    // .if_clknrst(if_clknrst),
+    .if_instr_bad_uvc   ( if_instr_bad_uvc ),
+    .if_data_bad_uvc    ( if_data_bad_uvc ),
+    .if_instr_obi       ( if_instr_obi ),
+    .if_rvvi            ( if_rvvi ),
+    
+    .hartid_i       ( hartid ),
+    .mtvec_i        ( mtvec ),
+    .boot_addr_i    ( boot_addr )
 );
 
 // uvm_default_report_server rserver;
@@ -111,7 +116,7 @@ initial begin
 
     // Virtual interfaces send to VIPs - begin
         uvm_config_db#(virtual interface clknrst_if)::set(null, "uvm_test_top", "vif_clknrst"      , if_clknrst      );
-        uvm_config_db#(virtual interface obi_if)::set(null, "uvm_test_top", "vif", if_obi);
+        uvm_config_db#(virtual interface obi_if    )::set(null, "uvm_test_top", "instr_obi_vif"    , if_instr_obi    );
         uvm_config_db#(virtual interface rvvi_if   )::set(null, "uvm_test_top", "vif_rvvi"         , if_rvvi         );
     // Virtual interfaces send to VIPs - end
 
