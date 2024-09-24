@@ -59,6 +59,10 @@ assign rd_ex_is_rs2_id  = (rd_addr_ex_i  == rs2_addr_id_i) && (rs2_addr_id_i != 
 assign rd_mem_is_rs2_id = (rd_addr_mem_i == rs2_addr_id_i) && (rs2_addr_id_i != '0);
 assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0);
 
+logic ctrl_transfer;
+
+assign ctrl_transfer = branch_decision_ex_i || id_is_jump || trap_id_i;
+
 // Resolve forwarding for rs1
 always_comb begin
     fwd_op1_o = NO_FORWARD;
@@ -106,7 +110,7 @@ always_comb begin
         if(rd_ex_is_rs1_id || rd_ex_is_rs2_id)
             stall_id_o = 1'b1;
     
-    stall_if_o = stall_id_o || !valid_if_i;
+    stall_if_o = stall_id_o || (!valid_if_i && !ctrl_transfer);
     stall_ex_o = 1'b0;
     stall_mem_o = 1'b0;
 end
