@@ -1,14 +1,15 @@
 
 module opdiv(
-    input  logic                clock           ,
-    input  logic                nreset          ,
-    input  logic signed [31:0]  a               ,
-    input  logic signed [31:0]  b               ,
-    output logic signed [31:0]  c               ,
-    input  logic                in_valid_i      ,   //  
-    output logic                in_ready_o      ,   //  
-    output logic                out_valid_o     ,   //  
-//    input logic                 signal_division ,
+    input  logic                clock               ,
+    input  logic                nreset              ,
+    input  logic signed [31:0]  a                   ,
+    input  logic signed [31:0]  b                   ,
+    output logic signed [31:0]  c                   ,
+    output logic signed [31:0]  r                   ,
+    input  logic                in_valid_i          ,   //  
+    output logic                in_ready_o          ,   //  
+    output logic                out_valid_o         ,   //  
+    input  logic                signal_division     ,
     input  logic                out_ready_i     // 
 );
 
@@ -167,29 +168,33 @@ module opdiv(
                                      end
         default                     :next = IDLE;
     endcase
-
-    //always_comb c = out_valid_o && out_ready_i ?  Quatient[30:0]: 'x;
     always_comb 
-        if(out_valid_o && out_ready_i)
-            if(b_reg[30:0] == 0)
-                c = {31{1'b1}};
-            else if(a_reg[30:0] == 0)
-                c = {31{1'b0}};
-            else  
+        if(out_valid_o && out_ready_i)begin
+            if(b_reg[30:0] == 0)begin
+                c = {32{1'b1}};
+                r = {32{1'b1}};
+            end
+            else if(a_reg[30:0] == 0)begin
+                c = {32{1'b0}};
+                r = {32{1'b0}};
+            end else  begin
+                r = minuend - b_reg;
                 case({a_signal,b_signal})
                     2'b00: c = {1'b0,Quatient[30:0]};
                     2'b11: c = {1'b0,Quatient[30:0]};
                     2'b10: c = {1'b1,~Quatient[30:0]+1};
                     2'b01: c = {1'b1,~Quatient[30:0]+1};
                 endcase
-        else
+            end
+        end
+        else begin
             c = 'x;
+            r = 'x;
+        end
 
 
     always_comb left_updade     = {minuend,a_reg[next_k]};
     always_comb right_updade    = {minuend-b_reg,a_reg[next_k]};
-    always_comb next_k          = k - 1;
+    always_comb next_k          = (k-1 >= 0) ? k - 1 : k;
 
 endmodule
-
-// out_valid_o  = next == DONE && in_ready_o 
