@@ -16,7 +16,7 @@
 // Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
 //                                                                            //
 // Additional contributions by:                                               //
-//                 Ewerton Cordeiro -                                         //
+//                 Ewerton Cordeiro - jose.cordeiro@ee.ufcg.edu.br            //
 //                 Davi Medeiros -                                            //
 //                                                                            //
 // Design Name:    Decoder                                                    //
@@ -174,9 +174,7 @@ always_comb begin
 
     //F
     fpu_req_o = 1'b0;
-    
-    
-    fpu_rnd_mode_o  = instr_i[14:12];
+    fpu_rnd_mode_o  = 0;
     fpu_op_o = fpnew_pkg::SGNJ;
     fpu_op_mod_o = 1'b0;
     //is_immediate_F = 1'b0;
@@ -841,6 +839,8 @@ always_comb begin
         // TODO: raise illegal instruction for invalid rounding mode??
         OPCODE_OP_FP:begin
             if (ISA_F) begin
+                //rs1_is_used_o = 1'b1;
+                //rs2_is_used_o = 1'b1;
                 fpu_req_o = 1'b1;
                 reg_alu_wen_o = 1'b1;
                 rs1_src_bank_o = F_REG;
@@ -848,13 +848,18 @@ always_comb begin
                 rs3_src_bank_o = F_REG;
                 rd_dst_bank_o  = F_REG;
                 alu_result_mux_o = FPU_RESULT;
+                fpu_rnd_mode_o = instr_i[14:12];
                 unique case (funct7)
                     7'b000_0000: begin // fadd.s
                         fpu_op_o = fpnew_pkg::ADD;
+                        alu_source_2_o = ALU_SCR2_RS1;
+                        alu_source_3_o = ALU_SCR3_RS2;
                     end
                     7'b000_0100: begin // fsub.s
                         fpu_op_o = fpnew_pkg::ADD;
                         fpu_op_mod_o = 1'b1;
+                        alu_source_2_o = ALU_SCR2_RS1;
+                        alu_source_3_o = ALU_SCR3_RS2;
                     end
                     7'b000_1000: begin // fmul.s
                         fpu_op_o = fpnew_pkg::MUL;
@@ -863,32 +868,32 @@ always_comb begin
                         fpu_op_o = fpnew_pkg::DIV;
                     end
                     7'b010_1100: begin // fsqrt.s
-                        fpu_op_o = fpnew_pkg::SQRT;
-                        if (instr_i[24:20] != 5'b0) illegal_instr_o = 1'b1;
+                        if (instr_i[24:20] == 5'b0) fpu_op_o = fpnew_pkg::SQRT;
+                        else illegal_instr_o = 1'b1;
                     end
                     7'b001_0000: begin
                         fpu_op_o = fpnew_pkg::SGNJ;
-                        unique case (funct3)
+                        unique case (instr_i[14:12])
                             3'b000:begin // fsgnj.s
-                                fpu_rnd_mode_o = fpnew_pkg::RNE;
+                                fpu_rnd_mode_o = 3'b000;
                             end
                             3'b001:begin // fsgnjn.s
-                                fpu_rnd_mode_o = fpnew_pkg::RTZ;
+                                fpu_rnd_mode_o = 3'b001;
                             end
                             3'b010:begin // fsgnjx.s
-                                fpu_rnd_mode_o = fpnew_pkg::RDN;
+                                fpu_rnd_mode_o = 3'b010;
                             end
                             default: illegal_instr_o = 1'b1;
                     endcase
                     end
                     7'b001_0100: begin
                         fpu_op_o = fpnew_pkg::MINMAX;
-                        unique case (funct3)
+                        unique case (instr_i[14:12])
                             3'b000: begin // fmin.s
-                                fpu_rnd_mode_o = fpnew_pkg::RNE;
+                                fpu_rnd_mode_o = 3'b000;
                             end
                             3'b001: begin // fmax.s
-                                fpu_rnd_mode_o = fpnew_pkg::RTZ;
+                                fpu_rnd_mode_o = 3'b001;
                             end
                             default: illegal_instr_o = 1'b1;
                         endcase
@@ -899,9 +904,11 @@ always_comb begin
                         unique case (instr_i[24:20])
                             5'b00000: begin // fcvt.w.s
                                 fpu_op_mod_o = 1'b0;
+                                rs2_is_used_o = 1'b0;
                             end
                             5'b00001: begin // fcvt.wu.s
                                 fpu_op_mod_o = 1'b1;
+                                rs2_is_used_o = 1'b0;
                             end
                             default: illegal_instr_o = 1'b1;
                         endcase
@@ -912,9 +919,11 @@ always_comb begin
                         unique case (instr_i[24:20])
                             5'b00000: begin // fcvt.s.w
                                 fpu_op_mod_o = 1'b0;
+                                rs2_is_used_o = 1'b0;
                             end
                             5'b00001: begin // fcvt.s.wu
                                 fpu_op_mod_o = 1'b1;
+                                rs2_is_used_o = 1'b0;
                             end
                             default: illegal_instr_o = 1'b1;
                         endcase
@@ -922,15 +931,15 @@ always_comb begin
                     7'b101_0000: begin
                         fpu_op_o = fpnew_pkg::CMP;
                         rd_dst_bank_o = X_REG;
-                        unique case (funct3)
+                        unique case (instr_i[14:12])
                             3'b000: begin // fle.s
-                                fpu_rnd_mode_o = fpnew_pkg::RNE;
+                                fpu_rnd_mode_o = 3'b000;
                             end
                             3'b001: begin // flt.s
-                                fpu_rnd_mode_o = fpnew_pkg::RTZ;
+                                fpu_rnd_mode_o = 3'b001;
                             end
                             3'b010: begin // feq.s
-                                fpu_rnd_mode_o = fpnew_pkg::RDN;
+                                fpu_rnd_mode_o = 3'b010;
                             end
                             default: illegal_instr_o = 1'b1;
                         endcase
@@ -938,17 +947,18 @@ always_comb begin
                     7'b111_0000: begin
                         if(instr_i[24:20] != 5'b0) illegal_instr_o = 1'b1;
                         rd_dst_bank_o = X_REG;
-                        unique case (funct3)
+                        unique case (instr_i[14:12])
                             3'b000: begin // fmv.x.w
                                 // Move from F reg to X reg
                                 // TODO: test fpu_req_o = 1'b0;
                                 fpu_op_o = fpnew_pkg::SGNJ;
                                 fpu_op_mod_o = 1'b1;
-                                fpu_rnd_mode_o = fpnew_pkg::RUP;
+                                fpu_rnd_mode_o = 3'b011;
+                                alu_source_2_o = ALU_SCR2_RS1;
                             end
                             3'b001: begin // fclass.s
                                 fpu_op_o = fpnew_pkg::CLASSIFY;
-                                fpu_rnd_mode_o = fpnew_pkg::RNE; // TODO: is this necessary?
+                                fpu_rnd_mode_o = 3'b000; // TODO: is this necessary?
                             end
                             default: illegal_instr_o = 1'b1;
                         endcase
@@ -960,9 +970,10 @@ always_comb begin
                         fpu_op_mod_o = 1'b0;
                         fpu_rnd_mode_o = 3'b011;
                         rs1_src_bank_o = X_REG;
+                        alu_source_2_o = ALU_SCR2_RS1;
                         
                         if(instr_i[24:20] != 5'b0) illegal_instr_o = 1'b1;
-                        if(funct3         != 3'b0) illegal_instr_o = 1'b1;
+                        if(instr_i[14:12] != 3'b0) illegal_instr_o = 1'b1;
                     end
                     default: illegal_instr_o = 1'b1;
             
@@ -981,6 +992,7 @@ always_comb begin
                 rs2_src_bank_o = F_REG;
                 rs3_src_bank_o = F_REG;
                 rd_dst_bank_o  = F_REG;
+                rs2_is_used_o = 1'b1;
                 rs3_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FMADD;
                 alu_result_mux_o = FPU_RESULT;
@@ -1000,6 +1012,7 @@ always_comb begin
                 rs2_src_bank_o = F_REG;
                 rs3_src_bank_o = F_REG;
                 rd_dst_bank_o  = F_REG;
+                rs2_is_used_o = 1'b1;
                 rs3_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FMADD;
                 fpu_op_mod_o = 1'b1;
@@ -1019,8 +1032,9 @@ always_comb begin
                 rs1_src_bank_o = F_REG;
                 rs2_src_bank_o = F_REG;
                 rs3_src_bank_o = F_REG;
-                rd_dst_bank_o  = F_REG;
+                rd_dst_bank_o  = F_REG; 
                 rs3_is_used_o = 1'b1;
+                rs2_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FNMSUB;
                 alu_result_mux_o = FPU_RESULT;
                 
@@ -1039,6 +1053,7 @@ always_comb begin
                 rs2_src_bank_o = F_REG;
                 rs3_src_bank_o = F_REG;
                 rd_dst_bank_o  = F_REG;
+                rs2_is_used_o = 1'b1;
                 rs3_is_used_o = 1'b1;
                 fpu_op_o = fpnew_pkg::FNMSUB;
                 fpu_op_mod_o = 1'b1;

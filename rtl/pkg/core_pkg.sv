@@ -59,12 +59,14 @@ typedef enum logic [1:0] {
 } alu_source_1_t;
 
 typedef enum logic [1:0] { 
+    ALU_SCR2_RS1,
     ALU_SCR2_RS2,
     ALU_SCR2_IMM,
     ALU_SCR2_4_OR_2 // Used to calculate PC + 4 or PC + 2
 } alu_source_2_t;
 
 typedef enum logic { 
+    ALU_SCR3_RS2,
     ALU_SCR3_RS3
 } alu_source_3_t;
 

@@ -16,7 +16,7 @@
 // Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
 //                                                                            //
 // Additional contributions by:                                               //
-//                 Ewerton Cordeiro -                                         //
+//                 Ewerton Cordeiro - jose.cordeiro@ee.ufcg.edu.br            //
 //                 Davi Medeiros -                                            //
 //                                                                            //
 // Design Name:    Instruction decode stage                                   //
@@ -291,12 +291,14 @@ always_comb begin
         default: alu_operand_1_id_o = 32'b0;
     endcase
     unique case (alu_source_2_id)
+        ALU_SCR2_RS1   : alu_operand_2_id_o = rs1_or_fwd_id;
         ALU_SCR2_RS2   : alu_operand_2_id_o = rs2_or_fwd_id;
         ALU_SCR2_IMM   : alu_operand_2_id_o = immediate_id;
         ALU_SCR2_4_OR_2: alu_operand_2_id_o = (is_compressed_id) ? (32'd2) : (32'd4);
         default: alu_operand_2_id_o = 32'b0;
     endcase
     unique case (alu_source_3_id)
+        ALU_SCR3_RS2   : alu_operand_3_id_o = rs2_or_fwd_id;
         ALU_SCR3_RS3   : alu_operand_3_id_o = rs3_or_fwd_id;
         default: alu_operand_3_id_o = 32'b0;
     endcase

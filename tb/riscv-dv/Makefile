@@ -95,7 +95,7 @@ sim-elf: $(DEPS)
 		 +progs_path=$(PROGS_PATH) +prog=out +text_start=8000_0000 \
 		 +bin=$(BIN) +section=$(SECTION_FILE) \
 		 +check_regs=0 +check_mem=0 +print_trace=1 +verbose=$(VERBOSE) \
-		 -timescale 1ns/1ps -access +rwc -svseed $(SEED)
+		 -timescale 1ns/1ps -access +rwc -svseed $(SEED) 
 
 sim-elf-gui: $(DEPS)
 	python3 elf2hex.py $(ELF) $(PROGS_PATH)/out_prog.txt
