@@ -1,6 +1,7 @@
 xcelium*
 xrun*
 imc*
+cov_work*
 .simvision
 waves*
 *.log
@@ -11,6 +12,13 @@ simvision/
 restore.tcl
 restore.tcl.svcf
 *.svwf
+*.vcd
+*.evcd
+*.dump
+
+*.o
+*.bin
+*.map
 
 ignore*
 
@@ -21,6 +29,7 @@ rvviTrace.sv
 join.py
 jg.tcl
 run.py
+base_testlist.yaml
 
 *__pycache__*
 *mytest/

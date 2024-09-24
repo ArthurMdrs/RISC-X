@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wavelist version="3">
-  <insertion-point-position>27</insertion-point-position>
+  <insertion-point-position>42</insertion-point-position>
   <wave>
     <expr>clock</expr>
     <label/>
@@ -49,27 +49,12 @@
       <radix/>
     </wave>
     <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_id</expr>
-      <label/>
-      <radix/>
-    </wave>
-    <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_ex</expr>
-      <label/>
-      <radix/>
-    </wave>
-    <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_mem</expr>
-      <label/>
-      <radix/>
-    </wave>
-    <wave>
       <expr>wrapper.rvfi_inst.rvfi_valid_wb</expr>
       <label/>
       <radix/>
     </wave>
   </group>
-  <group collapsed="false">
+  <group collapsed="true">
     <expr/>
     <label>Intr</label>
     <wave collapsed="true">
@@ -106,6 +91,11 @@
   <group collapsed="false">
     <expr/>
     <label>PC</label>
+    <wave collapsed="true">
+      <expr>wrapper.core_inst.pc_if</expr>
+      <label/>
+      <radix/>
+    </wave>
     <wave collapsed="true">
       <expr>wrapper.rvfi_inst.pc_id</expr>
       <label/>
@@ -235,6 +225,11 @@
     </wave>
     <wave>
       <expr>wrapper.core_inst.flush_ex</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.flush_mem</expr>
       <label/>
       <radix/>
     </wave>
@@ -397,6 +392,18 @@
   </group>
   <highlightlist>
     <!--Users can remove the highlightlist block if they want to load the signal save file into older version of Jasper-->
+    <highlight>
+      <expr>wrapper.core_inst.flush_ex</expr>
+      <color>builtin_green</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.core_inst.flush_id</expr>
+      <color>builtin_green</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.core_inst.flush_mem</expr>
+      <color>builtin_green</color>
+    </highlight>
     <highlight>
       <expr>wrapper.core_inst.if_stage_inst.pc_if_n</expr>
       <color>builtin_blue</color>

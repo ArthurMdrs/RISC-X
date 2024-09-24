@@ -1,3 +1,32 @@
+// Copyright 2024 UFCG
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+////////////////////////////////////////////////////////////////////////////////
+// Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
+//                                                                            //
+// Additional contributions by:                                               //
+//                 Túlio Tavares -                                            //
+//                 Victor Melquíades -                                        //
+//                                                                            //
+// Design Name:    Instruction fetch stage                                    //
+// Project Name:   RISC-X                                                     //
+// Language:       SystemVerilog                                              //
+//                                                                            //
+// Description:    Fetches instructions from memory and decides the next PC.  //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 module if_stage import core_pkg::*; (
     input  logic clk_i,
     input  logic rst_n_i,
@@ -23,6 +52,7 @@ module if_stage import core_pkg::*; (
     output logic [31:0] pc_if_o,
     output logic [31:0] instr_if_o,
     output logic        valid_if_o,
+    output logic        is_compressed_if_o,
     
     // Control inputs
     input  logic stall_if_i,
@@ -51,6 +81,9 @@ module if_stage import core_pkg::*; (
 logic [31:0] pc_if_n;
 logic core_ready;
 
+// Indicator of compressed instructions
+assign is_compressed_if_o = ~(imem_rdata_i[1] && imem_rdata_i[0]);
+    
 // Instruction Memory Interface
 //assign instr_if_o = imem_rdata_i; // Instruction read from memory
 assign imem_addr_o = pc_if_o;     // Address from which the instruction is fetched
@@ -71,10 +104,10 @@ pc_controller pc_controller_inst (
     .next_pc_o            ( pc_if_n ),
     .curr_pc_i            ( pc_if_o ), 
     .valid_id_i           ( valid_id_i ),
-    .valid_ex_i           ( valid_ex_i ),
     .jump_target_id_i     ( jump_target_id_i ), 
     .branch_target_ex_i   ( branch_target_ex_i ), 
     .branch_decision_ex_i ( branch_decision_ex_i ),
+    .is_compressed_if_i   ( is_compressed_if_o),
     .pc_source_id_i       ( pc_source_id_i ),
     .pc_source_ex_i       ( pc_source_ex_i ),
     .trap_id_i            ( trap_id_i ),

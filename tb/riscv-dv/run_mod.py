@@ -16,12 +16,17 @@ limitations under the License.
 Regression script for RISC-V random instruction generator
 """
 
+# pyright: reportMissingImports=false, reportUndefinedVariable=false
+
 import argparse
 import os
 import random
 import re
 import sys
 import logging
+
+riscv_dv_root = os.environ.get('RISCV_DV_ROOT')
+sys.path.append(f'{riscv_dv_root}')
 
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
@@ -128,13 +133,14 @@ def get_generator_cmd(simulator, simulator_yaml, cov, exp, debug_cmd):
     sys.exit(RET_FAIL)
 
 
-def parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd):
+def parse_iss_yaml(iss, iss_yaml, isa, priv, setting_dir, debug_cmd):
     """Parse ISS YAML to get the simulation command
 
     Args:
       iss         : target ISS used to look up in ISS YAML
       iss_yaml    : ISS configuration file in YAML format
       isa         : ISA variant passed to the ISS
+      priv:       : privilege modes
       setting_dir : Generator setting directory
       debug_cmd   : Produce the debug cmd log without running
 
@@ -173,6 +179,7 @@ def parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd):
                     cmd = re.sub("\<variant\>", variant, cmd)
             else:
                 cmd = re.sub("\<variant\>", isa, cmd)
+            cmd = re.sub("\<priv\>", priv, cmd)
             cmd = re.sub("\<scripts_path\>", scripts_dir, cmd)
             cmd = re.sub("\<config_path\>", yaml_dir, cmd)
             return cmd
@@ -192,6 +199,8 @@ def get_iss_cmd(base_cmd, elf, log):
       cmd      : Command for ISS simulation
     """
     cmd = re.sub("\<elf\>", elf, base_cmd)
+    bin = elf[:-2] + ".bin"
+    cmd = re.sub("\<bin\>", bin, cmd)
     cmd += (" &> {}".format(log))
     return cmd
 
@@ -452,7 +461,12 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
             if 'gen_opts' in test:
                 # Disable compressed instruction
                 if re.search('disable_compressed_instr', test['gen_opts']):
-                    test_isa = re.sub("c", "", test_isa)
+                    # Note that this substitution assumes the cannonical order
+                    # of extensions, i.e. that extensions with preceding
+                    # underscores will be provided after all letter extensions.
+                    # This assumption should hold true, as this is a
+                    # requirement enforced by e.g. gcc
+                    test_isa = re.sub(r"(rv.+?)c", r"\1", test_isa)
             # If march/mabi is not defined in the test gcc_opts, use the default
             # setting from the command line.
             if not re.search('march', cmd):
@@ -460,6 +474,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
             if not re.search('mabi', cmd):
                 cmd += (" -mabi={}".format(mabi))
             logging.info("Compiling {}".format(asm))
+            # print(cmd)
             run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
             # Convert the ELF to plain binary, used in RTL sim
             logging.info("Converting to {}".format(binary))
@@ -483,10 +498,11 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
       setting_dir : Generator setting directory
       debug_cmd   : Produce the debug cmd log without running
     """
-    if not asm_test.endswith(".S"):
+    if not (asm_test.endswith(".S") or asm_test.endswith(".s")):
         logging.error("{} is not an assembly .S file".format(asm_test))
         return
-    cwd = os.path.dirname(os.path.realpath(__file__))
+    # cwd = os.path.dirname(os.path.realpath(__file__))
+    cwd = os.environ.get('RISCV_DV_ROOT')
     asm_test = os.path.expanduser(asm_test)
     report = ("{}/iss_regr.log".format(output_dir)).rstrip()
     asm = re.sub(r"^.*\/", "", asm_test)
@@ -544,7 +560,8 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
       setting_dir     : Generator setting directory
       debug_cmd       : Produce the debug cmd log without running
     """
-    result = run_cmd("find {} -name \"*.S\"".format(asm_test_dir))
+    # result = run_cmd("find {} -name \"*.S\"".format(asm_test_dir))
+    result = run_cmd("find {} -maxdepth 1 \\( -name \"*.S\" -o -name \"*.s\" \\)".format(asm_test_dir))
     if result:
         asm_list = result.splitlines()
         logging.info("Found {} assembly tests under {}".format(
@@ -579,7 +596,8 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
     if not c_test.endswith(".c"):
         logging.error("{} is not a .c file".format(c_test))
         return
-    cwd = os.path.dirname(os.path.realpath(__file__))
+    # cwd = os.path.dirname(os.path.realpath(__file__))
+    cwd = os.environ.get('RISCV_DV_ROOT')
     c_test = os.path.expanduser(c_test)
     report = ("{}/iss_regr.log".format(output_dir)).rstrip()
     c = re.sub(r"^.*\/", "", c_test)
@@ -601,6 +619,11 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
     cmd += (" -march={}".format(isa))
     cmd += (" -mabi={}".format(mabi))
     run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
+    
+    # result = subprocess.run(['ls',"/home/pedro.medeiros/Tools/RISC-X/tb/riscv-dv/mytest/directed_c_test"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # print(result.stdout)
+    # logging.info("{}".format(result.stdout))
+    
     # Convert the ELF to plain binary, used in RTL sim
     logging.info("Converting to {}".format(binary))
     cmd = ("{} -O binary {} {}".format(
@@ -651,7 +674,7 @@ def run_c_from_dir(c_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
 
 
 def iss_sim(test_list, output_dir, iss_list, iss_yaml, iss_opts,
-            isa, setting_dir, timeout_s, debug_cmd):
+            isa, priv, setting_dir, timeout_s, debug_cmd):
     """Run ISS simulation with the generated test program
 
     Args:
@@ -661,13 +684,15 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, iss_opts,
       iss_yaml    : ISS configuration file in YAML format
       iss_opts    : ISS command line options
       isa         : ISA variant passed to the ISS
+      priv        : privilege modes
       setting_dir : Generator setting directory
       timeout_s   : Timeout limit in seconds
       debug_cmd   : Produce the debug cmd log without running
     """
     for iss in iss_list.split(","):
         log_dir = ("{}/{}_sim".format(output_dir, iss))
-        base_cmd = parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd)
+        base_cmd = parse_iss_yaml(iss, iss_yaml, isa, priv, setting_dir, debug_cmd)
+        base_cmd += iss_opts
         logging.info("{} sim log dir: {}".format(iss, log_dir))
         run_cmd_output(["mkdir", "-p", log_dir])
         for test in test_list:
@@ -710,6 +735,8 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error, exp, debug_cmd):
     report = ("{}/iss_regr.log".format(output_dir)).rstrip()
     run_cmd("rm -rf {}".format(report))
     for test in test_list:
+        # report = ("{}/cmp_{}.log".format(output_dir, test['test'])).rstrip()
+        # run_cmd("rm -rf {}".format(report))
         for i in range(0, test['iterations']):
             elf = ("{}/asm_test/{}_{}.o".format(output_dir, test['test'], i))
             logging.info("Comparing ISS sim result {}/{} : {}".format(
@@ -753,12 +780,20 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0,
         logging.info(result)
 
 
+# def save_regr_report(report):
+#     passed_cnt = run_cmd("grep PASSED {} | wc -l".format(report)).strip()
+#     failed_cnt = run_cmd("grep FAILED {} | wc -l".format(report)).strip()
+#     summary = ("{} PASSED, {} FAILED".format(passed_cnt, failed_cnt))
+#     logging.info(summary)
+#     run_cmd(("echo {} >> {}".format(summary, report)))
+#     logging.info("ISS regression report is saved to {}".format(report))
+    
 def save_regr_report(report):
-    passed_cnt = run_cmd("grep PASSED {} | wc -l".format(report)).strip()
-    failed_cnt = run_cmd("grep FAILED {} | wc -l".format(report)).strip()
-    summary = ("{} PASSED, {} FAILED".format(passed_cnt, failed_cnt))
+    passed_cnt = run_cmd("grep PASSED {} | grep -v '^# Summary:' | wc -l".format(report)).strip()
+    failed_cnt = run_cmd("grep FAILED {} | grep -v '^# Summary:' | wc -l".format(report)).strip()
+    summary = "# Summary: {} PASSED, {} FAILED".format(passed_cnt, failed_cnt)
     logging.info(summary)
-    run_cmd(("echo {} >> {}".format(summary, report)))
+    run_cmd("echo {} >> {}".format(summary, report))
     logging.info("ISS regression report is saved to {}".format(report))
 
 
@@ -826,6 +861,8 @@ def parse_args(cwd):
                             command is not specified")
     parser.add_argument("--isa", type=str, default="",
                         help="RISC-V ISA subset")
+    parser.add_argument("--priv", type=str, default="",
+                        help="RISC-V privilege modes enabled in simulation [su]")
     parser.add_argument("-m", "--mabi", type=str, default="",
                         help="mabi used for compilation", dest="mabi")
     parser.add_argument("--gen_timeout", type=int, default=360,
@@ -1165,7 +1202,7 @@ def main():
             if args.steps == "all" or re.match(".*iss_sim.*", args.steps):
                 iss_sim(matched_list, output_dir, args.iss, args.iss_yaml,
                         args.iss_opts,
-                        args.isa, args.core_setting_dir, args.iss_timeout,
+                        args.isa, args.priv, args.core_setting_dir, args.iss_timeout,
                         args.debug)
 
             # Compare ISS simulation result

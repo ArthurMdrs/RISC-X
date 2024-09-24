@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wavelist version="3">
-  <insertion-point-position>4</insertion-point-position>
+  <insertion-point-position>29</insertion-point-position>
   <wave>
     <expr>clock</expr>
     <label/>
@@ -24,18 +24,28 @@
   <group collapsed="false">
     <expr/>
     <label>rvfi_valid</label>
-    <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_id</expr>
+    <wave collapsed="true">
+      <expr>wrapper.core_inst.if_stage_inst.imem_addr_o</expr>
       <label/>
       <radix/>
     </wave>
     <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_ex</expr>
+      <expr>wrapper.core_inst.valid_if</expr>
       <label/>
       <radix/>
     </wave>
     <wave>
-      <expr>wrapper.rvfi_inst.rvfi_valid_mem</expr>
+      <expr>wrapper.core_inst.valid_id</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.valid_ex</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.core_inst.valid_mem</expr>
       <label/>
       <radix/>
     </wave>
@@ -45,6 +55,46 @@
       <radix/>
     </wave>
   </group>
+  <wave>
+    <expr>wrapper.rvfi_inst.rvfi_valid</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave>
+    <expr>wrapper.core_inst.controller_inst.fpu_req_id_i</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave>
+    <expr>wrapper.core_inst.controller_inst.fpu_gnt_id_i</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave>
+    <expr>wrapper.core_inst.ex_stage_inst.fpu_rvalid</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave>
+    <expr>wrapper.core_inst.stall_id</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave>
+    <expr>wrapper.core_inst.stall_ex</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave>
+    <expr>wrapper.core_inst.flush_id</expr>
+    <label/>
+    <radix/>
+  </wave>
+  <wave>
+    <expr>wrapper.core_inst.flush_ex</expr>
+    <label/>
+    <radix/>
+  </wave>
   <group collapsed="false">
     <expr/>
     <label>Instr</label>
@@ -84,6 +134,11 @@
     </wave>
     <wave>
       <expr>wrapper.rvfi_inst.trap_ex</expr>
+      <label/>
+      <radix/>
+    </wave>
+    <wave>
+      <expr>wrapper.rvfi_inst.rvfi_trap_ex</expr>
       <label/>
       <radix/>
     </wave>
@@ -285,6 +340,26 @@
   </group>
   <highlightlist>
     <!--Users can remove the highlightlist block if they want to load the signal save file into older version of Jasper-->
+    <highlight>
+      <expr>wrapper.core_inst.controller_inst.fpu_gnt_id_i</expr>
+      <color>builtin_yellow</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.core_inst.controller_inst.fpu_req_id_i</expr>
+      <color>builtin_yellow</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.core_inst.ex_stage_inst.fpu_rvalid</expr>
+      <color>builtin_yellow</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.core_inst.stall_ex</expr>
+      <color>builtin_green</color>
+    </highlight>
+    <highlight>
+      <expr>wrapper.core_inst.stall_id</expr>
+      <color>builtin_green</color>
+    </highlight>
     <highlight>
       <expr>wrapper.rvfi_inst.instr_wb</expr>
       <color>#ff8787</color>

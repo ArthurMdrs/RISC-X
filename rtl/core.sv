@@ -1,3 +1,31 @@
+// Copyright 2024 UFCG
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+////////////////////////////////////////////////////////////////////////////////
+// Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
+//                                                                            //
+// Additional contributions by:                                               //
+//                                                                            //
+//                                                                            //
+// Design Name:    RISC-X core                                                //
+// Project Name:   RISC-X                                                     //
+// Language:       SystemVerilog                                              //
+//                                                                            //
+// Description:    Top level module of the RISC-V core.                       //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 /*
     Author: Pedro Medeiros (pedromedeiros.egnr@gmail.com)
     
@@ -53,6 +81,7 @@ logic        valid_if, valid_id, valid_ex, valid_mem;
 // logic        ready_if, ready_id, ready_ex, ready_mem, ready_wb;
 logic        stall_if, stall_id, stall_ex, stall_mem;
 logic        flush_id, flush_ex, flush_mem, flush_wb;
+logic        is_compressed_if;
 
 // Source and destiny registers from register file
 logic [ 4:0] rs1_addr_id, rs2_addr_id;
@@ -129,9 +158,10 @@ if_stage if_stage_inst (
     .insn_obi_rdata_i  ( insn_obi_rdata_i ),
     
     // Output to ID stage
-    .pc_if_o    ( pc_if ),
-    .instr_if_o ( instr_if ),
-    .valid_if_o ( valid_if ),
+    .pc_if_o            ( pc_if ),
+    .instr_if_o         ( instr_if ),
+    .valid_if_o         ( valid_if ),
+    .is_compressed_if_o ( is_compressed_if ),
     
     // Control inputs
     .stall_if_i (stall_if),
@@ -168,9 +198,10 @@ id_stage #(
     .rst_n_i ( rst_n_i ),
     
     // Input from IF stage
-    .pc_if_i    ( pc_if ),
-    .instr_if_i ( instr_if ),
-    .valid_if_i ( valid_if ),
+    .pc_if_i            ( pc_if ),
+    .instr_if_i         ( instr_if ),
+    .valid_if_i         ( valid_if ),
+    .is_compressed_if_i ( is_compressed_if ),
     
     // Output to IF stage
     .jump_target_id_o ( jump_target_id ),
@@ -373,7 +404,11 @@ wb_stage wb_stage_inst (
 ////////////////////       CONTROL/STATUS REGISTERS       /////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-csr csr_inst (
+csr #(
+    .ISA_M ( ISA_M ),
+    .ISA_C ( ISA_C ),
+    .ISA_F ( ISA_F )
+) csr_inst (
     .clk_i   ( clk_i ),
     .rst_n_i ( rst_n_i ),
     

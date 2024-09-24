@@ -1,3 +1,32 @@
+// Copyright 2024 UFCG
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+////////////////////////////////////////////////////////////////////////////////
+// Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
+//                                                                            //
+// Additional contributions by:                                               //
+//                 Ewerton Cordeiro -                                         //
+//                 Davi Medeiros -                                            //
+//                                                                            //
+// Design Name:    Instruction decode stage                                   //
+// Project Name:   RISC-X                                                     //
+// Language:       SystemVerilog                                              //
+//                                                                            //
+// Description:    Decodes instructions and contains the register file.       //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 module id_stage import core_pkg::*; #(
     parameter bit ISA_M = 0,
     parameter bit ISA_C = 0,
@@ -10,6 +39,7 @@ module id_stage import core_pkg::*; #(
     input  logic [31:0] pc_if_i,
     input  logic [31:0] instr_if_i,
     input  logic        valid_if_i,
+    input  logic        is_compressed_if_i,
     
     // Output to IF stage
     output logic [31:0] jump_target_id_o,
@@ -68,6 +98,7 @@ module id_stage import core_pkg::*; #(
 ///////////////////////////////////////////////////////////////////////////////
 
 logic [31:0] instr_id;
+logic        is_compressed_id;
 
 logic [31:0] rs1_rdata_id, rs2_rdata_id;
 logic [31:0] rs1_or_fwd_id, rs2_or_fwd_id;
@@ -84,19 +115,21 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
         pc_id_o  <= '0;
         instr_id <= '0;
-        
         valid_id_o <= '0;
+        is_compressed_id <= '0;
     end else begin
         if (!stall_id_i) begin
             // Insert bubble if flushing is needed
             if (flush_id_i) begin
                 instr_id <= 32'h0000_0013; // NOP instruction
                 valid_id_o <= 1'b0;
+                is_compressed_id <= '0;
             end
             else begin
                 pc_id_o  <= pc_if_i;
                 instr_id <= instr_if_i;
                 valid_id_o <= valid_if_i;
+                is_compressed_id <= is_compressed_if_i;
             end
         end
     end
@@ -108,7 +141,7 @@ decoder #(
     .ISA_F ( ISA_F )
 ) decoder_inst (
     // ALU related signals
-	.alu_operation_o  ( alu_operation_id_o ),
+    .alu_operation_o  ( alu_operation_id_o ),
     .alu_source_1_o   ( alu_source_1_id ), 
     .alu_source_2_o   ( alu_source_2_id ), 
     .immediate_type_o ( immediate_type_id ),
@@ -142,7 +175,8 @@ decoder #(
     .illegal_instr_o ( illegal_instr_id_o ),
     
     // Instruction to be decoded
-	.instr_i ( instr_id )
+    .instr_i         ( instr_id ),
+    .is_compressed_i ( is_compressed_id )
 );
 
 imm_extender imm_extender_inst (
@@ -199,7 +233,7 @@ always_comb begin
     unique case (alu_source_2_id)
         ALU_SCR2_RS2   : alu_operand_2_id_o = rs2_or_fwd_id;
         ALU_SCR2_IMM   : alu_operand_2_id_o = immediate_id;
-        ALU_SCR2_4_OR_2: alu_operand_2_id_o = 32'd4;
+        ALU_SCR2_4_OR_2: alu_operand_2_id_o = (is_compressed_id) ? (32'd2) : (32'd4);
         default: alu_operand_2_id_o = 32'b0;
     endcase
 end

@@ -1,7 +1,11 @@
-.globl main
+.include "init.s"
 
-.text
+.section .text
+.globl main
 main:
+    # t3 will be the base addr for .data
+    la t3, .data
+    
 	# Use lui to load values
     lui t0, 0x10101
     ori t0, t0, 0x101
@@ -15,11 +19,13 @@ main:
 	auipc sp, 0x23456
     
     # Store in memory
-    sw t0, 0(x0)
-    sw t1, 4(x0)
-    sw t2, 8(x0)
-    sw s0, 20(x0)
-    sw gp, 28(x0)
-    sw sp, 100(x0)
+    sw t0, 0(t3)
+    sw t1, 4(t3)
+    sw t2, 8(t3)
+    sw s0, 20(t3)
+    sw gp, 28(t3)
+    sw sp, 100(t3)
     
     ecall
+    nop
+    j _exit

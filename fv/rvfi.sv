@@ -1,3 +1,31 @@
+// Copyright 2024 UFCG
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+////////////////////////////////////////////////////////////////////////////////
+// Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
+//                                                                            //
+// Additional contributions by:                                               //
+//                                                                            //
+//                                                                            //
+// Design Name:    RVFI Driver                                                //
+// Project Name:   RISC-X                                                     //
+// Language:       SystemVerilog                                              //
+//                                                                            //
+// Description:    Drives RVFI signals.                                       //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 module rvfi import core_pkg::*; (
     input  logic clk_i,
     input  logic rst_n_i,
@@ -129,7 +157,8 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         pc_n_ex       <= '0;
     end else begin
         if (!stall_ex) begin
-            instr_ex     <= instr_id;
+            // instr_ex     <= instr_id;
+            instr_ex     <= (instr_id[1:0] == 2'b11) ? (instr_id) : ({16'b0, instr_id[15:0]});
             rvfi_trap_ex <= trap_id && !stall_id && !branch_decision_ex;
             intr_ex      <= intr_id;
             if ((alu_source_1_id == ALU_SCR1_RS1) || (pc_source_id == PC_JALR)) begin

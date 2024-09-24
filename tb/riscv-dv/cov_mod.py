@@ -16,11 +16,16 @@ limitations under the License.
 Regression script for RISC-V random instruction generator
 """
 
+# pyright: reportMissingImports=false, reportUndefinedVariable=false
+
 import argparse
 import os
 import re
 import sys
 import logging
+
+riscv_dv_root = os.environ.get('RISCV_DV_ROOT')
+sys.path.append(f'{riscv_dv_root}')
 
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *

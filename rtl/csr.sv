@@ -1,3 +1,31 @@
+// Copyright 2024 UFCG
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+////////////////////////////////////////////////////////////////////////////////
+// Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
+//                                                                            //
+// Additional contributions by:                                               //
+//                                                                            //
+//                                                                            //
+// Design Name:    Control and Status Registers                               //
+// Project Name:   RISC-X                                                     //
+// Language:       SystemVerilog                                              //
+//                                                                            //
+// Description:    RISC-X Control and Status Registers (CSRs).                //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 module csr import core_pkg::*; #(
     parameter bit ISA_M = 0,
     parameter bit ISA_C = 0,
@@ -48,27 +76,8 @@ assign mimpid    = '0;
 assign mhartid   = hartid_i;
 
 // Machine Status Registers
-mstatus_t mstatus;
-assign mstatus.uie  = 1'b0; // User mode interrupt enable
-assign mstatus.sie  = 1'b0; // Supervisor mode interrupt enable
-assign mstatus.hie  = 1'b0; // Hypervisor mode interrupt enable
-assign mstatus.mie  = 1'b0; // Machine mode interrupt enable
-assign mstatus.upie = 1'b0; // User mode previous interrupt enable
-assign mstatus.spie = 1'b0; // Supervisor mode previous interrupt enable
-assign mstatus.ube  = 1'b0; // User mode endianess control
-assign mstatus.mpie = 1'b0; // Machine mode previous interrupt enable
-assign mstatus.spp  = 1'b0; // Supervisor mode previous privilege mode
-assign mstatus.vs   = 2'b0; // V extension status
-assign mstatus.mpp  = 2'b0; // Machine mode previous privilege mode
-assign mstatus.fs   = 2'b0; // F extension status
-assign mstatus.xs   = 2'b0; // X extension status
-assign mstatus.mprv = 1'b0; // Modify memory PRiVilege
-assign mstatus.sum  = 1'b0; // Permit Supervisor User Memory access
-assign mstatus.mxr  = 1'b0; // Make eXecutable Readable
-assign mstatus.tvm  = 1'b0; // Trap Virtual Memory
-assign mstatus.tw   = 1'b0; // Timeout Wait
-assign mstatus.tsr  = 1'b0; // Trap SRET
-assign mstatus.sd   = 1'b0; // ?
+mstatus_t mstatus, mstatus_n;
+// These mstatus fields are actually WPRI: uie, hie, upie
 
 // Machine Trap-Vector Base-Address Register
 logic [31:0] mtvec, mtvec_n;
@@ -113,6 +122,7 @@ end
 
 // Define next values of CSRs
 always_comb begin
+    mstatus_n = mstatus;
     mie_n = mie;
     mtvec_n = (set_initial_mtvec) ? ({mtvec_i, 8'b0}) : (mtvec);
     mepc_n = mepc;
@@ -122,6 +132,31 @@ always_comb begin
     
     if (csr_wen) begin
         case (csr_addr_i)
+            CSR_MSTATUS: begin
+                mstatus_n.sie  = csr_wdata_actual[ 1];
+                mstatus_n.mie  = csr_wdata_actual[ 3];
+                mstatus_n.spie = csr_wdata_actual[ 5];
+                mstatus_n.ube  = csr_wdata_actual[ 6];
+                mstatus_n.mpie = csr_wdata_actual[ 7];
+                mstatus_n.spp  = csr_wdata_actual[ 8];
+                mstatus_n.vs   = csr_wdata_actual[10: 9];
+                mstatus_n.mpp  = csr_wdata_actual[12:11];
+                mstatus_n.fs   = csr_wdata_actual[14:13];
+                mstatus_n.xs   = csr_wdata_actual[16:15];
+                mstatus_n.mprv = csr_wdata_actual[17];
+                mstatus_n.sum  = csr_wdata_actual[18];
+                mstatus_n.mxr  = csr_wdata_actual[19];
+                mstatus_n.tvm  = csr_wdata_actual[20];
+                mstatus_n.tw   = csr_wdata_actual[21];
+                mstatus_n.tsr  = csr_wdata_actual[22];
+                mstatus_n.sd   = csr_wdata_actual[31];
+            end
+            CSR_MIE: begin
+                mie_n = csr_wdata_actual;
+            end
+            CSR_MTVEC: begin
+                mtvec_n = {csr_wdata_actual[31:8], 8'b0};
+            end
             CSR_MEPC: begin
                 if (ISA_C) mepc_n = {csr_wdata_actual[31:1], 1'b0};
                 else       mepc_n = {csr_wdata_actual[31:2], 2'b0};
@@ -129,10 +164,6 @@ always_comb begin
             CSR_MCAUSE: begin
                 // mcause_intr_n = csr_wdata_actual[31]; // TODO Change this when interrupts are implemented
                 mcause_code_n = csr_wdata_actual[4:0];
-            end
-            CSR_MIE: begin
-                // mcause_intr_n = csr_wdata_actual[31]; // TODO Change this when interrupts are implemented
-                mie_n = csr_wdata_actual;
             end
             CSR_MSCRATCH: begin
                 mscratch_n = csr_wdata_actual;
@@ -152,9 +183,11 @@ always_comb begin
     end
 end
 
+// Update CSR values with next values
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
         set_initial_mtvec <= '1;
+        mstatus <= '0;
         mie  <= '0;
         mtvec <= '0;
         mepc  <= '0;
@@ -164,6 +197,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
     end
     else begin
         set_initial_mtvec <= '0;
+        mstatus <= mstatus_n;
         mie  <= mie_n;
         mtvec <= mtvec_n;
         mepc  <= mepc_n;

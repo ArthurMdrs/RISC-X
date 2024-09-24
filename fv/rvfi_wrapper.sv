@@ -1,3 +1,31 @@
+// Copyright 2024 UFCG
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+////////////////////////////////////////////////////////////////////////////////
+// Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
+//                                                                            //
+// Additional contributions by:                                               //
+//                                                                            //
+//                                                                            //
+// Design Name:    RVFI Wrapper                                               //
+// Project Name:   RISC-X                                                     //
+// Language:       SystemVerilog                                              //
+//                                                                            //
+// Description:    RVFI Wrapper that includes the core and RVFI.              //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 module rvfi_wrapper (
     input logic clock,
     input logic reset
@@ -49,8 +77,17 @@ assign hartid    = 32'h0000_0000;
 assign mtvec     = 24'h0000_80;
 assign boot_addr = 30'h0000_0c00; // Equivalent to 32'b0000_3000;
 
+
+localparam bit ISA_C = 1;
+localparam bit ISA_M = 0;
+localparam bit ISA_F = 0;
+
 `default_nettype none
-core core_inst (
+core #(
+    .ISA_M(ISA_M),
+    .ISA_C(ISA_C),
+    .ISA_F(ISA_F)
+) core_inst (
     .clk_i   ( clk_i ),
     .rst_n_i ( rst_n_i ),
     
