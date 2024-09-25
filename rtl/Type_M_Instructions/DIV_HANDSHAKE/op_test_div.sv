@@ -33,8 +33,9 @@ module tb();
         #2
         nreset = 1;
         in_valid_i = 1;      
-        a = 67;
-        b =  7; 
+        out_ready_i =1;
+        a = 44;
+        b =  8; 
         //out_ready_i = 0;
         $monitor("%d %d %d",a,b,c);
         #500 $finish;
@@ -43,7 +44,7 @@ module tb();
   always_ff@(negedge clock)begin
         //$display("%d %d %d %d %d %d %s",inst0opdiv.a_reg,inst0opdiv.b_reg,inst0opdiv.ena,inst0opdiv.Quatient,inst0opdiv.minuend,inst0opdiv.k ,str[inst0opdiv.state]);
         //if(temp=="START")begin 
-        if(inst0opdiv.out_valid_o)begin out_ready_i <=1;
+        if(inst0opdiv.out_valid_o)begin ;
                 $display("%d,%b, %b",inst0opdiv.c,inst0opdiv.Quatient,inst0opdiv.c_signal);
         end
 

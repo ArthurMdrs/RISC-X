@@ -13,7 +13,7 @@ module opdiv(
     input  logic                out_ready_i     // 
 );
 
-    logic ena, a_signal,b_signal, c_signal, next_in_ready_o, next_out_valid_o;
+    logic ena, a_signal,b_signal, c_signal, next_in_ready_o, next_out_valid_o, compair;
     logic [5:0] qbits;
     logic signed [31:0] state, next, k;
     logic [31:0] left_updade,right_updade;
@@ -155,8 +155,8 @@ module opdiv(
         INITIALISE_AND_COUNTER_BITS :                               {next,next_in_ready_o,next_out_valid_o} = {SET_AK_MINUEND,2'b00}                                                        ;
         SET_AK_MINUEND              :                               {next,next_in_ready_o,next_out_valid_o} = {LOOP,2'b00}                                                                  ;
         LOOP                        :begin 
-                                        if((minuend - b_reg) >= 0)  {next,next_in_ready_o,next_out_valid_o} = (!k) ? {DONE,2'b01} : {UPDATE_MINUEND_RIGHT,2'b00}                            ;
-                                        else                        {next,next_in_ready_o,next_out_valid_o} = (!k )? {DONE,2'b01} : {UPDATE_MINUEND_LEFT ,2'b00 }                           ;  
+                                        if(compair)  {next,next_in_ready_o,next_out_valid_o} = !k ? {DONE,2'b01} : {UPDATE_MINUEND_RIGHT,2'b00}                            ;
+                                        else                        {next,next_in_ready_o,next_out_valid_o} = !k ? {DONE,2'b01} : {UPDATE_MINUEND_LEFT ,2'b00 }                           ;  
                                     end
         UPDATE_MINUEND_RIGHT        :                               {next,next_in_ready_o,next_out_valid_o} = {INCREASE_K,2'b00}                                                            ;
         UPDATE_MINUEND_LEFT         :                               {next,next_in_ready_o,next_out_valid_o} = {INCREASE_K,2'b00}                                                            ;
@@ -166,7 +166,7 @@ module opdiv(
                                      if(!out_ready_i)               {next,next_in_ready_o,next_out_valid_o} = {DONE,2'b01}                                                                  ;
                                      else                           {next,next_in_ready_o,next_out_valid_o} = {IDLE,2'b10}                                                  ;
                                      end
-        default                     :next = IDLE;
+        default                     : {next,next_in_ready_o,next_out_valid_o} = {IDLE,2'b10} ;
     endcase
     always_comb 
         if(out_valid_o && out_ready_i)begin
@@ -178,7 +178,7 @@ module opdiv(
                 c = {32{1'b0}};
                 r = {32{1'b0}};
             end else  begin
-                r = minuend - b_reg;
+                r = compair ? minuend - b_reg: minuend ;
                 case({a_signal,b_signal})
                     2'b00: c = {1'b0,Quatient[30:0]};
                     2'b11: c = {1'b0,Quatient[30:0]};
@@ -192,7 +192,7 @@ module opdiv(
             r = 'x;
         end
 
-
+    always_comb compair = minuend - b_reg >= 0;
     always_comb left_updade     = {minuend,a_reg[next_k]};
     always_comb right_updade    = {minuend-b_reg,a_reg[next_k]};
     always_comb next_k          = (k-1 >= 0) ? k - 1 : k;
