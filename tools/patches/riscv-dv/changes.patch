@@ -311,7 +311,7 @@ index 5f364fc..d998a69 100644
                              if not args.debug:
                                  logging.error(
 diff --git a/scripts/spike_log_to_trace_csv.py b/scripts/spike_log_to_trace_csv.py
-index b6970bc..c07b966 100644
+index b6970bc..bd5d416 100644
 --- a/scripts/spike_log_to_trace_csv.py
 +++ b/scripts/spike_log_to_trace_csv.py
 @@ -27,14 +27,42 @@ sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
@@ -366,7 +366,7 @@ index b6970bc..c07b966 100644
  
      in_trampoline = True
      instr = None
-+    myaux = 0
++    # myaux = 0
  
      with open(path, 'r') as handle:
          for line in handle:
@@ -374,11 +374,11 @@ index b6970bc..c07b966 100644
              # we need to stop immediately.
              instr_match = CORE_RE.match(line)
              if instr_match:
-+                if "fmv.w.x" in instr_match.group('instr'):
-+                    logging.info(instr_match.group('addr'))
-+                    myaux = 1
-+                else:
-+                    myaux = 0
++                # if "fmv.w.x" in instr_match.group('instr'):
++                #     logging.info(instr_match.group('addr'))
++                #     myaux = 1
++                # else:
++                #     myaux = 0
                  yield instr, False
                  instr = read_spike_instr(instr_match, full_trace)
                  if instr.instr_str == 'ecall':
@@ -386,8 +386,8 @@ index b6970bc..c07b966 100644
              # the --log-commits Spike option)?
              commit_match = RD_RE.match(line)
              if commit_match:
-+                if myaux:
-+                    logging.info('in commit')
++                # if myaux:
++                #     logging.info('in commit')
                  groups = commit_match.groupdict()
                  instr.gpr.append(gpr_to_abi(groups["reg"].replace(' ', '')) +
                                   ":" + groups["val"])
