@@ -70,7 +70,7 @@ core_wrapper #(
     .ISA_F(ISA_F)
 ) wrapper_inst (
     .clk_i      ( clk ),
-    .rst_n_i    ( dlyd_rst_n ),
+    .rst_n_i    ( rst_n ),
     
     // .if_clknrst(if_clknrst),
     .if_instr_bad_uvc   ( if_instr_bad_uvc ),
@@ -111,12 +111,14 @@ initial begin
     $dumpfile("dump.vcd");
     $dumpvars;
     
+    get_plus_args();
     
     // rserver = uvm_report_server::get_server();
 
     // Virtual interfaces send to VIPs - begin
         uvm_config_db#(virtual interface clknrst_if)::set(null, "uvm_test_top", "vif_clknrst"      , if_clknrst      );
         uvm_config_db#(virtual interface obi_if    )::set(null, "uvm_test_top", "instr_obi_vif"    , if_instr_obi    );
+        uvm_config_db#(virtual interface bad_uvc_if)::set(null, "uvm_test_top", "data_bad_uvc_vif" , if_data_bad_uvc );
         uvm_config_db#(virtual interface rvvi_if   )::set(null, "uvm_test_top", "vif_rvvi"         , if_rvvi         );
     // Virtual interfaces send to VIPs - end
 

@@ -94,7 +94,8 @@ interface rvvi_if #(
         tr.x_wb         = x_wb          ;
         tr.f_wdata      = f_wdata       ;
         tr.f_wb         = f_wb          ;
-        tr.csr          = csr_wb        ;
+        tr.csr          = csr           ;
+        tr.csr_wb       = csr_wb        ;
         tr.pc_wdata     = pc_wdata      ;
         tr.intr         = intr          ;
         tr.halt         = halt          ;

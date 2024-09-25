@@ -132,3 +132,61 @@ class obi_load_mem_seq #(int XLEN=32, int ALEN=32) extends obi_base_sequence#(XL
 endclass: obi_load_mem_seq
 
 //==============================================================//
+
+class obi_memory_seq #(int XLEN=32, int ALEN=32) extends obi_base_sequence#(XLEN, ALEN);
+
+    `uvm_object_utils(obi_memory_seq)
+
+    function new(string name="obi_memory_seq");
+        super.new(name);
+    endfunction: new
+    
+    virtual task body();
+        obi_tr mon_tr;
+        int id;
+        logic [31:0] addr, rdata;
+        
+        `uvm_info("OBI MEM SEQ", $sformatf("Started memory sequence."), UVM_LOW)
+        
+        id = 0;
+        forever begin
+            p_sequencer.mon_tr_fifo.get(mon_tr);
+            // `uvm_info("OBI RND SEQ", $sformatf("Got transaction from monitor:\n%s", mon_tr.sprint()), UVM_HIGH)
+            // `uvm_info("OBI RND SEQ", "Got transaction from monitor.", UVM_HIGH)
+            
+            `uvm_create(req)
+            void'(req.randomize());
+            
+            addr = mon_tr.addr;
+            if (mon_tr.we) begin
+                foreach (mon_tr.be[i]) begin
+                    if (mon_tr.be[i])
+                        mem.write (addr+i, mon_tr.wdata[i*8+:8]);
+                end
+            end
+            else begin
+                foreach (mon_tr.be[i]) begin
+                    // if (mem.exists(addr)) begin
+                    // end
+                    if (mon_tr.be[i])
+                        rdata[i*8+:8] = mem.read (addr+i);
+                    else
+                        rdata[i*8+:8] = 8'b0;
+                end
+                req.rdata = rdata;
+            end
+            
+            // void'(req.randomize() with {field_1==value_1; field_2==value_2;});
+            
+            req.id = id;
+            id++;
+            `uvm_send(req)
+            
+        end
+        
+        `uvm_info("OBI MEM SEQ", $sformatf("Finished memory sequence."), UVM_LOW)
+    endtask: body
+
+endclass: obi_memory_seq
+
+//==============================================================//

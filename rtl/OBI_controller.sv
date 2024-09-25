@@ -47,6 +47,7 @@ module OBI_controller #(
     output logic [WIDTH-1:0]    obi_wdata_o,
     output logic [ 5:0]         obi_atop_o,
     input  logic [WIDTH-1:0]    obi_rdata_i,
+    output logic                obi_rready_o,
     input  logic                obi_rvalid_i,
     input  logic                obi_err_i
 
@@ -69,6 +70,7 @@ module OBI_controller #(
     // Assigns 
 
         assign resp_valid_o = obi_rvalid_i;
+        assign obi_rready_o = core_rready_i; // Isso tá certo??? TODO
 
     always_ff@(posedge clk or negedge rst_n) begin
         if (~rst_n) begin

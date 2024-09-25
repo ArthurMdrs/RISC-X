@@ -192,7 +192,7 @@ class bad_uvc_memory_seq extends bad_uvc_base_sequence;
             
         end
         
-        `uvm_info("BAD_UVC RND SEQ", $sformatf("Finished memory sequence."), UVM_LOW)
+        `uvm_info("BAD_UVC MEM SEQ", $sformatf("Finished memory sequence."), UVM_LOW)
     endtask: body
 
 endclass: bad_uvc_memory_seq

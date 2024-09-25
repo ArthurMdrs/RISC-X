@@ -63,6 +63,7 @@ core #(
     .clk_i   ( clk_i ),
     .rst_n_i ( rst_n_i ),
 
+    // Bad data interface
     .dmem_rdata_i ( if_data_bad_uvc.rdata ),
     .dmem_wdata_o ( if_data_bad_uvc.wdata ),
     .dmem_addr_o  ( if_data_bad_uvc.addr ),
@@ -73,6 +74,7 @@ core #(
     // .imem_rdata_i ( if_instr_bad_uvc.rdata ),
     // .imem_addr_o  ( if_instr_bad_uvc.addr ),
     
+    // OBI instr interface
     .insn_obi_req_o     ( if_instr_obi.req ),
     .insn_obi_gnt_i     ( if_instr_obi.gnt ),
     .insn_obi_addr_o    ( if_instr_obi.addr ),

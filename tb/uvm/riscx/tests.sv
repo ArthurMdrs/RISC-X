@@ -26,15 +26,16 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-class base_test extends uvm_test;
+class riscx_base_test extends uvm_test;
 
     localparam int XLEN = 32;
     localparam int ALEN = 32;
 
-    `uvm_component_utils(base_test)
+    `uvm_component_utils(riscx_base_test)
 
     clknrst_vif vif_clknrst;
-    obi_vif instr_obi_vif;
+    obi_vif     instr_obi_vif;
+    bad_uvc_vif data_bad_uvc_vif;
     rvvi_vif    vif_rvvi;
     
     riscx_env riscx_env_inst;
@@ -56,6 +57,10 @@ class base_test extends uvm_test;
             `uvm_info("BASE TEST", "Virtual interface for Instr OBI was successfully set!", UVM_HIGH)
         else
             `uvm_error("BASE TEST", "No interface for Instr OBI was set!")
+        if(uvm_config_db#(bad_uvc_vif)::get(this, "", "data_bad_uvc_vif", data_bad_uvc_vif))
+            `uvm_info("BASE TEST", "Virtual interface for Data bad_uvc was successfully set!", UVM_HIGH)
+        else
+            `uvm_error("BASE TEST", "No interface for Data bad_uvc was set!")
         if(uvm_config_db#(rvvi_vif)::get(this, "", "vif_rvvi", vif_rvvi))
             `uvm_info("BASE TEST", "Virtual interface for RVVI was successfully set!", UVM_HIGH)
         else
@@ -63,6 +68,7 @@ class base_test extends uvm_test;
         
         uvm_config_db#(clknrst_vif)::set(this, "riscx_env_inst", "vif_clknrst"  , vif_clknrst  );
         uvm_config_db#(obi_vif    )::set(this, "riscx_env_inst", "instr_obi_vif", instr_obi_vif);
+        uvm_config_db#(bad_uvc_vif)::set(this, "riscx_env_inst", "data_bad_uvc_vif", data_bad_uvc_vif );
         uvm_config_db#(rvvi_vif   )::set(this, "riscx_env_inst", "vif_rvvi"     , vif_rvvi     );
         
         riscx_env_inst = riscx_env::type_id::create("riscx_env_inst", this);
@@ -87,11 +93,11 @@ class base_test extends uvm_test;
         obj.set_drain_time(this, 200ns);
     endtask: run_phase
 
-endclass: base_test
+endclass: riscx_base_test
 
 //==============================================================//
 
-class random_test extends base_test;
+class random_test extends riscx_base_test;
 
     `uvm_component_utils(random_test)
 
@@ -114,7 +120,7 @@ endclass: random_test
 
 //==============================================================//
 
-class vseqr_test extends base_test;
+class vseqr_test extends riscx_base_test;
 
     `uvm_component_utils(vseqr_test)
 
@@ -147,6 +153,24 @@ class vseqr_test extends base_test;
     // endtask: run_phase
 
 endclass: vseqr_test
+
+//==============================================================//
+
+class riscx_dv_test extends riscx_base_test;
+
+    `uvm_component_utils(riscx_dv_test)
+
+    function new(string name, uvm_component parent);
+        super.new(name, parent);
+    endfunction: new
+
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+
+        uvm_config_wrapper::set(this, "riscx_env_inst.vsequencer.run_phase", "default_sequence", riscx_dv_vseq::get_type());
+    endfunction: build_phase
+
+endclass: riscx_dv_test
 
 //==============================================================//
 

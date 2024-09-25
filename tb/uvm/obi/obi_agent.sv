@@ -53,7 +53,7 @@ class obi_agent #(int XLEN=32, int ALEN=32) extends uvm_agent;
         super.build_phase(phase);
         
         if(uvm_config_db#(obi_vif)::get(this, "", "vif", vif))
-            `uvm_info("OBI AGENT", "Virtual interface was successfully set!", UVM_MEDIUM)
+            `uvm_info("OBI AGENT", "Virtual interface was successfully set!", UVM_HIGH)
         else
             `uvm_fatal("OBI AGENT", "No interface was set!")
         

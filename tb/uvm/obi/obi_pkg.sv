@@ -22,7 +22,8 @@
 // Project Name:   RISC-X                                                     //
 // Language:       SystemVerilog                                              //
 //                                                                            //
-// Description:    Includes all OBI agent's files.                            //
+// Description:    Includes all OBI agent's files. This uses a memory model   //
+//                 package from another folder.                               //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -31,7 +32,7 @@ package obi_pkg;
     import uvm_pkg::*;
     `include "uvm_macros.svh"
 
-    `include "riscx_mem_model.sv"
+    import riscx_mem_model_pkg::*;
     
     `include "obi_tdefs.sv"
 

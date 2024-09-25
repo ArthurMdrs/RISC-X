@@ -28,6 +28,10 @@ ${RVFI_HOME}/rvfi.sv
 
 ////////////////////////////////////////////////////////////
 
+// RISC-X memory model
++incdir+${RISCX_UVM_SRC}/mem_model
+${RISCX_UVM_SRC}/mem_model/riscx_mem_model_pkg.sv
+
 // clknrst UVC
 +incdir+${RISCX_UVM_SRC}/clknrst
 ${RISCX_UVM_SRC}/clknrst/clknrst_pkg.sv
@@ -61,5 +65,4 @@ ${RISCX_UVM_SRC}/riscx/riscx_pkg.sv
 // Testbench files
 ${TB_HOME}/core_wrapper.sv
 //${TB_HOME}/bad_tb_top.sv
-//${TB_HOME}/rtl/stub.sv
 ${TB_HOME}/tb_top.sv

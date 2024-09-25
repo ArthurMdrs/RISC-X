@@ -18,33 +18,19 @@
 // Additional contributions by:                                               //
 //                                                                            //
 //                                                                            //
-// Design Name:    Bad UVC package                                            //
+// Design Name:    RISC-X memory model package                                //
 // Project Name:   RISC-X                                                     //
 // Language:       SystemVerilog                                              //
 //                                                                            //
-// Description:    Includes all Bad UVC agent's files.                        //
+// Description:    Includes RISC-X's memory model files.                      //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-package bad_uvc_pkg;
+package riscx_mem_model_pkg;
 
     import uvm_pkg::*;
     `include "uvm_macros.svh"
-
-    import riscx_mem_model_pkg::*;
     
-    `include "bad_uvc_tdefs.sv"
+    `include "riscx_mem_model.sv"
 
-    typedef virtual interface bad_uvc_if bad_uvc_vif;
-
-    `include "bad_uvc_cntxt.sv"
-    `include "bad_uvc_cfg.sv"
-    `include "bad_uvc_tr.sv"
-    `include "bad_uvc_seqr.sv"
-    `include "bad_uvc_seq_lib.sv"
-    `include "bad_uvc_mon.sv"
-    `include "bad_uvc_drv.sv"
-    `include "bad_uvc_cov.sv"
-    `include "bad_uvc_agent.sv"
-
-endpackage: bad_uvc_pkg
+endpackage: riscx_mem_model_pkg

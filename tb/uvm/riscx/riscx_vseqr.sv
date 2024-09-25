@@ -38,8 +38,9 @@ class riscx_vseqr #(
         // `uvm_field_object(cntxt, UVM_DEFAULT)
     `uvm_component_utils_end
     
-    clknrst_sqr  sequencer_clknrst;
-    obi_seqr instr_obi_seqr;
+    clknrst_sqr sequencer_clknrst;
+    obi_seqr    instr_obi_seqr;
+    bad_uvc_seqr data_bad_uvc_seqr;
     
     typedef riscx_vseqr this_type;
     uvm_analysis_imp #(bit [ILEN-1:0], this_type) detected_insn_imp;

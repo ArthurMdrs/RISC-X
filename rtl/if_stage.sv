@@ -133,7 +133,7 @@ OBI_controller OBI_controller_inst (
     .core_wdata_i           ( 32'b0 ),
 
     // Transaction response interface
-    .resp_valid_o           ( valid_if_o ),  // Note: Consumer is assumed to be 'ready' whenever resp_valid_o = 1
+    .resp_valid_o           ( valid_if_o ),
     .resp_rdata_o           ( instr_if_o ),
     .resp_err_o             (  ),
 
@@ -146,6 +146,7 @@ OBI_controller OBI_controller_inst (
     .obi_wdata_o            ( insn_obi_wdata_o ),
     .obi_atop_o             (  ),
     .obi_rdata_i            ( insn_obi_rdata_i ),
+    .obi_rready_o           ( insn_obi_rready_o ),
     .obi_rvalid_i           ( insn_obi_rvalid_i ),
     .obi_err_i              ( 1'b0 )
 
