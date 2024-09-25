@@ -1,4 +1,4 @@
-class coverage_out extends bvm_cover #(a_tr);
+class coverage_out extends bvm_cover #(tr_out);
    `uvm_component_utils(coverage_out)
 
    covergroup transaction_covergroup;  // predefined name of covergroup
@@ -10,6 +10,6 @@ class coverage_out extends bvm_cover #(a_tr);
         option.at_least = 10;
       }
     endgroup
-   `bvm_cover_utils(a_tr)
+   `bvm_cover_utils(tr_out)
     
-endclass
+endclass : coverage_out

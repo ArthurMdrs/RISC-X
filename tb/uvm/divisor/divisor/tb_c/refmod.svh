@@ -1,54 +1,44 @@
 class refmod extends uvm_component;
    `uvm_component_utils(refmod)
 
-   // The functionality of this refmod is meaningless. It only demonstrates APB transaction
-   // and event transaction.
-
-   uvm_get_port #(apb_tr) in;
-   uvm_blocking_put_port #(a_tr) out; 
+   uvm_get_port #(tr_in) in;
+   uvm_blocking_put_port #(tr_out) out; 
 
    function new(string name, uvm_component parent=null);
       super.new(name,parent);
       in  = new("in",  this);
-      
    endfunction : new
-
 
    virtual function void build_phase (uvm_phase phase);
    super.build_phase(phase);
         out = new("out", this);
-
    endfunction
 
-   // a register file for APB interaction
-   int m_matches, m_mismatches; // used for APB read operations
+   int m_matches, m_mismatches; 
    int register_file;
-//    int  result;
    logic [31:0]  result;
    task run_phase (uvm_phase phase);
    
-     apb_tr tr_in;
-     a_tr tr_out;
-
-
+     tr_in tr_input;
+     tr_out tr_output;
+     
      forever begin
-        in.get(tr_in);
-       
-         tr_out = a_tr::type_id::create("tr_out", this);	
-          `bvm_begin_tr(tr_out)
-        //    result =  tr_in.dividendo / tr_in.divisor;
-        if (tr_in.divisor == '0) begin
+        in.get(tr_input);
+         tr_output = tr_out::type_id::create("tr_out", this);	
+          `bvm_begin_tr(tr_output)
+
+        if (tr_input.divisor == '0) begin
             result = 2**32 - 1;
         end
-        else if (tr_in.divisor == '1 && tr_in.dividendo == 2**32 - 1) begin
+        else if (tr_input.divisor == '1 && tr_input.dividendo == 2**32 - 1) begin
             result = -(2**31);
         end
         else begin
-            result = $signed(tr_in.dividendo) / $signed(tr_in.divisor);
+            result = $signed(tr_input.dividendo) / $signed(tr_input.divisor);
         end
-           tr_out.c = result;
-          out.put(tr_out);
-          `bvm_end_tr(tr_out)
+           tr_output.c = result;
+          out.put(tr_output);
+          `bvm_end_tr(tr_output)
         end
     
   endtask
@@ -60,5 +50,5 @@ class refmod extends uvm_component;
               UVM_NONE)
   endfunction
 
-endclass
+endclass : refmod
 

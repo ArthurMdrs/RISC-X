@@ -1,11 +1,8 @@
 //Monitor OUT
-class monitor extends uvm_monitor;  
-   `uvm_component_utils(monitor)
-
-   uvm_analysis_port #(a_tr) out;
-    
-   virtual a_if a_vi; 
-  
+class monitor_div_out extends uvm_monitor;  
+   `uvm_component_utils(monitor_div_out)
+   uvm_analysis_port #(tr_out) out;
+   virtual out_div_if out_vi; 
 
    function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -14,40 +11,34 @@ class monitor extends uvm_monitor;
     
    function void build_phase(uvm_phase phase);
       super.build_phase(phase);
-      assert( uvm_config_db #(virtual a_if)::get(this, "", "a_vi", a_vi) );
-      
+      assert( uvm_config_db #(virtual out_div_if)::get(this, "", "out_vi", out_vi) );
    endfunction
    
    task run_phase(uvm_phase phase);
-      a_tr tr;
+      tr_out tr;
       forever begin
-         wait (a_vi.reset === 0);
-         tr = a_tr::type_id::create("tr");
-
+         wait (out_vi.reset === 0);
+         tr = tr_out::type_id::create("tr");
          `bvm_begin_tr(tr)          // start transaction recording
-         while (!(a_vi.out_valid_o === 1 && a_vi.out_ready_i === 1)) begin
-            @(posedge a_vi.clock);
-        // `uvm_info("OUT MON", $sformatf("\ntime = %t\t\t\tDEBUG", $realtime), UVM_NONE)
-         end
-        tr.c = a_vi.c;
-        @(posedge a_vi.clock);
 
+         while (!(out_vi.out_valid_o === 1 && out_vi.out_ready_i === 1)) begin
+            @(posedge out_vi.clock);
+         end
+        tr.c = out_vi.c;
+        @(posedge out_vi.clock);
         `uvm_info("OUT MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_MEDIUM)
          out.write(tr);
          `bvm_end_tr(tr)           // end transaction recording
-         
       end
    endtask
 
-endclass
+endclass : monitor_div_out
 
 //Monitor In
-class apb_monitor extends uvm_monitor;  
-   `uvm_component_utils(apb_monitor)
-
-   uvm_analysis_port #(apb_tr) out;
-    
-   virtual apb_if apb_vi; 
+class monitor_div_in extends uvm_monitor;  
+   `uvm_component_utils(monitor_div_in)
+   uvm_analysis_port #(tr_in) out;
+   virtual in_div_if in_vi; 
 
    function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -56,29 +47,24 @@ class apb_monitor extends uvm_monitor;
     
    function void build_phase(uvm_phase phase);
       super.build_phase(phase);
-      assert( uvm_config_db #(virtual apb_if)::get(this, "", "apb_vi", apb_vi) );
+      assert( uvm_config_db #(virtual in_div_if)::get(this, "", "in_vi", in_vi) );
    endfunction
    
    task run_phase(uvm_phase phase);
-      apb_tr tr;
+      tr_in tr;
       forever begin
-         wait (apb_vi.PRESETn === 1);
-
-         tr = apb_tr::type_id::create("tr");
-   
+         wait (in_vi.PRESETn === 1);
+         tr = tr_in::type_id::create("tr");
          `bvm_begin_tr(tr) // start transaction recording
-         while (!(apb_vi.in_ready_o === 1 && apb_vi.in_valid_i === 1))
-            @(posedge apb_vi.PCLK);
-            tr.divisor = apb_vi.divisor;
-            tr.dividendo = apb_vi.dividendo;        
-        // `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_NONE)
-        // `uvm_info("IN MON", $sformatf("\n\ndivisor = 32'h%h\ndividendo = 32'h%h\n\n", apb_vi.divisor, apb_vi.dividendo), UVM_NONE)
-            @(posedge apb_vi.PCLK);
+         while (!(in_vi.in_ready_o === 1 && in_vi.in_valid_i === 1))
+            @(posedge in_vi.PCLK);
+            tr.divisor = in_vi.divisor;
+            tr.dividendo = in_vi.dividendo;        
         `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_MEDIUM)
          out.write(tr);
          `bvm_end_tr(tr) // end transaction recording
       end
    endtask
 
-endclass
+endclass : monitor_div_in
 

@@ -1,11 +1,11 @@
-class agent extends uvm_agent;
-  `uvm_component_utils(agent)
+class agent_div_out extends uvm_agent;
+  `uvm_component_utils(agent_div_out)
     
-   uvm_analysis_port #(a_tr) out;
+   uvm_analysis_port #(tr_out) out;
     
-   sequencer sequencer_h;
-   driver_master driver_h;
-   monitor monitor_h;
+   out_sequencer sequencer_h;
+   driver_div_out driver_h;
+   monitor_div_out monitor_h;
 
    function new(string name, uvm_component parent);
      super.new(name, parent);
@@ -15,10 +15,10 @@ class agent extends uvm_agent;
      super.build_phase(phase);
      out = new("out", this);
      if(get_is_active() == UVM_ACTIVE) begin
-        sequencer_h = sequencer::type_id::create("sequencer_h", this);
-        driver_h = driver_master::type_id::create("driver_h", this);
+        sequencer_h = out_sequencer::type_id::create("sequencer_h", this);
+        driver_h = driver_div_out::type_id::create("driver_h", this);
      end
-     monitor_h = monitor::type_id::create("monitor_h", this);
+     monitor_h = monitor_div_out::type_id::create("monitor_h", this);
    endfunction
 
    function void connect_phase(uvm_phase phase);
@@ -28,16 +28,16 @@ class agent extends uvm_agent;
      end
    endfunction
     
-endclass
+endclass : agent_div_out
 
-class apb_agent extends uvm_agent;
-  `uvm_component_utils(apb_agent)
+class agent_div_in extends uvm_agent;
+  `uvm_component_utils(agent_div_in)
     
-   uvm_analysis_port #(apb_tr) out;
+   uvm_analysis_port #(tr_in) out;
 
-   apb_sequencer sequencer_h;
-   apb_driver_master driver_h;
-   apb_monitor monitor_h;
+   in_sequencer sequencer_h;
+   driver_div_in driver_h;
+   monitor_div_in monitor_h;
 
    function new(string name, uvm_component parent);
      super.new(name, parent);
@@ -47,10 +47,10 @@ class apb_agent extends uvm_agent;
      super.build_phase(phase);
      out = new("out", this);
      if(get_is_active() == UVM_ACTIVE) begin
-        sequencer_h = apb_sequencer::type_id::create("sequencer_h", this);
-        driver_h = apb_driver_master::type_id::create("driver_h", this);
+        sequencer_h = in_sequencer::type_id::create("sequencer_h", this);
+        driver_h    = driver_div_in::type_id::create("driver_h", this);
      end
-     monitor_h = apb_monitor::type_id::create("monitor_h", this);
+     monitor_h      = monitor_div_in::type_id::create("monitor_h", this);
    endfunction
 
    function void connect_phase(uvm_phase phase);
@@ -60,5 +60,5 @@ class apb_agent extends uvm_agent;
      end
    endfunction
     
-endclass
+endclass : agent_div_in
 

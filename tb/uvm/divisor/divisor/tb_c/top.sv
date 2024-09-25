@@ -23,8 +23,8 @@ module top;
    assign PRESETn = ~reset;
 
    // input and output interface instance for DUT
-   apb_if in(.*);
-   a_if out(.*);
+   in_div_if in(.*);
+   out_div_if out(.*);
 
    opdiv testediv( 
     .clock(clock)                       ,
@@ -52,8 +52,8 @@ module top;
       `endif
 
       // register the input and output interface instance in the database
-      uvm_config_db #(virtual apb_if)::set(null, "uvm_test_top.env_h.agent_in_h.*", "apb_vi", in);
-      uvm_config_db #(virtual a_if)::set(null, "uvm_test_top.env_h.agent_out_h.*", "a_vi", out);
+      uvm_config_db #(virtual in_div_if)::set(null, "uvm_test_top.env_h.agent_in_h.*", "in_vi", in);
+      uvm_config_db #(virtual out_div_if)::set(null, "uvm_test_top.env_h.agent_out_h.*", "out_vi", out);
 
       run_test("test");
    end

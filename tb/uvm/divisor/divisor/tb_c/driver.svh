@@ -1,131 +1,108 @@
 //Driver out
-class driver_master extends uvm_driver #(a_tr);
-  `uvm_component_utils(driver_master)
+class driver_div_out extends uvm_driver #(tr_out);
+  `uvm_component_utils(driver_div_out)
 
    function new(string name, uvm_component parent);
      super.new(name, parent);
    endfunction
 
    // a virtual interface must be substituted later with an actual interface instance
-   virtual a_if a_vi; 
+   virtual out_div_if out_vi; 
 
    function void build_phase(uvm_phase phase);
      super.build_phase(phase);
      // get interface instance from database
-     assert( uvm_config_db #(virtual a_if)::get(this, "", "a_vi", a_vi) );
+     assert( uvm_config_db #(virtual out_div_if)::get(this, "", "out_vi", out_vi) );
    endfunction
 
    task run_phase(uvm_phase phase);  
-    
-     a_vi.out_ready_i <= 0;
-    
-     fork // reset may occur at any time, therefore let's treat is in a separate task
-       reset_signals();
+     out_vi.out_ready_i <= 0;
+     fork 
+       reset_signals(); // reset may occur at any time
        get_and_drive();
      join
    endtask
 
    task reset_signals();
       forever begin
-         wait (a_vi.reset === 1);
-          a_vi.out_ready_i <= 0;
-         wait (a_vi.reset === 0);
+         wait (out_vi.reset === 1);
+          out_vi.out_ready_i <= 0;
+         wait (out_vi.reset === 0);
       end
   endtask
 
    task get_and_drive();
-      a_tr tr_sequencer; // transaction coming from sequencer
+      tr_out tr_sequencer; // transaction coming from sequencer
 
-      forever begin
-        
-         wait (a_vi.reset === 0);
-         
-         //seq_item_port.get_next_item(tr_sequencer); // get transaction
-
-         a_vi.out_ready_i = 1; 
-        @(posedge a_vi.clock);
-        while (!(a_vi.out_valid_o === 1))
-        @(posedge a_vi.clock);
-        a_vi.out_ready_i = 0;
-        @(posedge a_vi.clock);
-         //seq_item_port.item_done(); // notify sequencer that transaction is completed
-
+      forever begin        
+         wait (out_vi.reset === 0);
+         out_vi.out_ready_i = 1; 
+        @(posedge out_vi.clock);
+        while (!(out_vi.out_valid_o === 1))
+        @(posedge out_vi.clock);
+        out_vi.out_ready_i = 0;
+        @(posedge out_vi.clock);
       end
    endtask
 
-endclass
+endclass : driver_div_out
 
-//Driver In
-class apb_driver_master extends uvm_driver #(apb_tr);
-  `uvm_component_utils(apb_driver_master)
+//Driver in
+class driver_div_in extends uvm_driver #(tr_in);
+  `uvm_component_utils(driver_div_in)
 
    function new(string name, uvm_component parent);
      super.new(name, parent);
    endfunction
 
    // a virtual interface must be substituted later with an actual interface instance
-   virtual apb_if apb_vi; 
+   virtual in_div_if in_vi; 
 
    function void build_phase(uvm_phase phase);
      super.build_phase(phase);
      // get interface instance from database
-     assert( uvm_config_db #(virtual apb_if)::get(this, "", "apb_vi", apb_vi) );
+     assert( uvm_config_db #(virtual in_div_if)::get(this, "", "in_vi", in_vi) );
    endfunction
 
    task run_phase(uvm_phase phase);
-
-     apb_vi.divisor  <= 'x; 
-     apb_vi.dividendo  <= 'x; 
-     apb_vi.in_valid_i <= 'x; //Indica validade dos dados na interface de entrada
-     apb_vi.in_ready_o <= 'x;
-
-     fork // reset may occur at any time, therefore let's treat is in a separate task
-       reset_signals();
+     in_vi.divisor  <= 'x; 
+     in_vi.dividendo  <= 'x; 
+     in_vi.in_valid_i <= 'x; 
+     in_vi.in_ready_o <= 'x;
+     fork 
+       reset_signals(); // reset may occur at any time
        get_and_drive();
      join
    endtask
 
    task reset_signals();
       forever begin
-         wait (apb_vi.PRESETn === 0);
-         apb_vi.divisor     <= 0; 
-         apb_vi.dividendo   <= 0; 
-         apb_vi.in_valid_i  <= 0; //Indica validade dos dados na interface de entrada
-         
-
-         @(posedge apb_vi.PRESETn);
+         wait (in_vi.PRESETn === 0);
+         in_vi.divisor     <= 0; 
+         in_vi.dividendo   <= 0; 
+         in_vi.in_valid_i  <= 0; 
+         @(posedge in_vi.PRESETn);
       end
    endtask
 
    task get_and_drive();
 
-      apb_tr tr_sequencer; // transaction coming from sequencer
-
+      tr_in tr_sequencer; // transaction coming from sequencer
       forever begin
-        wait (apb_vi.PRESETn === 1);
+        wait (in_vi.PRESETn === 1);
         seq_item_port.get_next_item(tr_sequencer); // get transaction
-      
-        // Old
-        apb_vi.in_valid_i <= 1;
-
-        // New
-        // apb_vi.in_valid_i <= 1;
-        
+        in_vi.in_valid_i <= 1;
         `uvm_info("IN DRV", $sformatf("\n*************************\nDriving tr:\n%s\n*************************", tr_sequencer.convert2string()), UVM_HIGH)
-
-        apb_vi.dividendo  <= tr_sequencer.dividendo; 
-        apb_vi.divisor    <= tr_sequencer.divisor;
-        
-        while (apb_vi.in_ready_o !== 1)
-            @(posedge apb_vi.PCLK);
-        
-        @(posedge apb_vi.PCLK);
-        apb_vi.in_valid_i <= 0;
-
+        in_vi.dividendo  <= tr_sequencer.dividendo; 
+        in_vi.divisor    <= tr_sequencer.divisor;
+        while (in_vi.in_ready_o !== 1)
+            @(posedge in_vi.PCLK);
+        @(posedge in_vi.PCLK);
+        in_vi.in_valid_i <= 0;
         seq_item_port.item_done(); // notify sequencer that transaction is completed
       end
    endtask
 
-endclass
+endclass : driver_div_in
 
 
