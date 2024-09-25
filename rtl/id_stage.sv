@@ -330,7 +330,7 @@ end
 
 // Deassert FPU req if we don't have a valid instruction
 // assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !flush_ex_i; // && !stall_ex_i;
-assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i; // && !stall_ex_i;
+assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !stall_id_i; // && !stall_ex_i;
 
 // Traps: illegal instruction decoded, jump target misaligned, mret
 assign exception_id = illegal_instr_id_o || instr_addr_misaligned_id_o || is_mret_id_o;
