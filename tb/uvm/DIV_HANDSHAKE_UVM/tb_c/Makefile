@@ -1,10 +1,10 @@
 sim:
 	xrun -access +r -uvm +uvm_set_config_int="*",recording_detail,1 -coverage all -covoverwrite \
-		-top top +UVM_VERBOSITY=LOW -svseed random \
+		-top top +UVM_VERBOSITY=UVM_HIGH -svseed random \
 		-DSYSTEM_CLOCK_UNITS_PER_SECOND=100 ../bvm/system_clock.c +incdir+../bvm \
 		../bvm/*.sv *.sv \
-		../../../../../rtl/Type_M_Instructions/DIV_HANDSHAKE/opdiv.sv \
-		../../../../../rtl/Type_M_Instructions/DIV_HANDSHAKE/counter_bit.sv 
+		../../../../rtl/Type_M_Instructions/DIV_HANDSHAKE/opdiv.sv \
+		../../../../rtl/Type_M_Instructions/DIV_HANDSHAKE/counter_bit.sv 
 
 wave:
 	simvision -NOCOPYRIGHT -input simvision.svcf

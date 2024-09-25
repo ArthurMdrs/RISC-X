@@ -61,6 +61,7 @@ class monitor_div_in extends uvm_monitor;
             tr.divisor = in_vi.divisor;
             tr.dividendo = in_vi.dividendo;        
         `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_MEDIUM)
+         @(posedge in_vi.PCLK);
          out.write(tr);
          `bvm_end_tr(tr) // end transaction recording
       end

@@ -23,19 +23,21 @@ module top;
    assign PRESETn = ~reset;
 
    // input and output interface instance for DUT
-   in_div_if in(.*);
-   out_div_if out(.*);
+   in_div_if in_vi(.*);
+   out_div_if out_vi(.*);
 
    opdiv testediv( 
-    .clock(clock)                       ,
-    .nreset(~reset)                     ,
-    .a(in.dividendo)                    ,
-    .b(in.divisor)                      ,
-    .c(out.c)                           ,
-    .in_valid_i(in.in_valid_i)          ,
-    .in_ready_o(in.in_ready_o)          ,
-    .out_valid_o(out.out_valid_o)       ,
-    .out_ready_i(out.out_ready_i)   
+    .clock(clock)                          ,
+    .nreset(~reset)                        ,
+    .a(in_vi.dividendo)                    ,
+    .b(in_vi.divisor)                      ,
+    .c(out_vi.c)                           ,
+    .r(out_vi.r)                           ,
+    .in_valid_i(in_vi.in_valid_i)          ,
+    .in_ready_o(in_vi.in_ready_o)          ,
+    .out_valid_o(out_vi.out_valid_o)       ,
+    .signal_division(in_vi.signal_division),
+    .out_ready_i(out_vi.out_ready_i)   
   );
 
    initial begin
@@ -52,8 +54,8 @@ module top;
       `endif
 
       // register the input and output interface instance in the database
-      uvm_config_db #(virtual in_div_if)::set(null, "uvm_test_top.env_h.agent_in_h.*", "in_vi", in);
-      uvm_config_db #(virtual out_div_if)::set(null, "uvm_test_top.env_h.agent_out_h.*", "out_vi", out);
+      uvm_config_db #(virtual in_div_if)::set(null, "uvm_test_top.env_h.agent_in_h.*", "in_vi", in_vi);
+      uvm_config_db #(virtual out_div_if)::set(null, "uvm_test_top.env_h.agent_out_h.*", "out_vi", out_vi);
 
       run_test("test");
    end
