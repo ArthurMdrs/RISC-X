@@ -55,12 +55,12 @@ module csr import core_pkg::*; #(
     input  logic [31:0] pc_ex_i,
     input  logic [ 4:0] exception_cause_i,
 
-    // Adicionei aqui
     // Floating-point ports
     input logic [4:0] fflags_i,
     input logic fflag_we_i,
     input logic fregs_we_i,
     output logic [2:0] frm_o
+
 
 );
 
@@ -278,6 +278,7 @@ always_comb begin
 end
 
 // Output some CSRs
+assign frm_o = frm;
 assign mtvec_o = mtvec;
 // assign mepc_o = mepc;
 // Output next value of mepc to account for writes followed by xRET 

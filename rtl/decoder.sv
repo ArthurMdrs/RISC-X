@@ -878,7 +878,7 @@ always_comb begin
                                 fpu_rnd_mode_o = 3'b000;
                             end
                             3'b001:begin // fsgnjn.s
-                                fpu_rnd_mode_o = 3'b001;
+                                fpu_rnd_mode_o = fpnew_pkg::RTZ;
                             end
                             3'b010:begin // fsgnjx.s
                                 fpu_rnd_mode_o = 3'b010;

@@ -95,14 +95,15 @@ module ex_stage import core_pkg::*; #(
     input  logic flush_ex_i,
     
     // FPU signals
-    input  logic [ 2:0]    fpu_rnd_mode_id_i,
-    input  logic [ 3:0]    fpu_op_id_i,
-    input  logic           fpu_op_mod_id_i,
-    input  logic           fpu_req_id_i,
-    output logic           fpu_gnt_id_o,
+    input  logic [2:0]    fpu_rnd_mode_id_i,
+    input  logic [3:0]    fpu_op_id_i,
+    input  logic [2:0]    fpu_frm_i,
+    input  logic          fpu_op_mod_id_i,
+    input  logic          fpu_req_id_i,
+    output logic          fpu_gnt_id_o,
     // output logic [31:0]    fpu_result_o,
     // output logic           fpu_rvalid_o,
-    output logic           fpu_busy_ex_o
+    output logic          fpu_busy_ex_o
 );
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -261,7 +262,8 @@ generate
         localparam int unsigned ENABLE_SIMD_MASK = 0;
         
         fpnew_pkg::roundmode_e fpu_rnd_mode;
-        assign fpu_rnd_mode = fpnew_pkg::roundmode_e'(fpu_rnd_mode_id_i);
+        // fpnew_pkg::roundmode_e fpu_rnd_mode_fpnew;
+        assign fpu_rnd_mode = (fpu_rnd_mode_id_i == fpnew_pkg::DYN) ? (fpu_frm_i) : (fpnew_pkg::roundmode_e'(fpu_rnd_mode_id_i));
         fpnew_pkg::operation_e fpu_op;
         assign fpu_op = fpnew_pkg::operation_e'(fpu_op_id_i);
         fpnew_pkg::status_t fpu_flags;
@@ -271,6 +273,8 @@ generate
         assign fpu_operands_i[1] = alu_operand_2_id_i;
         assign fpu_operands_i[2] = alu_operand_3_id_i;
         
+        // assign fpu_rnd_mode_fpnew = (fpu_rnd_mode == 3'b111) ? fpu_frm_i : fpu_rnd_mode;
+
         fpnew_top #(
             .Features       (FPU_FEATURES),
             .Implementation (FPU_IMPLEMENTATION),

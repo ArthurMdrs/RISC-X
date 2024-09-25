@@ -132,7 +132,7 @@ logic       fpu_op_mod_id;
 logic       fpu_req_id, fpu_gnt_id;
 logic       fpu_busy_ex;
 logic [4:0] csr_fpu_flags_ex;
-
+logic [2:0] frm_csr_ex;
 
 
 `ifdef JASPER
@@ -348,7 +348,8 @@ ex_stage #(
     .fpu_op_mod_id_i   ( fpu_op_mod_id ),
     .fpu_req_id_i      ( fpu_req_id ),
     .fpu_gnt_id_o      ( fpu_gnt_id ),
-    .fpu_busy_ex_o     ( fpu_busy_ex )
+    .fpu_busy_ex_o     ( fpu_busy_ex ),
+    .fpu_frm_i         ( frm_csr_ex )
 );
 
 
@@ -468,7 +469,7 @@ csr #(
     .fflags_i   ( csr_fpu_flags_ex ),
     .fflag_we_i ( 1'b0 ),
     .fregs_we_i ( 1'b0 ),
-    .frm_o      (  )
+    .frm_o      ( frm_csr_ex )
 );
 
 
