@@ -16,11 +16,13 @@ module opdiv(
     logic ena, a_signal,b_signal, c_signal, next_in_ready_o, next_out_valid_o, compair;
     logic [5:0] qbits;
     logic signed [31:0] state, next, k;
+    logic signed [32:0] a_reg, b_reg,minuend;
     logic [31:0] left_updade,right_updade;
-    logic signed [31:0] Quatient,minuend,next_k,a_reg, b_reg;
+    logic signed [31:0] next_k,Quatient;
     counter_bit inst0Count(
+
                 .ena    (ena),
-                .A      (a_reg[30:0]),
+                .A      (signal_division ? {1'b0,a_reg[30:0]} : a_reg),
                 .nBits  (qbits)
     );
     enum {IDLE,INITIALISE_AND_COUNTER_BITS,SET_AK_MINUEND,LOOP,UPDATE_MINUEND_RIGHT,UPDATE_MINUEND_LEFT,INCREASE_K,DONE} states;
@@ -43,15 +45,20 @@ module opdiv(
                 INITIALISE_AND_COUNTER_BITS:
                 begin
                         Quatient    <= 0;
-                        a_reg[30:0] <= a[31] ? {1'b0,~a[30:0]+1}: a[30:0];
-                        b_reg[30:0] <= b[31] ? {1'b0,~b[30:0]+1}: b[30:0];
+                        if(signal_division)begin
+                            a_reg[30:0] <= a[31]  ? {1'b0,~a[30:0]+1}: a[30:0];
+                            b_reg[30:0] <= b[31]  ? {1'b0,~b[30:0]+1}: b[30:0];
+                            a_reg[32:31]   <= 0;
+                            b_reg[32:31]   <= 0;   
+                        end else begin
+                            a_reg <= {1'b0,a};
+                            b_reg <= {1'b0,b};
+                        end
                         ena         <= 1;
                         minuend     <= 0;
                         k           <= qbits;     
-                        a_signal    <= a[31];
-                        b_signal    <= b[31];    
-                        a_reg[31]   <= 0;
-                        b_reg[31]   <= 0;                         
+                        a_signal    <= a[31] & signal_division;
+                        b_signal    <= b[31] & signal_division;                          
                 end
                 SET_AK_MINUEND:
                 begin  
@@ -66,7 +73,7 @@ module opdiv(
                 end
                 LOOP:
                 begin  
-                    if(minuend - b_reg >= 0)begin
+                    if(compair)begin
                         Quatient[k] <= 1;
                         ena         <= 0;
                         minuend     <= minuend;
@@ -170,22 +177,35 @@ module opdiv(
     endcase
     always_comb 
         if(out_valid_o && out_ready_i)begin
-            if(b_reg[30:0] == 0)begin
-                c = {32{1'b1}};
-                r = {32{1'b1}};
-            end
-            else if(a_reg[30:0] == 0)begin
-                c = {32{1'b0}};
-                r = {32{1'b0}};
-            end else  begin
-                r = compair ? minuend - b_reg: minuend ;
-                case({a_signal,b_signal})
-                    2'b00: c = {1'b0,Quatient[30:0]};
-                    2'b11: c = {1'b0,Quatient[30:0]};
-                    2'b10: c = {1'b1,~Quatient[30:0]+1};
-                    2'b01: c = {1'b1,~Quatient[30:0]+1};
-                endcase
-            end
+            if(signal_division)
+                if(b_reg[30:0] == 0)begin
+                    c = {32{1'b1}};
+                    r = {32{1'b1}};
+                end
+                else if(a_reg[30:0] < b_reg[30:0])begin
+                    c = {32{1'b0}};
+                    r = {32{1'b0}};
+                end else  begin
+                    r = compair ? minuend - b_reg: minuend ;
+                        case({a_signal,b_signal})
+                            2'b00: c = {1'b0,Quatient[30:0]};
+                            2'b11: c = {1'b0,Quatient[30:0]};
+                            2'b10: c = {1'b1,~Quatient[30:0]+1};
+                            2'b01: c = {1'b1,~Quatient[30:0]+1};
+                        endcase
+                end else begin  
+                     if(b_reg[31:0] == 0)begin
+                        c = {32{1'b1}};
+                        r = {32{1'b1}};
+                    end
+                    else if(a_reg[31:0] < b_reg[31:0])begin
+                        c = {32{1'b0}};
+                        r = {32{1'b0}};
+                    end else  begin
+                        c = Quatient;
+                        r = compair ? minuend - b_reg: minuend ; 
+                    end
+                end
         end
         else begin
             c = 'x;

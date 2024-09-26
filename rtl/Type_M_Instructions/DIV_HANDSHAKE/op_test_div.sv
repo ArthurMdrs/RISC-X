@@ -10,7 +10,7 @@ module tb();
 		logic 	signed	[31:0]  c			;
 		logic 					out_valid_o	;
 		logic					out_ready_i	;
-		logic 	[31:0]			nclocks		;
+		logic 	[31:0]			nclocks,pass		;
 		opdiv inst0opdiv(
 		
 				.clock		      (	clock		    ),	
@@ -21,7 +21,8 @@ module tb();
 				.b			        (	b			      ),
 				.c			        (	c			      ),
 				.out_valid_o    (	out_valid_o	),
-				.out_ready_i    (	out_ready_i	)
+				.out_ready_i    (	out_ready_i	),
+        .signal_division(1'b0)
 //        .signal_division( 0     )
 		
 		);	
@@ -29,23 +30,37 @@ module tb();
     string temp;
     initial begin
         clock = 0;
+        nreset = 1;
+        #1
         nreset = 0;
-        #2
+        #1
         nreset = 1;
         in_valid_i = 1;      
         out_ready_i =1;
-        a = 44;
-        b =  8; 
         //out_ready_i = 0;
         $monitor("%d %d %d",a,b,c);
-        #500 $finish;
+        #1000 $finish;
      end
      always #2 clock = ~clock;
-  always_ff@(negedge clock)begin
+  always_ff@(posedge clock, negedge nreset)begin
         //$display("%d %d %d %d %d %d %s",inst0opdiv.a_reg,inst0opdiv.b_reg,inst0opdiv.ena,inst0opdiv.Quatient,inst0opdiv.minuend,inst0opdiv.k ,str[inst0opdiv.state]);
         //if(temp=="START")begin 
-        if(inst0opdiv.out_valid_o)begin ;
-                $display("%d,%b, %b",inst0opdiv.c,inst0opdiv.Quatient,inst0opdiv.c_signal);
+        if(!nreset)begin
+            a    <= 32'hffffffff;
+            b    <= -2;
+            pass <= 0 ;
+        end else if(inst0opdiv.out_valid_o)begin 
+                $display("%d,%d, %d",inst0opdiv.a,inst0opdiv.b,inst0opdiv.c);
+              if(a/b == inst0opdiv.c)begin
+                pass  <= pass +1;
+                a     <= $urandom_range(1024);
+                b     <= $urandom_range(512);
+              end
+              else  begin
+                pass <= 0;
+                a    <= a;
+                b    <= b;
+              end
         end
 
         //end
