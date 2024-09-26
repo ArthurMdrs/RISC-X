@@ -49,7 +49,8 @@ module top;
     .in_ready_o(in_vi.in_ready_o)    ,         
     .resultado(out_vi.c)             ,
     .out_valid_o(out_vi.out_valid_o) ,
-    .out_ready_i(out_vi.out_ready_i)   
+    .out_ready_i(out_vi.out_ready_i) ,
+    .op_sel (in_vi.op_sel)       
   );
 
    initial begin

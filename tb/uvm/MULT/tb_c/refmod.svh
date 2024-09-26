@@ -28,17 +28,31 @@ class refmod extends uvm_component;
 
    int m_matches, m_mismatches; 
    int register_file;
-   int  result;
+   int result;
    task run_phase (uvm_phase phase);
 
      tr_in tr_input;
      tr_out tr_output;
+
      forever begin
         in.get(tr_input);
          tr_output = tr_out::type_id::create("tr_output", this);	
           `bvm_begin_tr(tr_output)
+       // Tipo de operação: 00=MUL, 01=MULH, 10=MULHSU, 11=MULHU
 
-         result =  tr_input.b * tr_input.a;
+          if      (tr_input.op_sel == 1) begin //  MULH = 
+            resul = 
+          end
+          else if (tr_input.op_sel == 2) begin  // MULHSU
+            result = 
+          end
+          else if (tr_input.op_sel == 3) begin  // MULHU
+            result = 
+          end
+          else begin                           //  MUL = MULT COM SINAL
+            result =  tr_input.b * tr_input.a; 
+          end
+
          tr_output.c = result;
 
           out.put(tr_output);

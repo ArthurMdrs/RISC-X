@@ -75,6 +75,7 @@ class monitor_in extends uvm_monitor;
             @(posedge in_vi.PCLK);
             tr.a = in_vi.a;
             tr.b = in_vi.b;
+            tr.op_sel = in_vi.op_sel;
             @(posedge in_vi.PCLK);
          `bvm_end_tr(tr)          // end transaction recording
          out.write(tr);
