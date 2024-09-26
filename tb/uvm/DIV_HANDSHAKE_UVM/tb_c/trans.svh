@@ -1,8 +1,8 @@
 //Transaction Out - a_tr
 class tr_out extends uvm_sequence_item;
   
-  rand logic c;
-  rand logic r;
+  rand logic [31:0] c;
+  rand logic [31:0] r;
 
  
   `uvm_object_utils_begin(tr_out)  // needed for transaction recording

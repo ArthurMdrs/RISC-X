@@ -4,6 +4,7 @@ xrun*
 waves*
 *.log
 *.diag
+*.svcf
 jgproject
 .symbol*
 ignore.txt
