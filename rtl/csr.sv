@@ -108,7 +108,7 @@ logic [31:0] mie, mie_n;
 
 // FPU Registers
 logic [4:0] fflags, fflags_n;
-logic [2:0] frm, frm_n;
+logic [2:0] frm_q, frm_n;
 
 `ifdef JASPER
 `default_nettype none
@@ -135,10 +135,9 @@ always_comb begin
         CSR_MCAUSE: csr_rdata_o = mcause;
         CSR_MSCRATCH: csr_rdata_o = mscratch;
         
-        // Adicionei aqui
         CSR_FFLAGS: csr_rdata_o = (ISA_F) ? {27'b0, fflags}:'0;
-        CSR_FRM: csr_rdata_o = (ISA_F) ? {29'b0, frm}:'0;
-        CSR_FCSR: csr_rdata_o = (ISA_F) ? {24'b0, frm, fflags}:'0;
+        CSR_FRM:    csr_rdata_o = (ISA_F) ? {29'b0, frm_q}:'0;
+        CSR_FCSR:   csr_rdata_o = (ISA_F) ? {24'b0, frm_q, fflags}:'0;
 
         default: csr_rdata_o = '0;
     endcase
@@ -154,10 +153,9 @@ always_comb begin
     mcause_code_n = mcause[4:0];
     mscratch_n    = mscratch;
 
-    // Adicionei aqui
     if(ISA_F) begin
         fflags_n = fflags;
-        frm_n    = frm;
+        frm_n    = frm_q;
     end
     
     if(ISA_F) if(fflag_we_i) fflags_n = fflags_i | fflags;
@@ -202,12 +200,11 @@ always_comb begin
                 mscratch_n = csr_wdata_actual;
             end
 
-            //Adicionei aqui
             CSR_FFLAGS: fflags_n = (ISA_F) ? csr_wdata_actual[4:0]:'0; 
-            CSR_FRM: fflags_n = (ISA_F) ? csr_wdata_actual[2:0]:'0;
+            CSR_FRM: frm_n = (ISA_F) ? csr_wdata_actual[2:0]:'0;
             CSR_FCSR: begin
                 fflags_n = (ISA_F) ? csr_wdata_actual[4:0] : '0;
-                frm_n    = (ISA_F) ? csr_wdata_actual[6:4] : '0;
+                frm_n    = (ISA_F) ? csr_wdata_actual[7:5] : '0;
             end
 
         endcase
@@ -240,7 +237,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         // Adicionei aqui
         if(ISA_F) begin
             fflags <= '0;
-            frm <= '0;
+            frm_q <= '0;
         end
     end
     else begin
@@ -256,7 +253,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         // Adicionei aqui
         if(ISA_F) begin
             fflags <= fflags_n;
-            frm <= frm_n;
+            frm_q <= frm_n;
         end
     end
 end
@@ -278,7 +275,7 @@ always_comb begin
 end
 
 // Output some CSRs
-assign frm_o = frm;
+assign frm_o = (ISA_F) ? frm_q : '0;
 assign mtvec_o = mtvec;
 // assign mepc_o = mepc;
 // Output next value of mepc to account for writes followed by xRET 
