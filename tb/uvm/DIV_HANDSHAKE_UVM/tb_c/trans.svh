@@ -11,8 +11,8 @@ class tr_out extends uvm_sequence_item;
   `uvm_object_utils_end
 
 function string convert2string();
-    return $sformatf("Resultado = 32'd%d", c);
-    return $sformatf("Resultado = 32'd%d", r);
+    return $sformatf("Resultado = 32'h%h", c);
+    return $sformatf("Resultado = 32'h%h", r);
 endfunction
 
 
