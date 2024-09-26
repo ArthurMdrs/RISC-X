@@ -87,7 +87,6 @@ module ex_stage import core_pkg::*; #(
     output logic [ 4:0]    csr_fpu_flags_ex_o,
     
     // Input from CSRs
-    input  logic        csr_access_ex_i,
     input  logic [31:0] csr_rdata_ex_i,
     
     // Control inputs
@@ -183,8 +182,9 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 is_branch_ex         <= is_branch_id_i;
                 branch_target_ex_o   <= branch_target_id_i;
                 csr_access_ex_o      <= csr_access_id_i;
+                csr_op_ex_o          <= csr_op_id_i;
                 if (csr_access_id_i) begin
-                    csr_op_ex_o    <= csr_op_id_i;
+                    // csr_op_ex_o    <= csr_op_id_i;
                     csr_wdata_ex_o <= alu_operand_1_id_i; // wdata is passed through operand 1
                     csr_addr_ex_o  <= csr_addr_t'(alu_operand_2_id_i[11:0]); // addr is passed through operand 2
                 end
@@ -339,7 +339,7 @@ generate
 endgenerate
 
 // Pass CSR rdata through ALU result in case of CSR reads
-assign alu_result_ex_o = (csr_access_ex_i) ? (csr_rdata_ex_i) : (alu_result_ex);
+assign alu_result_ex_o = (csr_access_ex_o) ? (csr_rdata_ex_i) : (alu_result_ex);
 
 // Control signal for branches (this will invalidate IF and ID)
 assign branch_decision_ex_o = is_branch_ex && alu_result_ex_o[0];
@@ -358,6 +358,9 @@ assign trap_ex_o = valid_ex_o && exception_ex;
 
 `ifdef JASPER
 `default_nettype wire
+
+//(wrapper.rvfi_inst.instr_id[7:0] != 7'h73)
+//(wrapper.core_inst.ex_stage_inst.csr_access_id_i == 1'b0 && wrapper.core_inst.ex_stage_inst.csr_op_id_i != 2'b00)
 `endif
 
 endmodule

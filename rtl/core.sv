@@ -337,7 +337,6 @@ ex_stage #(
     .csr_fpu_flags_ex_o ( csr_fpu_flags_ex ),
     
     // Input from CSRs
-    .csr_access_ex_i      ( csr_access_ex ),
     .csr_rdata_ex_i       ( csr_rdata_ex ),
     
     // Control inputs

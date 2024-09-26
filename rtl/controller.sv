@@ -82,17 +82,21 @@ module controller import core_pkg::*; (
     output logic [4:0] exception_cause_o // Exception cause code for mcause
 );
 
-logic rd_ex_is_rs1_id;
+logic rd_ex_valid ;
+logic rd_mem_valid;
+logic rd_wb_valid ;
+
+logic rd_ex_is_rs1_id ;
 logic rd_mem_is_rs1_id;
-logic rd_wb_is_rs1_id;
+logic rd_wb_is_rs1_id ;
 
-logic rd_ex_is_rs2_id;
+logic rd_ex_is_rs2_id ;
 logic rd_mem_is_rs2_id;
-logic rd_wb_is_rs2_id;
+logic rd_wb_is_rs2_id ;
 
-logic rd_ex_is_rs3_id;
+logic rd_ex_is_rs3_id ;
 logic rd_mem_is_rs3_id;
-logic rd_wb_is_rs3_id;
+logic rd_wb_is_rs3_id ;
 
 logic fpu_gnt_stall;
 logic fpu_rvalid_stall;
@@ -101,18 +105,22 @@ logic fpu_rvalid_stall;
 `default_nettype none
 `endif
 
+assign rd_ex_valid  = (rd_dst_bank_ex_i  == X_REG && rd_addr_ex_i  != '0) || (rd_dst_bank_ex_i  == F_REG);
+assign rd_mem_valid = (rd_dst_bank_mem_i == X_REG && rd_addr_mem_i != '0) || (rd_dst_bank_mem_i == F_REG);
+assign rd_wb_valid  = (rd_dst_bank_wb_i  == X_REG && rd_addr_wb_i  != '0) || (rd_dst_bank_wb_i  == F_REG);
+
 // TODO: register f0 is not always zero. Some treatment must be made
-assign rd_ex_is_rs1_id  = (rd_addr_ex_i  == rs1_addr_id_i) && (rs1_addr_id_i != '0) && (rd_dst_bank_ex_i  == rs1_src_bank_id_i);
-assign rd_mem_is_rs1_id = (rd_addr_mem_i == rs1_addr_id_i) && (rs1_addr_id_i != '0) && (rd_dst_bank_mem_i == rs1_src_bank_id_i);
-assign rd_wb_is_rs1_id  = (rd_addr_wb_i  == rs1_addr_id_i) && (rs1_addr_id_i != '0) && (rd_dst_bank_wb_i  == rs1_src_bank_id_i);
+assign rd_ex_is_rs1_id  = (rd_addr_ex_i  == rs1_addr_id_i) && (rd_ex_valid ) && (rd_dst_bank_ex_i  == rs1_src_bank_id_i);
+assign rd_mem_is_rs1_id = (rd_addr_mem_i == rs1_addr_id_i) && (rd_mem_valid) && (rd_dst_bank_mem_i == rs1_src_bank_id_i);
+assign rd_wb_is_rs1_id  = (rd_addr_wb_i  == rs1_addr_id_i) && (rd_wb_valid ) && (rd_dst_bank_wb_i  == rs1_src_bank_id_i);
 
-assign rd_ex_is_rs2_id  = (rd_addr_ex_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0) && (rd_dst_bank_ex_i  == rs2_src_bank_id_i);
-assign rd_mem_is_rs2_id = (rd_addr_mem_i == rs2_addr_id_i) && (rs2_addr_id_i != '0) && (rd_dst_bank_mem_i == rs2_src_bank_id_i);
-assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0) && (rd_dst_bank_wb_i  == rs2_src_bank_id_i);
+assign rd_ex_is_rs2_id  = (rd_addr_ex_i  == rs2_addr_id_i) && (rd_ex_valid ) && (rd_dst_bank_ex_i  == rs2_src_bank_id_i);
+assign rd_mem_is_rs2_id = (rd_addr_mem_i == rs2_addr_id_i) && (rd_mem_valid) && (rd_dst_bank_mem_i == rs2_src_bank_id_i);
+assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rd_wb_valid ) && (rd_dst_bank_wb_i  == rs2_src_bank_id_i);
 
-assign rd_ex_is_rs3_id  = (rd_addr_ex_i  == rs3_addr_id_i) && (rs3_addr_id_i != '0) && (rd_dst_bank_ex_i  == rs3_src_bank_id_i);
-assign rd_mem_is_rs3_id = (rd_addr_mem_i == rs3_addr_id_i) && (rs3_addr_id_i != '0) && (rd_dst_bank_mem_i == rs3_src_bank_id_i);
-assign rd_wb_is_rs3_id  = (rd_addr_wb_i  == rs3_addr_id_i) && (rs3_addr_id_i != '0) && (rd_dst_bank_wb_i  == rs3_src_bank_id_i);
+assign rd_ex_is_rs3_id  = (rd_addr_ex_i  == rs3_addr_id_i) && (rd_ex_valid ) && (rd_dst_bank_ex_i  == rs3_src_bank_id_i);
+assign rd_mem_is_rs3_id = (rd_addr_mem_i == rs3_addr_id_i) && (rd_mem_valid) && (rd_dst_bank_mem_i == rs3_src_bank_id_i);
+assign rd_wb_is_rs3_id  = (rd_addr_wb_i  == rs3_addr_id_i) && (rd_wb_valid ) && (rd_dst_bank_wb_i  == rs3_src_bank_id_i);
 
 assign fpu_gnt_stall    = fpu_req_id_i && !fpu_gnt_id_i;
 assign fpu_rvalid_stall = fpu_busy_ex_i;

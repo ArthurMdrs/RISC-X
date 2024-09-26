@@ -108,7 +108,7 @@ logic [31:0] mie, mie_n;
 
 // FPU Registers
 logic [4:0] fflags, fflags_n;
-logic [2:0] frm_q, frm_n;
+logic [2:0] frm, frm_n;
 
 `ifdef JASPER
 `default_nettype none
@@ -136,8 +136,8 @@ always_comb begin
         CSR_MSCRATCH: csr_rdata_o = mscratch;
         
         CSR_FFLAGS: csr_rdata_o = (ISA_F) ? {27'b0, fflags}:'0;
-        CSR_FRM:    csr_rdata_o = (ISA_F) ? {29'b0, frm_q}:'0;
-        CSR_FCSR:   csr_rdata_o = (ISA_F) ? {24'b0, frm_q, fflags}:'0;
+        CSR_FRM:    csr_rdata_o = (ISA_F) ? {29'b0, frm}:'0;
+        CSR_FCSR:   csr_rdata_o = (ISA_F) ? {24'b0, frm, fflags}:'0;
 
         default: csr_rdata_o = '0;
     endcase
@@ -153,10 +153,8 @@ always_comb begin
     mcause_code_n = mcause[4:0];
     mscratch_n    = mscratch;
 
-    if(ISA_F) begin
-        fflags_n = fflags;
-        frm_n    = frm_q;
-    end
+    fflags_n = fflags;
+    frm_n    = frm;
     
     if(ISA_F) if(fflag_we_i) fflags_n = fflags_i | fflags;
 
@@ -235,10 +233,8 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         mscratch <= '0;
 
         // Adicionei aqui
-        if(ISA_F) begin
-            fflags <= '0;
-            frm_q <= '0;
-        end
+        fflags <= '0;
+        frm <= '0;
     end
     else begin
         set_initial_mtvec <= '0;
@@ -253,7 +249,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         // Adicionei aqui
         if(ISA_F) begin
             fflags <= fflags_n;
-            frm_q <= frm_n;
+            frm <= frm_n;
         end
     end
 end
@@ -275,7 +271,7 @@ always_comb begin
 end
 
 // Output some CSRs
-assign frm_o = (ISA_F) ? frm_q : '0;
+assign frm_o = (ISA_F) ? frm : '0;
 assign mtvec_o = mtvec;
 // assign mepc_o = mepc;
 // Output next value of mepc to account for writes followed by xRET 
