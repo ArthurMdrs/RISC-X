@@ -30,7 +30,8 @@ class in_sequence extends uvm_sequence #(tr_in);
       item5 m_item_5;
       item6 m_item_6;
       item7 m_item_7;
-      
+      //item8 m_item_8;
+
       forever begin
        `uvm_do(tr)
         m_item   = item::type_id::create("m_item");
@@ -40,6 +41,7 @@ class in_sequence extends uvm_sequence #(tr_in);
         m_item_5 = item5::type_id::create("m_item_5");
         m_item_6 = item6::type_id::create("m_item_6");
         m_item_7 = item7::type_id::create("m_item_7");
+        //m_item_8 = item8::type_id::create("m_item_8");
 
     	  start_item(m_item);        //Start the generation of the item 
         void'(m_item.randomize()); //Randomize
@@ -68,6 +70,12 @@ class in_sequence extends uvm_sequence #(tr_in);
     	  start_item(m_item_7);
         void'(m_item_7.randomize());
         finish_item(m_item_7);
+
+        /*
+    	  start_item(m_item_8);
+        void'(m_item_8.randomize());
+        finish_item(m_item_8);
+        */
       end
         `uvm_info("SEQ", $sformatf("Done generation of items"), UVM_LOW)
     endtask

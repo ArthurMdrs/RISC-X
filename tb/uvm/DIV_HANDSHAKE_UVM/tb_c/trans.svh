@@ -11,8 +11,8 @@ class tr_out extends uvm_sequence_item;
   `uvm_object_utils_end
 
 function string convert2string();
-    return $sformatf("resultado = 32'h%h", c);
-    return $sformatf("resultado = 32'h%h", r);
+    return $sformatf("Resultado = 32'd%d", c);
+    return $sformatf("Resultado = 32'd%d", r);
 endfunction
 
 
@@ -28,13 +28,13 @@ class tr_in extends uvm_sequence_item;
   endfunction
 
   `uvm_object_utils_begin(tr_in) // needed for transaction recording
-     `uvm_field_int(divisor, UVM_ALL_ON | UVM_DEC)
      `uvm_field_int(dividendo, UVM_ALL_ON | UVM_DEC)
+     `uvm_field_int(divisor, UVM_ALL_ON | UVM_DEC)
      `uvm_field_int(signal_division, UVM_ALL_ON | UVM_DEC)
   `uvm_object_utils_end
   
   //constraint non_zero_divisor { divisor != 32'b0;}
-  constraint signal_division_positive { signal_division == 1;}
+  constraint signal_division_positive { signal_division == 0;}
   //constraint signal_division_small { signal_division < 1; }
   
 
@@ -183,3 +183,23 @@ class item7 extends tr_in;
   constraint c4 { soft dividendo inside {32'h0};}
 
 endclass : item7
+
+/*class item8 extends tr_in;
+
+///Utility and Field macros,
+  `uvm_object_utils_begin(item7)
+
+  `uvm_object_utils_end
+
+  //Constructor
+  function new(string name = "item7");
+    super.new(name);
+  endfunction
+
+  //Constraint, to generate any divisor and dividendo
+                                        
+  constraint c9 { soft divisor inside   {32'hFFFFFFFF};}
+  constraint c10{ soft dividendo inside {32'h80000000};}
+
+endclass : item8
+*/

@@ -94,7 +94,7 @@ class driver_div_in extends uvm_driver #(tr_in);
         wait (in_vi.PRESETn === 1);
         seq_item_port.get_next_item(tr_sequencer); // get transaction
         in_vi.in_valid_i = 1;
-        in_vi.signal_division  <= 1;
+        in_vi.signal_division  <= 0;
         `uvm_info("IN DRV", $sformatf("\n*************************\nDriving tr:\n%s\n*************************", tr_sequencer.convert2string()), UVM_HIGH)
         in_vi.dividendo  <= tr_sequencer.dividendo; 
         in_vi.divisor    <= tr_sequencer.divisor;
