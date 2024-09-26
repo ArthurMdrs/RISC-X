@@ -109,7 +109,10 @@ module id_stage import core_pkg::*; #(
     output logic [2:0] fpu_rnd_mode_id_o,
     output logic [3:0] fpu_op_id_o,
     output logic       fpu_op_mod_id_o,
-    output logic       fpu_req_id_o
+    output logic       fpu_req_id_o,
+    
+    input  logic fpu_busy_ex_i
+    
 );
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -330,7 +333,8 @@ end
 
 // Deassert FPU req if we don't have a valid instruction
 // assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !flush_ex_i; // && !stall_ex_i;
-assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !stall_id_i; // && !stall_ex_i;
+// assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !stall_id_i;
+assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !fpu_busy_ex_i;
 
 // Traps: illegal instruction decoded, jump target misaligned, mret
 assign exception_id = illegal_instr_id_o || instr_addr_misaligned_id_o || is_mret_id_o;
@@ -338,6 +342,17 @@ assign trap_id_o = valid_id_o && exception_id;
 
 `ifdef JASPER
 `default_nettype wire
+`endif
+
+`ifdef SVA_ON
+    default clocking def_clk @(posedge clk_i); endclocking
+    default disable iff (!rst_n_i);
+    
+    property no_fpu_req_during_stall;
+        (stall_id_i) |-> (!fpu_req_id_o);
+    endproperty
+    
+    AST_no_fpu_req_during_stall: assert property (no_fpu_req_during_stall);
 `endif
 
 endmodule

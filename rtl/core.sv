@@ -266,7 +266,9 @@ id_stage #(
     .fpu_rnd_mode_id_o ( fpu_rnd_mode_id ),
     .fpu_op_id_o       ( fpu_op_id ),
     .fpu_op_mod_id_o   ( fpu_op_mod_id ),
-    .fpu_req_id_o      ( fpu_req_id )
+    .fpu_req_id_o      ( fpu_req_id ),
+    
+    .fpu_busy_ex_i ( fpu_busy_ex )
 );
 
 

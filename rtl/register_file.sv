@@ -57,7 +57,7 @@ localparam MEM_SIZE = 2**AWIDTH;
 // Integer registers
 logic [DWIDTH-1:0] mem_x [1:MEM_SIZE-1];
 // Floating-point registers
-logic [DWIDTH-1:0] mem_f [1:MEM_SIZE-1];
+logic [DWIDTH-1:0] mem_f [0:MEM_SIZE-1];
 
 `ifdef JASPER
 `default_nettype none
@@ -81,10 +81,10 @@ generate
         always_ff @(posedge clk_i, negedge rst_n_i) begin
             if (!rst_n_i) begin
                 // mem_f <= '{(MEM_SIZE){'0}};
-                for (int i = 1; i < MEM_SIZE; i++)
+                for (int i = 0; i < MEM_SIZE; i++)
                     mem_f[i] <= '0;
             end else begin
-                if (wen_i && waddr_i != 0 && wdst_i == F_REG)
+                if (wen_i && wdst_i == F_REG)
                     mem_f[waddr_i] <= wdata_i;
             end
         end
@@ -99,45 +99,95 @@ endgenerate
         
 
 // Define read operation
+// always_comb begin
+//     if (raddr1_i == '0) begin
+//         rdata1_o = '0;
+//     end else if (!GEN_F_REGS) begin
+//         rdata1_o = mem_x[raddr1_i];
+//     end else begin
+//         unique case (rsrc1_i)
+//             X_REG: rdata1_o = mem_x[raddr1_i];
+//             F_REG: rdata1_o = mem_f[raddr1_i];
+//             default: rdata1_o = '0;
+//         endcase
+//     end
+    
+//     if (raddr2_i == '0) begin
+//         rdata2_o = '0;
+//     end else if (!GEN_F_REGS) begin
+//         rdata2_o = mem_x[raddr2_i];
+//     end else begin
+//         unique case (rsrc2_i)
+//             X_REG: rdata2_o = mem_x[raddr2_i];
+//             F_REG: rdata2_o = mem_f[raddr2_i];
+//             default: rdata2_o = '0;
+//         endcase
+//     end
+    
+//     if (raddr3_i == '0) begin
+//         rdata3_o = '0;
+//     end else if (!GEN_F_REGS) begin
+//         rdata3_o = mem_x[raddr3_i];
+//     end else begin
+//         unique case (rsrc3_i)
+//             X_REG: rdata3_o = mem_x[raddr3_i];
+//             F_REG: rdata3_o = mem_f[raddr3_i];
+//             default: rdata3_o = '0;
+//         endcase
+//     end
+    
+//     // rdata1_o = (!raddr1_i) ? ('0) : (mem_x[raddr1_i]);
+//     // rdata2_o = (!raddr2_i) ? ('0) : (mem_x[raddr2_i]);
+// end
+// Define read operation
 always_comb begin
-    if (raddr1_i == '0) begin
-        rdata1_o = '0;
-    end else if (!GEN_F_REGS) begin
-        rdata1_o = mem_x[raddr1_i];
+    if (!GEN_F_REGS) begin
+        if (raddr1_i == '0) rdata1_o = '0;
+        else                rdata1_o = mem_x[raddr1_i];
     end else begin
         unique case (rsrc1_i)
-            X_REG: rdata1_o = mem_x[raddr1_i];
-            F_REG: rdata1_o = mem_f[raddr1_i];
+            X_REG: begin
+                if (raddr1_i == '0) rdata1_o = '0;
+                else                rdata1_o = mem_x[raddr1_i];
+            end
+            F_REG: begin
+                rdata1_o = mem_f[raddr1_i];
+            end
             default: rdata1_o = '0;
         endcase
     end
     
-    if (raddr2_i == '0) begin
-        rdata2_o = '0;
-    end else if (!GEN_F_REGS) begin
-        rdata2_o = mem_x[raddr2_i];
+    if (!GEN_F_REGS) begin
+        if (raddr2_i == '0) rdata2_o = '0;
+        else                rdata2_o = mem_x[raddr2_i];
     end else begin
-        unique case (rsrc2_i)
-            X_REG: rdata2_o = mem_x[raddr2_i];
-            F_REG: rdata2_o = mem_f[raddr2_i];
+        unique case (rsrc1_i)
+            X_REG: begin
+                if (raddr2_i == '0) rdata2_o = '0;
+                else                rdata2_o = mem_x[raddr2_i];
+            end
+            F_REG: begin
+                rdata2_o = mem_f[raddr2_i];
+            end
             default: rdata2_o = '0;
         endcase
     end
     
-    if (raddr3_i == '0) begin
-        rdata3_o = '0;
-    end else if (!GEN_F_REGS) begin
-        rdata3_o = mem_x[raddr3_i];
+    if (!GEN_F_REGS) begin
+        if (raddr3_i == '0) rdata3_o = '0;
+        else                rdata3_o = mem_x[raddr3_i];
     end else begin
-        unique case (rsrc3_i)
-            X_REG: rdata3_o = mem_x[raddr3_i];
-            F_REG: rdata3_o = mem_f[raddr3_i];
+        unique case (rsrc1_i)
+            X_REG: begin
+                if (raddr3_i == '0) rdata3_o = '0;
+                else                rdata3_o = mem_x[raddr3_i];
+            end
+            F_REG: begin
+                rdata3_o = mem_f[raddr3_i];
+            end
             default: rdata3_o = '0;
         endcase
     end
-    
-    // rdata1_o = (!raddr1_i) ? ('0) : (mem_x[raddr1_i]);
-    // rdata2_o = (!raddr2_i) ? ('0) : (mem_x[raddr2_i]);
 end
 
 `ifdef JASPER

@@ -48,7 +48,7 @@ ifeq ($(strip $(VERBOSE)), 1)
 endif
 
 SEED = 1
-# SVA = +define+SVA_ON=1
+SVA = +define+SVA_ON=1
 INPUT = -input restore.tcl
 
 ELF=$(DV_OUT_DIR)/asm_test/$(DV_SIM_TEST)_0.o

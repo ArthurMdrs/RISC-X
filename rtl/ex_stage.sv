@@ -263,7 +263,7 @@ generate
         
         fpnew_pkg::roundmode_e fpu_rnd_mode;
         // fpnew_pkg::roundmode_e fpu_rnd_mode_fpnew;
-        assign fpu_rnd_mode = (fpu_rnd_mode_id_i == fpnew_pkg::DYN) ? (fpu_frm_i) : (fpnew_pkg::roundmode_e'(fpu_rnd_mode_id_i));
+        assign fpu_rnd_mode = (fpu_rnd_mode_id_i == fpnew_pkg::DYN) ? (fpnew_pkg::roundmode_e'(fpu_frm_i)) : (fpnew_pkg::roundmode_e'(fpu_rnd_mode_id_i));
         fpnew_pkg::operation_e fpu_op;
         assign fpu_op = fpnew_pkg::operation_e'(fpu_op_id_i);
         fpnew_pkg::status_t fpu_flags;
