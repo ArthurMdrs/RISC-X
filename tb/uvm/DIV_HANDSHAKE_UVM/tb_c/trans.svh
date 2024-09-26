@@ -2,14 +2,19 @@
 class tr_out extends uvm_sequence_item;
   
   rand logic c;
+  rand logic r;
+
  
   `uvm_object_utils_begin(tr_out)  // needed for transaction recording
      `uvm_field_int(c, UVM_ALL_ON | UVM_DEC)
+     `uvm_field_int(r, UVM_ALL_ON | UVM_DEC)
   `uvm_object_utils_end
 
 function string convert2string();
     return $sformatf("resultado = 32'h%h", c);
+    return $sformatf("resultado = 32'h%h", r);
 endfunction
+
 
 endclass : tr_out
 
@@ -17,7 +22,7 @@ endclass : tr_out
 class tr_in extends uvm_sequence_item;
 
   rand logic [31:0] divisor, dividendo;
-
+  rand int signal_division;
   function new(string name = "tr_in");
     super.new(name);
   endfunction
@@ -25,11 +30,13 @@ class tr_in extends uvm_sequence_item;
   `uvm_object_utils_begin(tr_in) // needed for transaction recording
      `uvm_field_int(divisor, UVM_ALL_ON | UVM_DEC)
      `uvm_field_int(dividendo, UVM_ALL_ON | UVM_DEC)
+     `uvm_field_int(signal_division, UVM_ALL_ON | UVM_DEC)
   `uvm_object_utils_end
   
-  constraint non_zero_divisor {
-    divisor != 32'b0;
-  }
+  //constraint non_zero_divisor { divisor != 32'b0;}
+  constraint signal_division_positive { signal_division == 1;}
+  //constraint signal_division_small { signal_division < 1; }
+  
 
 function string convert2string();
     string my_str = {$sformatf("divisor = 32'h%h\ndividendo = 32'h%h\n", divisor, dividendo), 

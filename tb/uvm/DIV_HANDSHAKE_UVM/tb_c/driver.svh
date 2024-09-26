@@ -69,6 +69,7 @@ class driver_div_in extends uvm_driver #(tr_in);
      in_vi.dividendo  <= 'x; 
      in_vi.in_valid_i <= 'x; 
      in_vi.in_ready_o <= 'x;
+     in_vi.signal_division <= 'x;
      fork 
        reset_signals(); // reset may occur at any time
        get_and_drive();
@@ -81,6 +82,7 @@ class driver_div_in extends uvm_driver #(tr_in);
          in_vi.divisor     <= 0; 
          in_vi.dividendo   <= 0; 
          in_vi.in_valid_i  <= 0; 
+         in_vi.signal_division <= 0;
          @(posedge in_vi.PRESETn);
       end
    endtask
@@ -91,7 +93,8 @@ class driver_div_in extends uvm_driver #(tr_in);
       forever begin
         wait (in_vi.PRESETn === 1);
         seq_item_port.get_next_item(tr_sequencer); // get transaction
-        in_vi.in_valid_i <= 1;
+        in_vi.in_valid_i = 1;
+        in_vi.signal_division  <= 1;
         `uvm_info("IN DRV", $sformatf("\n*************************\nDriving tr:\n%s\n*************************", tr_sequencer.convert2string()), UVM_HIGH)
         in_vi.dividendo  <= tr_sequencer.dividendo; 
         in_vi.divisor    <= tr_sequencer.divisor;

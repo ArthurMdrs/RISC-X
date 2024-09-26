@@ -25,6 +25,7 @@ class monitor_div_out extends uvm_monitor;
             @(posedge out_vi.clock);
          end
         tr.c = out_vi.c;
+        tr.r = out_vi.r;
         @(posedge out_vi.clock);
         `uvm_info("OUT MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_MEDIUM)
          out.write(tr);
@@ -59,7 +60,8 @@ class monitor_div_in extends uvm_monitor;
          while (!(in_vi.in_ready_o === 1 && in_vi.in_valid_i === 1))
             @(posedge in_vi.PCLK);
             tr.divisor = in_vi.divisor;
-            tr.dividendo = in_vi.dividendo;        
+            tr.dividendo = in_vi.dividendo;   
+            tr.signal_division = in_vi.signal_division;      
         `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_MEDIUM)
          @(posedge in_vi.PCLK);
          out.write(tr);

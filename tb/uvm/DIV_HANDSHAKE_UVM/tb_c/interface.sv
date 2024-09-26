@@ -9,8 +9,8 @@ endinterface
 interface in_div_if (input logic PCLK, PRESETn);
 
   logic signed [31:0]     divisor, dividendo;
-  logic                   in_valid_i; 
-  logic                   in_ready_o;
+  logic                   in_valid_i;         //Handshake
+  logic                   in_ready_o;         //Handshake
   logic                   signal_division;
 
 endinterface
