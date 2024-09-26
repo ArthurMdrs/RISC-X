@@ -1,6 +1,10 @@
 sim:
-	irun -access +r -uvm +uvm_set_config_int="*",recording_detail,1 -coverage all -covoverwrite -DSYSTEM_CLOCK_UNITS_PER_SECOND=100 ../bvm/system_clock.c +incdir+../bvm ../bvm/*.sv *.sv +UVM_VERBOSITY=LOW
-
+	xrun -access +r -uvm +uvm_set_config_int="*",recording_detail,1 -coverage all -covoverwrite \
+		-top top +UVM_VERBOSITY=UVM_HIGH -svseed random \
+		-DSYSTEM_CLOCK_UNITS_PER_SECOND=100 ../bvm/system_clock.c +incdir+../bvm \
+		../bvm/*.sv *.sv \
+		../../../../rtl/Type_M_Instructions/MULT_HANDSHAKE/multiplier.sv \
+		
 wave:
 	simvision -NOCOPYRIGHT -input simvision.svcf
 

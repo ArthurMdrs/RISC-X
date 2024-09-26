@@ -12,7 +12,7 @@ endclass : tr_out
 class tr_in extends uvm_sequence_item;
 
   rand int a, b;
-
+  int op_sel;
   function new(string name = "tr_in");
     super.new(name);
   endfunction
@@ -20,7 +20,15 @@ class tr_in extends uvm_sequence_item;
   `uvm_object_utils_begin(tr_in) // needed for transaction recording
      `uvm_field_int(a, UVM_ALL_ON | UVM_DEC)
      `uvm_field_int(b, UVM_ALL_ON | UVM_DEC)
+     `uvm_field_int(op_sel, UVM_ALL_ON | UVM_DEC)
+
+// Tipo de operação: 00=MUL, 01=MULH, 10=MULHSU, 11=MULHU
+  constraint op_sel_MUL    {op_sel == 0;}
+//  constraint op_sel_MULH   {op_sel == 1;}
+//  constraint op_sel_MULHSU {op_sel == 2;}
+//  constraint op_sel_MULHU  {op_sel == 3;}
   `uvm_object_utils_end
+  
 endclass : tr_in
 
 //Transaction Item for Constraint, class derivate tr_in 

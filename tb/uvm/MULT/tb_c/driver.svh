@@ -82,10 +82,11 @@ class driver_in extends uvm_driver #(tr_in);
 
    task run_phase(uvm_phase phase);
 
-     in_vi.a  <= 'x; 
-     in_vi.b  <= 'x; 
+     in_vi.a          <= 'x; 
+     in_vi.b          <= 'x; 
      in_vi.in_valid_i <= 'x; 
      in_vi.in_ready_o <= 'x;
+     in_vi.op_sel     <= 'x;
 
      fork // reset may occur at any time, therefore let's treat is in a separate task
        reset_signals();
@@ -96,9 +97,10 @@ class driver_in extends uvm_driver #(tr_in);
    task reset_signals();
       forever begin
          wait (in_vi.PRESETn === 0);
-         in_vi.a     <= 0; 
-         in_vi.b   <= 0; 
-         in_vi.in_valid_i  <= 0; 
+         in_vi.a           <= 0; 
+         in_vi.b           <= 0; 
+         in_vi.in_valid_i  <= 0;
+         in_vi.op_sel      <= 0; 
          @(posedge in_vi.PRESETn);
       end
    endtask
