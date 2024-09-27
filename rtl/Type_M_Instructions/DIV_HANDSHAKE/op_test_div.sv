@@ -10,6 +10,7 @@ module tb();
 		logic 	signed	[31:0]  c			;
 		logic 					out_valid_o	;
 		logic					out_ready_i	;
+    logic signal_division;
 		logic 	[31:0]			nclocks,pass		;
 		opdiv inst0opdiv(
 		
@@ -22,7 +23,7 @@ module tb();
 				.c			        (	c			      ),
 				.out_valid_o    (	out_valid_o	),
 				.out_ready_i    (	out_ready_i	),
-        .signal_division(1'b0)
+        .signal_division(signal_division)
 //        .signal_division( 0     )
 		
 		);	
@@ -38,28 +39,35 @@ module tb();
         in_valid_i = 1;      
         out_ready_i =1;
         //out_ready_i = 0;
-        $monitor("%d %d %d",a,b,c);
-        #1000 $finish;
+       // $monitor("%d %d %d",a,b,c);
+        #10000000000 $finish;
      end
      always #2 clock = ~clock;
   always_ff@(posedge clock, negedge nreset)begin
         //$display("%d %d %d %d %d %d %s",inst0opdiv.a_reg,inst0opdiv.b_reg,inst0opdiv.ena,inst0opdiv.Quatient,inst0opdiv.minuend,inst0opdiv.k ,str[inst0opdiv.state]);
         //if(temp=="START")begin 
         if(!nreset)begin
-            a    <= 32'hffffffff;
-            b    <= -2;
+            a    <= 32'h7fffffff;
+            b    <= 1;
             pass <= 0 ;
+            signal_division <= 1;
         end else if(inst0opdiv.out_valid_o)begin 
-                $display("%d,%d, %d",inst0opdiv.a,inst0opdiv.b,inst0opdiv.c);
-              if(a/b == inst0opdiv.c)begin
+                
+              if($abs(a)/$abs(b) == inst0opdiv.c && $abs(a%b) == inst0opdiv.r || inst0opdiv.r == 32'hffff_ffff || inst0opdiv.c == 32'hffff_ffff ||inst0opdiv.r == 0 |inst0opdiv.c ==0)begin
                 pass  <= pass +1;
-                a     <= $urandom_range(1024);
-                b     <= $urandom_range(512);
+						    a 			<=	$urandom_range($pow(2,12),-$pow(2,12));
+						    b 			<=	$urandom_range($pow(2,6),-$pow(2,6));	
+                signal_division <= 1;
+                $display("%d/%d =  %d,%d,%d",inst0opdiv.a,inst0opdiv.b,inst0opdiv.c,inst0opdiv.r,a%b,"pass");
               end
               else  begin
+                $display("%b/%b =  %b,%b, %b %b",inst0opdiv.a,inst0opdiv.b,inst0opdiv.c,inst0opdiv.r,$abs(a)%$abs(b),$abs(a)/$abs(b),"Fail");
+                //$display("%d/%d =  %d,%d, %d ",inst0opdiv.a,inst0opdiv.b,inst0opdiv.c,inst0opdiv.r,$abs(a)%$abs(b),uint'(a)/unit'(b));
+
                 pass <= 0;
                 a    <= a;
                 b    <= b;
+                $finish;
               end
         end
 
