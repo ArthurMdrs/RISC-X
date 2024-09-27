@@ -39,9 +39,9 @@ class refmod extends uvm_component;
             tr_output.c = result;
             tr_output.r = rem; 
         end
-        else if (tr_input.divisor == '1 && tr_input.dividendo == 2**32 - 1) begin
-            result = $signed(tr_input.dividendo);
-            //result = -(2**31);
+        else if (tr_input.divisor == '1 && tr_input.dividendo == 1 << 31) begin
+            // result = $signed(tr_input.dividendo);
+            result = -(2**31);
             rem = '0;
             tr_output.c = result;
             tr_output.r = rem;

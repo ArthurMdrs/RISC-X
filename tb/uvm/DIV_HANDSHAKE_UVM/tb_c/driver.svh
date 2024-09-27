@@ -92,14 +92,14 @@ class driver_div_in extends uvm_driver #(tr_in);
       tr_in tr_sequencer; // transaction coming from sequencer
       forever begin
         wait (in_vi.PRESETn === 1);
-        seq_item_port.get_next_item(tr_sequencer); // get transaction
+        seq_item_port.get_next_item(tr_sequencer); // get transactionload
         in_vi.in_valid_i = 1;
-        in_vi.signal_division  = 0; // com ou sem sinal
-        `uvm_info("IN DRV", $sformatf("\n*************************\nDriving tr:\n%s\n*************************", tr_sequencer.convert2string()), UVM_HIGH)
+        in_vi.signal_division  = tr_sequencer.signal_division; // com ou sem sinal
+        // `uvm_info("IN DRV", $sformatf("\n*************************\nDriving tr:\n%s\n*************************", tr_sequencer.convert2string()), UVM_HIGH)
         in_vi.dividendo  <= tr_sequencer.dividendo; 
         in_vi.divisor    <= tr_sequencer.divisor;
         while (in_vi.in_ready_o !== 1)
-            @(posedge in_vi.PCLK);
+        @(posedge in_vi.PCLK);
         @(posedge in_vi.PCLK);
         in_vi.in_valid_i <= 0;
         seq_item_port.item_done(); // notify sequencer that transaction is completed

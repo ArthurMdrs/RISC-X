@@ -22,7 +22,7 @@ endclass : tr_out
 class tr_in extends uvm_sequence_item;
 
   rand logic [31:0] divisor, dividendo;
-  rand int signal_division;
+  rand bit signal_division;
   function new(string name = "tr_in");
     super.new(name);
   endfunction
@@ -34,8 +34,8 @@ class tr_in extends uvm_sequence_item;
   `uvm_object_utils_end
   
   //constraint non_zero_divisor { divisor != 32'b0;}
-  constraint signal_division_positive { signal_division == 0;}
-  //constraint signal_division_small { signal_division < 1; }
+  //constraint signal_division_positive { signal_division == 0;}
+  constraint signal_division_small { signal_division == 1; }
   
 
 function string convert2string();

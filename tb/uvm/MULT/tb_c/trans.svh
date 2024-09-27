@@ -13,6 +13,7 @@ class tr_in extends uvm_sequence_item;
 
   rand int a, b;
   int op_sel;
+
   function new(string name = "tr_in");
     super.new(name);
   endfunction
@@ -21,13 +22,35 @@ class tr_in extends uvm_sequence_item;
      `uvm_field_int(a, UVM_ALL_ON | UVM_DEC)
      `uvm_field_int(b, UVM_ALL_ON | UVM_DEC)
      `uvm_field_int(op_sel, UVM_ALL_ON | UVM_DEC)
+  `uvm_object_utils_end
+
 
 // Tipo de operação: 00=MUL, 01=MULH, 10=MULHSU, 11=MULHU
-  constraint op_sel_MUL    {op_sel == 0;}
+  constraint op_sel_MUL { op_sel == 0; }
 //  constraint op_sel_MULH   {op_sel == 1;}
 //  constraint op_sel_MULHSU {op_sel == 2;}
 //  constraint op_sel_MULHU  {op_sel == 3;}
-  `uvm_object_utils_end
+function string convert2string();
+    string my_str;
+    if (op_sel == 1) begin
+        my_str = {$sformatf("A = 32'h%h\nB = 32'h%h\n", a, b), 
+                  $sformatf("Fator = %0d\nFator2 = %0d\n", $signed(a), $signed(b)),
+                  $sformatf("OP_SEL == 1 | MUL")};
+    end else if (op_sel == 2) begin 
+        my_str = {$sformatf("A = 32'h%h\nB = 32'h%h\n", a, b), 
+                  $sformatf("Fator = %0d\nFator2 = %0d\n", $signed(a), $signed(b)),
+                  $sformatf("OP_SEL == 2 | MUL")};
+    end else if (op_sel == 2) begin 
+        my_str = {$sformatf("A = 32'h%h\nB = 32'h%h\n", a, b), 
+                  $sformatf("Fator = %0d\nFator2 = %0d\n", $signed(a), $signed(b)),
+                  $sformatf("OP_SEL == 3 | MULHSU")};
+    end else begin
+        my_str = {$sformatf("A = 32'h%h\nB = 32'h%h\n", a, b), 
+                  $sformatf("Fator = %0d\nFator2 = %0d\n", $signed(a), $signed(b)),
+                  $sformatf("OP_SEL == 4 | MULHU")};
+    end
+    return my_str;
+endfunction
   
 endclass : tr_in
 

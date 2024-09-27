@@ -41,13 +41,13 @@ class refmod extends uvm_component;
        // Tipo de operação: 00=MUL, 01=MULH, 10=MULHSU, 11=MULHU
 
           if      (tr_input.op_sel == 1) begin //  MULH = 
-            resul = 
+            result = (tr_input.b * tr_input.a) << 4;
           end
           else if (tr_input.op_sel == 2) begin  // MULHSU
-            result = 
+            result = (tr_input.b * tr_input.a) << 4;
           end
           else if (tr_input.op_sel == 3) begin  // MULHU
-            result = 
+            result = (tr_input.b * tr_input.a) << 4;
           end
           else begin                           //  MUL = MULT COM SINAL
             result =  tr_input.b * tr_input.a; 

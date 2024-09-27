@@ -76,6 +76,7 @@ class monitor_in extends uvm_monitor;
             tr.a = in_vi.a;
             tr.b = in_vi.b;
             tr.op_sel = in_vi.op_sel;
+           `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_MEDIUM)
             @(posedge in_vi.PCLK);
          `bvm_end_tr(tr)          // end transaction recording
          out.write(tr);

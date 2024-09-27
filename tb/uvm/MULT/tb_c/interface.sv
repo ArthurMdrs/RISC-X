@@ -13,6 +13,6 @@ interface in_mult_if (input logic PCLK, PRESETn);
   logic [31:0]             a, b;
   logic                    in_valid_i; 
   logic                    in_ready_o;
-  logic [1:0]              op_sel       // Tipo de operação: 00=MUL, 01=MULH, 10=MULHSU, 11=MULHU
+  logic [1:0]              op_sel   ;    // Tipo de operação: 00=MUL, 01=MULH, 10=MULHSU, 11=MULHU
 
 endinterface

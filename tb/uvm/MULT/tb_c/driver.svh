@@ -113,9 +113,11 @@ class driver_in extends uvm_driver #(tr_in);
         wait (in_vi.PRESETn === 1);
         seq_item_port.get_next_item(tr_sequencer); // get transaction
         in_vi.in_valid_i <= 1;
+        in_vi.op_sel <= 1;
          #10 in_vi.in_valid_i <= 0;
         in_vi.b  <= tr_sequencer.b; 
         in_vi.a    <= tr_sequencer.a;
+      `uvm_info("IN DRV", $sformatf("\n*************************\nDriving tr:\n%s\n*************************", tr_sequencer.convert2string()), UVM_HIGH)
         @(posedge in_vi.PCLK);
         @(posedge in_vi.PCLK);
         wait (in_vi.in_ready_o === 1); 
