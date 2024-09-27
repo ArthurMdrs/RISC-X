@@ -36,30 +36,37 @@ class refmod extends uvm_component;
         if (tr_input.divisor == '0) begin
             result = 2**32 - 1;
             rem = $signed(tr_input.dividendo);
+            tr_output.c = result;
+            tr_output.r = rem; 
         end
         else if (tr_input.divisor == '1 && tr_input.dividendo == 2**32 - 1) begin
             result = $signed(tr_input.dividendo);
             //result = -(2**31);
             rem = '0;
+            tr_output.c = result;
+            tr_output.r = rem;
         end
         else begin
             result = $signed(tr_input.dividendo) / $signed(tr_input.divisor);
             rem    = $signed(tr_input.dividendo) % $signed(tr_input.divisor);
+            tr_output.c = result;
+            tr_output.r = rem;
         end
      end
       else begin
         if (tr_input.divisor == '0) begin
             result = 2**32 - 1;
             rem    = tr_input.dividendo;
+            tr_output.c = result;
+            tr_output.r = rem;
         end
         else begin
             result = (tr_input.dividendo) / (tr_input.divisor);
             rem    = (tr_input.dividendo) % (tr_input.divisor);
+            tr_output.c = result;
+            tr_output.r = rem;
         end
       end
-
-           tr_output.r = rem;
-           tr_output.c = result;
           out.put(tr_output);
           `bvm_end_tr(tr_output)
         end
