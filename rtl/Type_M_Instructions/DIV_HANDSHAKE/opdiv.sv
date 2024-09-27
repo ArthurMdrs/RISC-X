@@ -196,7 +196,7 @@ module opdiv(
                 end else begin  
                      if(b_reg[31:0] == 0)begin
                         c = {32{1'b1}};
-                        r = {32{1'b1}};
+                        r = a_reg[31:0];
                     end
                     else if(a_reg[31:0] < b_reg[31:0])begin
                         c = {32{1'b0}};
