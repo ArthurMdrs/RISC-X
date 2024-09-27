@@ -9,8 +9,8 @@ module tb();
     // Bloco inicial para atribuição de valores e operações
     initial begin
         // Atribuir valores
-        dividendo = 11;
-        divisor = 9;
+        dividendo = 3;
+        divisor   = 14;
 
         // Realizar divisão e cálculo do resto
         result = $signed (dividendo) / $signed (divisor);

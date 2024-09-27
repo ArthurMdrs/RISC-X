@@ -28,9 +28,7 @@ class refmod extends uvm_component;
         in.get(tr_input);
          tr_output = tr_out::type_id::create("tr_output", this);	
           `bvm_begin_tr(tr_output)
-
-      //if (tr_input.signal_division == '1)begin
-      //if (tr_input.divisor [31] && tr_input.divenddo [31])begin
+          tr_output.aux = 0;
 
       if (tr_input.signal_division == 1)begin
         if (tr_input.divisor == '0) begin
@@ -38,19 +36,21 @@ class refmod extends uvm_component;
             rem = $signed(tr_input.dividendo);
             tr_output.c = result;
             tr_output.r = rem; 
+            tr_output.aux = 1;
         end
         else if (tr_input.divisor == '1 && tr_input.dividendo == 1 << 31) begin
-            // result = $signed(tr_input.dividendo);
             result = -(2**31);
             rem = '0;
             tr_output.c = result;
-            tr_output.r = rem;
+            tr_output.r = rem   ;
+            tr_output.aux = 2;
         end
         else begin
-            result = $signed(tr_input.dividendo) / $signed(tr_input.divisor);
-            rem    = (tr_input.dividendo) % (tr_input.divisor);
+            result = $signed(tr_input.dividendo) / $signed(tr_input.divisor)  ;
+            rem    = $signed(tr_input.dividendo) % $signed (tr_input.divisor) ;
             tr_output.c = result;
             tr_output.r = rem;
+            tr_output.aux = 3;
         end
      end
       else begin
@@ -59,15 +59,17 @@ class refmod extends uvm_component;
             rem    = tr_input.dividendo;
             tr_output.c = result;
             tr_output.r = rem;
+            tr_output.aux = 4;
         end
         else begin
             result = (tr_input.dividendo) / (tr_input.divisor);
             rem    = (tr_input.dividendo) % (tr_input.divisor);
             tr_output.c = result;
             tr_output.r = rem;
+            tr_output.aux = 5;
         end
       end
-      
+
           out.put(tr_output);
           `bvm_end_tr(tr_output)
         end
