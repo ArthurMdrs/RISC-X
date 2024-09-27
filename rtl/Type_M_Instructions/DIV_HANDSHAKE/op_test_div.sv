@@ -47,8 +47,8 @@ module tb();
         //$display("%d %d %d %d %d %d %s",inst0opdiv.a_reg,inst0opdiv.b_reg,inst0opdiv.ena,inst0opdiv.Quatient,inst0opdiv.minuend,inst0opdiv.k ,str[inst0opdiv.state]);
         //if(temp=="START")begin 
         if(!nreset)begin
-            a    <= 32'h7fffffff;
-            b    <= 1;
+            a    <= -1613826193;
+            b    <= -371251114;
             pass <= 0 ;
             signal_division <= 1;
         end else if(inst0opdiv.out_valid_o)begin 
