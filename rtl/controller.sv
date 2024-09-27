@@ -168,6 +168,21 @@ end
 // Resolve forwarding for rs3
 always_comb begin
     fwd_rs3_o = NO_FORWARD;
+    if (rd_ex_is_rs3_id && reg_alu_wen_ex_i) begin
+        fwd_rs3_o = FWD_EX_ALU_RES_TO_ID;
+    end
+    else if (rd_mem_is_rs3_id && (reg_alu_wen_mem_i || reg_mem_wen_mem_i)) begin
+        if (reg_alu_wen_mem_i)
+            fwd_rs3_o = FWD_MEM_ALU_RES_TO_ID;
+        else if (reg_mem_wen_mem_i)
+            fwd_rs3_o = FWD_MEM_RDATA_TO_ID;
+    end
+    else if (rd_wb_is_rs3_id && (reg_alu_wen_wb_i || reg_mem_wen_wb_i)) begin
+        if (reg_alu_wen_wb_i)
+            fwd_rs3_o = FWD_WB_ALU_RES_TO_ID;
+        else if (reg_mem_wen_wb_i)
+            fwd_rs3_o = FWD_WB_RDATA_TO_ID;
+    end
 end
 
 // Resolve stalls
@@ -178,7 +193,7 @@ always_comb begin
     if (fpu_gnt_stall)
         stall_id_o = 1'b1;
     if (reg_mem_wen_ex_i) // Load operation in EX
-        if(rd_ex_is_rs1_id || rd_ex_is_rs2_id)
+        if(rd_ex_is_rs1_id || rd_ex_is_rs2_id) //  || rd_ex_is_rs3_id // TODO: maybe put rs3 in the if
             stall_id_o = 1'b1;
     
     stall_if_o = stall_id_o;
