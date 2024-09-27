@@ -39,8 +39,15 @@ class tr_in extends uvm_sequence_item;
   
 
 function string convert2string();
-    string my_str = {$sformatf("divisor = 32'h%h\ndividendo = 32'h%h\n", divisor, dividendo), 
-                     $sformatf("divisor = %0d\ndividendo = %0d", $signed(divisor), $signed(dividendo))};
+    string my_str;
+    if (signal_division)
+        my_str = {$sformatf("divisor = 32'h%h\ndividendo = 32'h%h\n", divisor, dividendo), 
+                  $sformatf("divisor = %0d\ndividendo = %0d\n", $signed(divisor), $signed(dividendo)),
+                  $sformatf("signed division")};
+    else
+        my_str = {$sformatf("divisor = 32'h%h\ndividendo = 32'h%h\n", divisor, dividendo), 
+                  $sformatf("divisor = %0d\ndividendo = %0d\n", $unsigned(divisor), $unsigned(dividendo)),
+                  $sformatf("UNsigned division")};
     return my_str;
 endfunction
 
