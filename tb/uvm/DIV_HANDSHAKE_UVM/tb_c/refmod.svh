@@ -32,7 +32,7 @@ class refmod extends uvm_component;
       //if (tr_input.signal_division == '1)begin
       //if (tr_input.divisor [31] && tr_input.divenddo [31])begin
 
-      if (tr_input.signal_division == '1)begin
+      if (tr_input.signal_division == 1)begin
         if (tr_input.divisor == '0) begin
             result = 2**32 - 1;
             rem = $signed(tr_input.dividendo);
@@ -48,7 +48,7 @@ class refmod extends uvm_component;
         end
         else begin
             result = $signed(tr_input.dividendo) / $signed(tr_input.divisor);
-            rem    = $signed(tr_input.dividendo) % $signed(tr_input.divisor);
+            rem    = (tr_input.dividendo) % (tr_input.divisor);
             tr_output.c = result;
             tr_output.r = rem;
         end
@@ -67,6 +67,7 @@ class refmod extends uvm_component;
             tr_output.r = rem;
         end
       end
+      
           out.put(tr_output);
           `bvm_end_tr(tr_output)
         end
