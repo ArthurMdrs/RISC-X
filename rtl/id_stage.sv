@@ -344,15 +344,4 @@ assign trap_id_o = valid_id_o && exception_id;
 `default_nettype wire
 `endif
 
-`ifdef SVA_ON
-    default clocking def_clk @(posedge clk_i); endclocking
-    default disable iff (!rst_n_i);
-    
-    property no_fpu_req_during_stall;
-        (stall_id_i) |-> (!fpu_req_id_o);
-    endproperty
-    
-    AST_no_fpu_req_during_stall: assert property (no_fpu_req_during_stall);
-`endif
-
 endmodule

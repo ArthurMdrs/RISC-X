@@ -61,6 +61,8 @@ class riscv_decoder;
                 OPCODE_FMSUB_FP:  mnemonic = decode_fmsub(instruction);
                 OPCODE_FNMADD_FP: mnemonic = decode_fnmadd(instruction);
                 OPCODE_FNMSUB_FP: mnemonic = decode_fnmsub(instruction);
+                OPCODE_STORE_FP : mnemonic = decode_fstore(instruction);
+                OPCODE_LOAD_FP  : mnemonic = decode_fload(instruction);
                 
                 default:          mnemonic = "UNKNOWN";
             endcase
@@ -753,6 +755,38 @@ class riscv_decoder;
         rs2 = translate_register(instruction[24:20], 1);
         rs3 = translate_register(instruction[31:27], 1);
         return $sformatf("fnmsub.s %s, %s, %s, %s", rd, rs1, rs2, rs3);
+    endfunction
+
+    // Function to decode FP STORE instructions
+    function string decode_fstore(logic [31:0] instruction);
+        string rs1, rs2, imm;
+        string func;
+        logic [11:0] imm_bits;
+        rs1 = translate_register(instruction[19:15]);
+        rs2 = translate_register(instruction[24:20], 1);
+        imm_bits = {instruction[31:25], instruction[11:7]};
+        imm = $sformatf("0x%0h", imm_bits);
+        case (instruction[14:12])
+            3'b010: func = "fsw";
+            default: func = "UNKNOWN";
+        endcase
+        return $sformatf("%s %s, %s(%s)", func, rs2, imm, rs1);
+    endfunction
+
+    // Function to decode FP LOAD instructions
+    function string decode_fload(logic [31:0] instruction);
+        string rd, rs1, imm;
+        string func;
+        logic [11:0] imm_bits;
+        rd  = translate_register(instruction[11:7], 1);
+        rs1 = translate_register(instruction[19:15]);
+        imm_bits = instruction[31:20];
+        imm = $sformatf("0x%0h", imm_bits);
+        case (instruction[14:12])
+            3'b010: func = "flw";
+            default: func = "UNKNOWN";
+        endcase
+        return $sformatf("%s %s, %s(%s)", func, rd, imm, rs1);
     endfunction
     
 endclass
