@@ -7,14 +7,16 @@ class tr_out extends uvm_sequence_item;
 
  
   `uvm_object_utils_begin(tr_out)  // needed for transaction recording
-     `uvm_field_int(c, UVM_ALL_ON | UVM_DEC)
-     `uvm_field_int(r, UVM_ALL_ON | UVM_DEC)
+    //  `uvm_field_int(c, UVM_ALL_ON | UVM_DEC)
+    //  `uvm_field_int(r, UVM_ALL_ON | UVM_DEC)
+     `uvm_field_int(c, UVM_ALL_ON | UVM_HEX)
+     `uvm_field_int(r, UVM_ALL_ON | UVM_HEX)
      `uvm_field_int(aux, UVM_ALL_ON | UVM_DEC | UVM_NOCOMPARE)
   `uvm_object_utils_end
 
 function string convert2string();
-    return $sformatf("Resultado = 32'h%h", c);
-    return $sformatf("Resultado = 32'h%h", r);
+    return {$sformatf("Quociente = 32'h%h\n", c),
+            $sformatf("Resto     = 32'h%h", r)};
 endfunction
 
 
@@ -55,6 +57,52 @@ function string convert2string();
 endfunction
 
 endclass : tr_in
+
+// Distribution 1: dividendo > divisor << shamt, 90% of the time
+class div_dist1_tr extends tr_in;
+    
+    rand bit dividendo_gt_divisor;
+    rand int unsigned shamt;
+    
+    `uvm_object_utils_begin(div_dist1_tr)
+        `uvm_field_int(dividendo_gt_divisor, UVM_ALL_ON | UVM_DEC)
+        `uvm_field_int(shamt, UVM_ALL_ON | UVM_DEC)
+    `uvm_object_utils_end
+
+    function new(string name = "div_dist1_tr");
+        super.new(name);
+    endfunction
+
+    constraint gt_dist { 
+        dividendo_gt_divisor dist {1:=9, 0:=1};
+    }
+    constraint shamt_dist { 
+        shamt dist {[0:5]:=1, [6:11]:=1, [12:17]:=2, [18:23]:=3, [24:29]:=3, [30:31]:=2};
+    }
+    constraint greater_than { 
+        solve dividendo_gt_divisor,shamt before dividendo, divisor;
+        if (dividendo_gt_divisor) {
+            (dividendo >> shamt) > divisor;
+        } 
+        else {
+            dividendo <= divisor;
+        }
+    }
+
+    function string convert2string();
+        string my_str;
+        if (signal_division)
+            my_str = {$sformatf("divisor = 32'h%h\ndividendo = 32'h%h\n", divisor, dividendo), 
+                    $sformatf("divisor = %0d\ndividendo = %0d\n", $signed(divisor), $signed(dividendo)),
+                    $sformatf("signed division, dividendo_gt_divisor = %b, shamt = %0d", dividendo_gt_divisor, shamt)};
+        else
+            my_str = {$sformatf("divisor = 32'h%h\ndividendo = 32'h%h\n", divisor, dividendo), 
+                    $sformatf("divisor = %0d\ndividendo = %0d\n", $unsigned(divisor), $unsigned(dividendo)),
+                    $sformatf("UNsigned division, dividendo_gt_divisor = %b, shamt = %0d", dividendo_gt_divisor, shamt)};
+        return my_str;
+    endfunction
+
+endclass : div_dist1_tr
 
 //Case underlfow = Dividendo baixo e divisor baixo;
 
