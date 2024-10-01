@@ -4,11 +4,10 @@ export RVFI_HOME := $(abspath $(RISC_X_ROOT)/fv)
 export TB_HOME := $(abspath $(shell pwd))
 export RISC_X_PATH := $(abspath $(shell pwd))
 export RVVI_HOME := $(abspath $(RISC_X_ROOT)/tb/rvvi)
-export RISCV_DV_ROOT := $(abspath $(RISC_X_ROOT)/tools/riscv-dv)
 
-# TOOLS_HOME := $(abspath $(RISC_X_ROOT)/tools)
-# export RISCV_DV_ROOT := $(abspath $(TOOLS_HOME)/riscv-dv)
-# RISCV_DV_ADDS := $(abspath $(TOOLS_HOME)/additions/riscv-dv)
+TOOLS_HOME := $(abspath $(RISC_X_ROOT)/tools)
+export RISCV_DV_ROOT := $(abspath $(TOOLS_HOME)/riscv-dv)
+export RISCV_DV_ADDS := $(abspath $(TOOLS_HOME)/additions/riscv-dv)
 
 ISA := rv32ifc_zicsr_zifencei
 
@@ -21,7 +20,7 @@ DV_ISS_YAML := $(TB_HOME)/iss.yaml
 # DV_ISS_YAML := $(RISCV_DV_ADDS)/iss.yaml
 DV_ALL_SIM_TESTS := $(shell tr '\n' ',' < full_test_list.txt | sed 's/,$$//')
 DV_SIM_TEST := $(DV_ALL_SIM_TESTS)
-DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) \
+DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) --iss_timeout 600 \
 					   --simulator xlm --noclean --csr_yaml $(TB_HOME)/csr_description.yaml \
 					   --custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi ilp32 
 # DV_RUN_CMD := cd $(RISCV_DV_ROOT) && python3 run.py
@@ -195,6 +194,9 @@ cov-report: $(COV_MERGED_DIR)
 	@imc -exec cov_script.tcl
 
 cov-full: log2csv cov-collect cov-merge cov-report
+
+cov-view: $(COV_MERGED_DIR)
+	imc -load $(COV_MERGED_DIR)
 
 ##########################################################################################################################
 

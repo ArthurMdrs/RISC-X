@@ -109,7 +109,6 @@ assign rd_ex_valid  = (rd_dst_bank_ex_i  == X_REG && rd_addr_ex_i  != '0) || (rd
 assign rd_mem_valid = (rd_dst_bank_mem_i == X_REG && rd_addr_mem_i != '0) || (rd_dst_bank_mem_i == F_REG);
 assign rd_wb_valid  = (rd_dst_bank_wb_i  == X_REG && rd_addr_wb_i  != '0) || (rd_dst_bank_wb_i  == F_REG);
 
-// TODO: register f0 is not always zero. Some treatment must be made
 assign rd_ex_is_rs1_id  = (rd_addr_ex_i  == rs1_addr_id_i) && (rd_ex_valid ) && (rd_dst_bank_ex_i  == rs1_src_bank_id_i);
 assign rd_mem_is_rs1_id = (rd_addr_mem_i == rs1_addr_id_i) && (rd_mem_valid) && (rd_dst_bank_mem_i == rs1_src_bank_id_i);
 assign rd_wb_is_rs1_id  = (rd_addr_wb_i  == rs1_addr_id_i) && (rd_wb_valid ) && (rd_dst_bank_wb_i  == rs1_src_bank_id_i);
