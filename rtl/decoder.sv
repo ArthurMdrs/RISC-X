@@ -209,25 +209,35 @@ always_comb begin
                     alu_operation_o  = ALU_ADD;
                 end*/
                 3'b010: begin // c.lw
-                    alu_source_2_o   = ALU_SCR2_IMM;
                     alu_operation_o  = ALU_ADD;
+                    alu_source_2_o   = ALU_SCR2_IMM;
                     immediate_type_o = IMM_CLS;
 
                     reg_mem_wen_o = 1'b1;
+                
+                    mem_data_type_o = WORD;
                     
                     rs1_addr_C = {2'b01, instr_i[9:7]};
                     rd_addr_C  = {2'b01, instr_i[4:2]};
                 end
-                /*3'b011: begin // c.flw
-                    reg_mem_wen_o = 1'b1;
-                    rs1_addr_C = {2'b01, instr_i[9:7]};
-                    rd_addr_C = {2'b01, instr_i[4:2]};
-
-                    immediate_type_o = IMM_CLS;
-
-                    alu_operation_o  = ALU_ADD;
-                    alu_source_2_o   = ALU_SCR2_IMM;
-                end*/
+                3'b011: begin // c.flw
+                    if (ISA_F) begin
+                        alu_operation_o  = ALU_ADD;
+                        alu_source_2_o   = ALU_SCR2_IMM;
+                        immediate_type_o = IMM_CLS;
+                        rd_dst_bank_o    = F_REG;
+                        
+                        reg_mem_wen_o = 1'b1;
+                    
+                        mem_data_type_o = WORD;
+                        
+                        rs1_addr_C = {2'b01, instr_i[9:7]};
+                        rd_addr_C  = {2'b01, instr_i[4:2]};
+                    end
+                    else begin 
+                        illegal_instr_o = 1'b1;
+                    end
+                end
                 /*3'b101:begin // c.fsd
                     rs1_addr_C = {2'b01, instr_i[9:7]};
                     rs2_addr_C = {2'b01, instr_i[4:2]};
@@ -239,8 +249,8 @@ always_comb begin
                     // DOUBLE
                 end*/
                 3'b110: begin // c.sw
-                    alu_source_2_o   = ALU_SCR2_IMM;
                     alu_operation_o  = ALU_ADD;
+                    alu_source_2_o   = ALU_SCR2_IMM;
                     immediate_type_o = IMM_CLS;
 
                     mem_wen_o = 1'b1;
@@ -248,18 +258,24 @@ always_comb begin
                     rs1_addr_C = {2'b01, instr_i[9:7]};
                     rs2_addr_C = {2'b01, instr_i[4:2]};
                 end
-                /*3'b111: begin // c.fsw
-                    rs1_addr_C = {2'b01, instr_i[9:7]};
-                    rs2_addr_C = {2'b01, instr_i[4:2]};
-
-                    immediate_type_o = IMM_CLS;
-
-                    alu_operation_o = ALU_ADD; // STORE
-
-                    mem_wen_o = 1'b1;
-                    mem_data_type_o = WORD;
-                    mem_sign_extend_o = 1'b0;
-                end*/
+                3'b111: begin // c.fsw
+                    if (ISA_F) begin
+                        alu_operation_o  = ALU_ADD;
+                        alu_source_2_o   = ALU_SCR2_IMM;
+                        immediate_type_o = IMM_CLS;
+                        rs2_src_bank_o   = F_REG;
+                        
+                        mem_wen_o = 1'b1;
+                        
+                        mem_data_type_o = WORD;
+                        
+                        rs1_addr_C = {2'b01, instr_i[9:7]};
+                        rs2_addr_C = {2'b01, instr_i[4:2]};
+                    end
+                    else begin 
+                        illegal_instr_o = 1'b1;
+                    end
+                end
                 default: illegal_instr_o = 1'b1;
             endcase
         end
@@ -464,6 +480,8 @@ always_comb begin
                     immediate_type_o = IMM_CSPL;
                     
                     reg_mem_wen_o    = 1'b1;
+                        
+                    mem_data_type_o  = WORD;
 
                     rs1_addr_C = 5'd2; // x2/sp
                     
@@ -471,20 +489,23 @@ always_comb begin
                     if (rd_addr_C == '0)
                         illegal_instr_o = 1'b1;
                 end
-                /*3'b011: begin // c.flwsp
-                    alu_operation_o  = ALU_ADD;
-                    alu_source_2_o   = ALU_SCR2_IMM;
-                    immediate_type_o = IMM_I;
-                    mem_data_type_o  = WORD;
-                    //immediate_type_o = IMM_I;
-                    reg_mem_wen_o    = 1'b1;
-                    
-                    immediate_type_o = IMM_CSPL;
+                3'b011: begin // c.flwsp
+                    if (ISA_F) begin
+                        alu_operation_o  = ALU_ADD;
+                        alu_source_2_o   = ALU_SCR2_IMM;
+                        immediate_type_o = IMM_CSPL;
+                        rd_dst_bank_o    = F_REG;
+                        
+                        reg_mem_wen_o    = 1'b1;
+                        
+                        mem_data_type_o  = WORD;
 
-                    rs1_addr_C = 5'd2; //x2
-                    rd_addr_C  = instr_i[11:7];
-
-                end*/
+                        rs1_addr_C = 5'd2; // x2/sp
+                    end
+                    else begin 
+                        illegal_instr_o = 1'b1;
+                    end
+                end
                 3'b100: begin
                     if (funct4_C[0] == 1'd0) begin
                         if (rs2_addr_C == 5'd0) begin // c.jr
@@ -511,7 +532,7 @@ always_comb begin
                     else begin
                         if (rs2_addr_C == 5'd0) begin
                             if (rs1_addr_C == 5'd0) begin // c.ebreak
-                                // NOT IMPLEMENTED!
+                                // TODO: NOT IMPLEMENTED!
                             end
                             else begin // c.jalr
                                 // ALU calculates PC+2
@@ -544,18 +565,23 @@ always_comb begin
 
                     rs1_addr_C = 5'd2; // x2/sp
                 end
-                /*3'b111: begin // c.fswsp
-                    alu_operation_o  = ALU_ADD;
-                    alu_source_2_o   = ALU_SCR2_IMM;
-                    mem_data_type_o  = WORD;
-                    //immediate_type_o = IMM_S;
-                    mem_wen_o        = 1'b1;
-
-                    immediate_type_o = IMM_CSPS;
-
-                    rs1_addr_C = 5'd2; //x2
-                    rs2_addr_C = instr_i[6:2];
-                end*/
+                3'b111: begin // c.fswsp
+                    if (ISA_F) begin
+                        alu_operation_o  = ALU_ADD;
+                        alu_source_2_o   = ALU_SCR2_IMM;
+                        immediate_type_o = IMM_CSPS;
+                        rs2_src_bank_o   = F_REG;
+                        
+                        mem_wen_o        = 1'b1;
+                        
+                        mem_data_type_o  = WORD;
+                        
+                        rs1_addr_C = 5'd2; // x2/sp
+                    end
+                    else begin 
+                        illegal_instr_o = 1'b1;
+                    end
+                end
                 default: illegal_instr_o = 1'b1;
             endcase
         end
@@ -1067,15 +1093,14 @@ always_comb begin
         
         OPCODE_STORE_FP: begin // fsw
             if (ISA_F) begin
-                reg_alu_wen_o = 1'b0;
-                // is_immediate_F = 1'b1;
-                fpu_op_o = ALU_ADD;
-                
+                alu_operation_o  = ALU_ADD;
                 alu_source_2_o   = ALU_SCR2_IMM;
                 immediate_type_o = IMM_S;
-                mem_data_type_o = WORD;
+                rs2_src_bank_o   = F_REG;
+                
                 mem_wen_o = 1'b1;
-                rs2_src_bank_o = F_REG;
+                
+                mem_data_type_o = WORD;
                 
                 if(funct3 != 3'b010) 
                     illegal_instr_o = 1'b1;
@@ -1087,15 +1112,14 @@ always_comb begin
         
         OPCODE_LOAD_FP: begin // flw
             if (ISA_F) begin
-                reg_alu_wen_o = 1'b1;
-                // is_immediate_F = 1'b1;
-                fpu_op_o = ALU_ADD;
-
+                alu_operation_o  = ALU_ADD;
                 alu_source_2_o   = ALU_SCR2_IMM;
                 immediate_type_o = IMM_I;
-                mem_data_type_o = WORD;
+                rd_dst_bank_o    = F_REG;
+                
                 reg_mem_wen_o = 1'b1;
-                rd_dst_bank_o = F_REG;
+                
+                mem_data_type_o = WORD;
                 
                 if(funct3 != 3'b010) 
                     illegal_instr_o = 1'b1;

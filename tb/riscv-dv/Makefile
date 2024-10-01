@@ -96,7 +96,6 @@ sim-elf: $(DEPS)
 		 +bin=$(BIN) +section=$(SECTION_FILE) \
 		 +check_regs=0 +check_mem=0 +print_trace=1 +verbose=$(VERBOSE) \
 		 -timescale 1ns/1ps -access +rwc -svseed $(SEED) 
-	echo hello
 
 sim-elf-gui: $(DEPS)
 	python3 elf2hex.py $(ELF) $(PROGS_PATH)/out_prog.txt

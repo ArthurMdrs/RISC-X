@@ -161,7 +161,7 @@ always_comb begin
         if (raddr2_i == '0) rdata2_o = '0;
         else                rdata2_o = mem_x[raddr2_i];
     end else begin
-        unique case (rsrc1_i)
+        unique case (rsrc2_i)
             X_REG: begin
                 if (raddr2_i == '0) rdata2_o = '0;
                 else                rdata2_o = mem_x[raddr2_i];
@@ -177,7 +177,7 @@ always_comb begin
         if (raddr3_i == '0) rdata3_o = '0;
         else                rdata3_o = mem_x[raddr3_i];
     end else begin
-        unique case (rsrc1_i)
+        unique case (rsrc3_i)
             X_REG: begin
                 if (raddr3_i == '0) rdata3_o = '0;
                 else                rdata3_o = mem_x[raddr3_i];
