@@ -174,10 +174,9 @@ always_comb begin
 
     //F
     fpu_req_o = 1'b0;
-    fpu_rnd_mode_o  = 0;
+    fpu_rnd_mode_o  = instr_i[14:12];
     fpu_op_o = fpnew_pkg::SGNJ;
     fpu_op_mod_o = 1'b0;
-    //is_immediate_F = 1'b0;
     csr_status_o = 1'b0;
 
     

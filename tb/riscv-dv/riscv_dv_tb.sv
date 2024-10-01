@@ -135,7 +135,7 @@ string sections_file = {"/mytest/asm_test/", prog_name, ".section"};
 
 // Generate clock
 localparam int PERIOD = 2;
-localparam int MAX_CYCLES = 100000;
+localparam int MAX_CYCLES = 1000000;
 initial begin
     clk = 0; 
     repeat(MAX_CYCLES) #(PERIOD/2) clk = ~clk;
