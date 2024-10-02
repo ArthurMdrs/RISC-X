@@ -192,7 +192,7 @@ always_comb begin
     if (fpu_gnt_stall)
         stall_id_o = 1'b1;
     if (reg_mem_wen_ex_i) // Load operation in EX
-        if(rd_ex_is_rs1_id || rd_ex_is_rs2_id) //  || rd_ex_is_rs3_id // TODO: maybe put rs3 in the if
+        if(rd_ex_is_rs1_id || rd_ex_is_rs2_id || rd_ex_is_rs3_id)
             stall_id_o = 1'b1;
     
     stall_if_o = stall_id_o;

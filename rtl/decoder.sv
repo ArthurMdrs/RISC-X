@@ -50,7 +50,7 @@ module decoder import core_pkg::*; #(
     output reg_bank_mux_t rs2_src_bank_o,
     output reg_bank_mux_t rs3_src_bank_o,
     output reg_bank_mux_t rd_dst_bank_o,
-    // TODO: really implement rsx_is_used (use to make better forwarding/stalls and in RVFI)
+    // TODO: really implement rs?_is_used (use to make better forwarding/stalls and in RVFI)
     output logic rs1_is_used_o,
     output logic rs2_is_used_o,
     output logic rs3_is_used_o,
@@ -127,7 +127,7 @@ assign funct2_C = instr_i[ 6: 5];
 
 wire is_compressed_int = is_compressed_i && ISA_C;
 
-// TODO: move all rs and rd logic to the always_comb
+// TODO: maybe move all rs and rd logic to the always_comb
 assign rs1_addr_o = (is_compressed_int) ? (rs1_addr_C) : (instr_i[19:15]);
 assign rs2_addr_o = (is_compressed_int) ? (rs2_addr_C) : (instr_i[24:20]);
 assign rd_addr_o  = (is_compressed_int) ? (rd_addr_C ) : (instr_i[11: 7]);
