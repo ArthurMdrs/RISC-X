@@ -9,14 +9,14 @@ module tb();
     // Bloco inicial para atribuição de valores e operações
     initial begin
         // Atribuir valores
-        dividendo = 3;
-        divisor   = 14;
-
+        dividendo = 10;
+        divisor   = 15;
+        // Divisão com sinal: 4294967060 /         26 = 4294967287 (resto = 4294967294)
         // Realizar divisão e cálculo do resto
         result = $signed (dividendo) / $signed (divisor);
         resto  = $signed(dividendo) %  $signed(divisor);  
 
-        $display("Divisão com sinal: %d / %d = %d (resto = %d)", dividendo, divisor, result, resto);
+        $display("Divisão com sinal: %d %d = %d (resto = %d)", dividendo, divisor, result, resto);
         #1    $finish;
     end
 

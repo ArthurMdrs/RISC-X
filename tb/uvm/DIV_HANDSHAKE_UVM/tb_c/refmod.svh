@@ -16,7 +16,8 @@ class refmod extends uvm_component;
 
    int m_matches, m_mismatches; 
    int register_file;
-   logic [31:0]  result, rem;
+   logic [31:0]  result;
+   logic [31:0] rem;
    logic signal;
 
    task run_phase (uvm_phase phase);
@@ -46,31 +47,39 @@ class refmod extends uvm_component;
             tr_output.aux = 2;
         end
         else begin
+          if (tr_input.dividendo[31] && tr_input.divisor[31]) begin 
+            result = $signed(tr_input.dividendo) / $signed(tr_input.divisor)      ;
+            rem    = - ($signed(tr_input.dividendo) % $signed (tr_input.divisor)) ;
+            tr_output.c = result;
+            tr_output.r = rem;
+            tr_output.aux = 3;
+          end
+          else begin
             result = $signed(tr_input.dividendo) / $signed(tr_input.divisor)  ;
             rem    = $signed(tr_input.dividendo) % $signed (tr_input.divisor) ;
             tr_output.c = result;
             tr_output.r = rem;
-            tr_output.aux = 3;
+            tr_output.aux = 4;
+          end
+          end
         end
-     end
       else begin
         if (tr_input.divisor == '0) begin
             result = 2**32 - 1;
             rem    = tr_input.dividendo;
             tr_output.c = result;
             tr_output.r = rem;
-            tr_output.aux = 4;
+            tr_output.aux = 5;
         end
         else begin
             result = (tr_input.dividendo) / (tr_input.divisor);
             rem    = (tr_input.dividendo) % (tr_input.divisor);
             tr_output.c = result;
             tr_output.r = rem;
-            tr_output.aux = 5;
+            tr_output.aux = 6;
         end
       end
-
-          out.put(tr_output);
+           out.put(tr_output);
           `bvm_end_tr(tr_output)
         end
     
