@@ -20,7 +20,7 @@ make gen-sim-cmp DV_SIM_TEST=<test_name>
 make cov-full
 ```
 
-After you have already generated and compiled the assembly, you might want to simulate multiple times using that. In that case, instead of doing `make gen-sim-cmp DV_SIM_TEST=<test_name>`, do `make sim-and-compare DV_SIM_TEST=<test_name>`.
+After you have already generated and compiled the assembly, you might want to simulate multiple times using it. In that case, instead of doing `make gen-sim-cmp DV_SIM_TEST=<test_name>`, do `make sim-and-compare DV_SIM_TEST=<test_name>`, which will not re-generate, and thus not overwrite, the assembly.
 
 The target `compile-instr-generator` will compile Google's RISCV-DV instruction generator. This target need to be executed only once. `gen-sim-cmp` performs various steps. It will run the generator to generate the assembly tests; then it will simulate said tests on both the reference model (ISS simulator, currently only Spike is supported) and the core; lastly, it will covert the logs to csv files and compare them. Currently, all the output files are send to the folder `mytest`. In this folder, you will find the file `iss_regr.log` containing the results of the comparison. At the end, there should be something like "2 PASSED, 0 FAILED".
 

@@ -31,7 +31,7 @@ riscv_instr_name_t unsupported_instr[] = '{FENCE, FENCE_I};
 
 // ISA supported by the processor
 // riscv_instr_group_t supported_isa[$] = {RV32I, RV32M, RV32C};
-riscv_instr_group_t supported_isa[$] = {RV32I, RV32C};
+riscv_instr_group_t supported_isa[$] = {RV32I, RV32C, RV32F, RV32FC};
 
 // Interrupt mode support
 mtvec_mode_t supported_interrupt_mode[$] = {DIRECT, VECTORED};

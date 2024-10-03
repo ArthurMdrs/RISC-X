@@ -37,6 +37,11 @@ module alu import core_pkg::*; #(
 );
 
 logic signed [DWIDTH-1:0] op1_s, op2_s;
+
+`ifdef JASPER
+`default_nettype none
+`endif
+
 assign op1_s = op1_i;
 assign op2_s = op2_i;
 
@@ -61,5 +66,9 @@ always_comb
         ALU_SNE : res_o = (op1_i != op2_i);
         default: res_o = 'x;
     endcase
+
+`ifdef JASPER
+`default_nettype wire
+`endif
 
 endmodule

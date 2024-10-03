@@ -48,10 +48,19 @@ rvfi rvfi_inst (
     .illegal_instr_id ( core_inst.illegal_instr_id ),
     .alu_source_1_id  ( core_inst.id_stage_inst.alu_source_1_id ),
     .alu_source_2_id  ( core_inst.id_stage_inst.alu_source_2_id ),
+    .alu_source_3_id  ( core_inst.id_stage_inst.alu_source_3_id ),
     .rs1_addr_id      ( core_inst.rs1_addr_id ),
     .rs2_addr_id      ( core_inst.rs2_addr_id ),
+    .rs3_addr_id      ( core_inst.rs3_addr_id ),
+    .rs1_src_bank_id  ( core_inst.rs1_src_bank_id ),
+    .rs2_src_bank_id  ( core_inst.rs2_src_bank_id ),
+    .rs3_src_bank_id  ( core_inst.rs3_src_bank_id ),
+    .rs1_is_used_id   ( core_inst.rs1_is_used_id ),
+    .rs2_is_used_id   ( core_inst.rs2_is_used_id ),
+    .rs3_is_used_id   ( core_inst.rs3_is_used_id ),
     .rs1_or_fwd_id    ( core_inst.id_stage_inst.rs1_or_fwd_id ),
     .rs2_or_fwd_id    ( core_inst.id_stage_inst.rs2_or_fwd_id ),
+    .rs3_or_fwd_id    ( core_inst.id_stage_inst.rs3_or_fwd_id ),
     .pc_id            ( core_inst.pc_id ),
     .pc_source_id     ( core_inst.pc_source_id ),
     .jump_target_id   ( core_inst.jump_target_id ),
@@ -78,13 +87,27 @@ rvfi rvfi_inst (
     .dmem_ben_o   ( core_inst.dmem_ben_o ),
     
     // Input from WB stage
-    .flush_wb     ( core_inst.flush_wb ),
-    .rd_addr_wb   ( core_inst.rd_addr_wb ),
-    .reg_wen_wb   ( core_inst.reg_wen_wb ),
-    .reg_wdata_wb ( core_inst.reg_wdata_wb ),
-    .mem_rdata_wb ( core_inst.mem_rdata_wb ),
+    .flush_wb       ( core_inst.flush_wb ),
+    .rd_addr_wb     ( core_inst.rd_addr_wb ),
+    .rd_dst_bank_wb ( core_inst.rd_dst_bank_wb ),
+    .reg_wen_wb     ( core_inst.reg_wen_wb ),
+    .reg_wdata_wb   ( core_inst.reg_wdata_wb ),
+    .mem_rdata_wb   ( core_inst.mem_rdata_wb ),
   
     .misa ( core_inst.csr_inst.misa ),
   
-    `RVFI_CONN
+    `RVFI_CONN,
+    
+    .rvfi_frs1_addr     (  ),
+    .rvfi_frs2_addr     (  ),
+    .rvfi_frs3_addr     (  ),
+    .rvfi_frd_addr      ( rvfi_frd_addr ),
+    // .rvfi_frs1_rvalid   (  ),
+    // .rvfi_frs2_rvalid   (  ),
+    // .rvfi_frs3_rvalid   (  ),
+    .rvfi_frd_wvalid    ( rvfi_frd_wvalid ),
+    .rvfi_frs1_rdata    (  ),
+    .rvfi_frs2_rdata    (  ),
+    .rvfi_frs3_rdata    (  ),
+    .rvfi_frd_wdata     ( rvfi_frd_wdata )
 );

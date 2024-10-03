@@ -4,9 +4,12 @@ export RVFI_HOME := $(abspath $(RISC_X_ROOT)/fv)
 export TB_HOME := $(abspath $(shell pwd))
 export RISC_X_PATH := $(abspath $(shell pwd))
 export RVVI_HOME := $(abspath $(RISC_X_ROOT)/tb/rvvi)
-export RISCV_DV_ROOT := $(abspath $(RISC_X_ROOT)/tools/riscv-dv)
 
-ISA := rv32ic_zicsr_zifencei
+TOOLS_HOME := $(abspath $(RISC_X_ROOT)/tools)
+export RISCV_DV_ROOT := $(abspath $(TOOLS_HOME)/riscv-dv)
+export RISCV_DV_ADDS := $(abspath $(TOOLS_HOME)/additions/riscv-dv)
+
+ISA := rv32ifc_zicsr_zifencei
 
 DV_OUT_DIR := $(TB_HOME)/mytest
 DV_FILE_LIST := $(RISCV_DV_ROOT)/files.f
@@ -14,13 +17,16 @@ DV_GEN_TEST := riscv_instr_base_test
 DV_NUM_TESTS := 1
 DV_RISCX_TARGET := $(TB_HOME)/riscx_target
 DV_ISS_YAML := $(TB_HOME)/iss.yaml
+# DV_ISS_YAML := $(RISCV_DV_ADDS)/iss.yaml
 DV_ALL_SIM_TESTS := $(shell tr '\n' ',' < full_test_list.txt | sed 's/,$$//')
 DV_SIM_TEST := $(DV_ALL_SIM_TESTS)
-DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) \
+DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) --iss_timeout 600 \
 					   --simulator xlm --noclean --csr_yaml $(TB_HOME)/csr_description.yaml \
 					   --custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi ilp32 
-DV_RUN_CMD := cd $(RISCV_DV_ROOT) && python3 run.py
-DV_COV_CMD := cd $(RISCV_DV_ROOT) && python3 cov.py
+# DV_RUN_CMD := cd $(RISCV_DV_ROOT) && python3 run.py
+# DV_COV_CMD := cd $(RISCV_DV_ROOT) && python3 cov.py
+DV_RUN_CMD := python3 run_mod.py
+DV_COV_CMD := python3 cov_mod.py
 
 MTVEC_ALIGNMENT_OPT := +tvec_alignment=8
 ifeq ($(strip $(MTVEC_ALIGNMENT_OPT)),)
@@ -41,7 +47,7 @@ ifeq ($(strip $(VERBOSE)), 1)
 endif
 
 SEED = 1
-# SVA = +define+SVA_ON=1
+SVA = +define+SVA_ON=1
 INPUT = -input restore.tcl
 
 ELF=$(DV_OUT_DIR)/asm_test/$(DV_SIM_TEST)_0.o
@@ -88,7 +94,7 @@ sim-elf: $(DEPS)
 		 +progs_path=$(PROGS_PATH) +prog=out +text_start=8000_0000 \
 		 +bin=$(BIN) +section=$(SECTION_FILE) \
 		 +check_regs=0 +check_mem=0 +print_trace=1 +verbose=$(VERBOSE) \
-		 -timescale 1ns/1ps -access +rwc -svseed $(SEED)
+		 -timescale 1ns/1ps -access +rwc -svseed $(SEED) 
 
 sim-elf-gui: $(DEPS)
 	python3 elf2hex.py $(ELF) $(PROGS_PATH)/out_prog.txt
@@ -188,6 +194,9 @@ cov-report: $(COV_MERGED_DIR)
 	@imc -exec cov_script.tcl
 
 cov-full: log2csv cov-collect cov-merge cov-report
+
+cov-view: $(COV_MERGED_DIR)
+	imc -load $(COV_MERGED_DIR)
 
 ##########################################################################################################################
 

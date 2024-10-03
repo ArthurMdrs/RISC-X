@@ -28,11 +28,13 @@
 
 module controller import core_pkg::*; (
     // Data Hazards (forwarding)
-    output forward_t fwd_op1_o,
-    output forward_t fwd_op2_o,
+    output forward_t fwd_rs1_o,
+    output forward_t fwd_rs2_o,
+    output forward_t fwd_rs3_o,
     // Source/destiny general purpose registers
     input  logic [4:0] rs1_addr_id_i,
     input  logic [4:0] rs2_addr_id_i,
+    input  logic [4:0] rs3_addr_id_i,
     input  logic [4:0] rd_addr_ex_i,
     input  logic [4:0] rd_addr_mem_i,
     input  logic [4:0] rd_addr_wb_i,
@@ -40,15 +42,25 @@ module controller import core_pkg::*; (
     input  logic reg_alu_wen_ex_i,
     input  logic reg_alu_wen_mem_i,
     input  logic reg_alu_wen_wb_i,
+    input  logic reg_mem_wen_ex_i,
     input  logic reg_mem_wen_mem_i,
     input  logic reg_mem_wen_wb_i,
+    // Type of register (x or f)
+    input  reg_bank_mux_t rs1_src_bank_id_i,
+    input  reg_bank_mux_t rs2_src_bank_id_i,
+    input  reg_bank_mux_t rs3_src_bank_id_i,
+    input  reg_bank_mux_t rd_dst_bank_ex_i,
+    input  reg_bank_mux_t rd_dst_bank_mem_i,
+    input  reg_bank_mux_t rd_dst_bank_wb_i,
     
     // Data Hazards (stalling)
     output logic stall_if_o,
     output logic stall_id_o,
     output logic stall_ex_o,
     output logic stall_mem_o,
-    input  logic reg_mem_wen_ex_i,
+    input  logic fpu_req_id_i,
+    input  logic fpu_gnt_id_i,
+    input  logic fpu_busy_ex_i,
     
     // Control Hazards (flushing)
     output logic flush_id_o,
@@ -71,21 +83,47 @@ module controller import core_pkg::*; (
     output logic [4:0] exception_cause_o // Exception cause code for mcause
 );
 
-logic rd_ex_is_rs1_id;
+logic rd_ex_valid ;
+logic rd_mem_valid;
+logic rd_wb_valid ;
+
+logic rd_ex_is_rs1_id ;
 logic rd_mem_is_rs1_id;
-logic rd_wb_is_rs1_id;
+logic rd_wb_is_rs1_id ;
 
-assign rd_ex_is_rs1_id  = (rd_addr_ex_i  == rs1_addr_id_i) && (rs1_addr_id_i != '0);
-assign rd_mem_is_rs1_id = (rd_addr_mem_i == rs1_addr_id_i) && (rs1_addr_id_i != '0);
-assign rd_wb_is_rs1_id  = (rd_addr_wb_i  == rs1_addr_id_i) && (rs1_addr_id_i != '0);
-
-logic rd_ex_is_rs2_id;
+logic rd_ex_is_rs2_id ;
 logic rd_mem_is_rs2_id;
-logic rd_wb_is_rs2_id;
+logic rd_wb_is_rs2_id ;
 
-assign rd_ex_is_rs2_id  = (rd_addr_ex_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0);
-assign rd_mem_is_rs2_id = (rd_addr_mem_i == rs2_addr_id_i) && (rs2_addr_id_i != '0);
-assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rs2_addr_id_i != '0);
+logic rd_ex_is_rs3_id ;
+logic rd_mem_is_rs3_id;
+logic rd_wb_is_rs3_id ;
+
+logic fpu_gnt_stall;
+logic fpu_rvalid_stall;
+
+`ifdef JASPER
+`default_nettype none
+`endif
+
+assign rd_ex_valid  = (rd_dst_bank_ex_i  == X_REG && rd_addr_ex_i  != '0) || (rd_dst_bank_ex_i  == F_REG);
+assign rd_mem_valid = (rd_dst_bank_mem_i == X_REG && rd_addr_mem_i != '0) || (rd_dst_bank_mem_i == F_REG);
+assign rd_wb_valid  = (rd_dst_bank_wb_i  == X_REG && rd_addr_wb_i  != '0) || (rd_dst_bank_wb_i  == F_REG);
+
+assign rd_ex_is_rs1_id  = (rd_addr_ex_i  == rs1_addr_id_i) && (rd_ex_valid ) && (rd_dst_bank_ex_i  == rs1_src_bank_id_i);
+assign rd_mem_is_rs1_id = (rd_addr_mem_i == rs1_addr_id_i) && (rd_mem_valid) && (rd_dst_bank_mem_i == rs1_src_bank_id_i);
+assign rd_wb_is_rs1_id  = (rd_addr_wb_i  == rs1_addr_id_i) && (rd_wb_valid ) && (rd_dst_bank_wb_i  == rs1_src_bank_id_i);
+
+assign rd_ex_is_rs2_id  = (rd_addr_ex_i  == rs2_addr_id_i) && (rd_ex_valid ) && (rd_dst_bank_ex_i  == rs2_src_bank_id_i);
+assign rd_mem_is_rs2_id = (rd_addr_mem_i == rs2_addr_id_i) && (rd_mem_valid) && (rd_dst_bank_mem_i == rs2_src_bank_id_i);
+assign rd_wb_is_rs2_id  = (rd_addr_wb_i  == rs2_addr_id_i) && (rd_wb_valid ) && (rd_dst_bank_wb_i  == rs2_src_bank_id_i);
+
+assign rd_ex_is_rs3_id  = (rd_addr_ex_i  == rs3_addr_id_i) && (rd_ex_valid ) && (rd_dst_bank_ex_i  == rs3_src_bank_id_i);
+assign rd_mem_is_rs3_id = (rd_addr_mem_i == rs3_addr_id_i) && (rd_mem_valid) && (rd_dst_bank_mem_i == rs3_src_bank_id_i);
+assign rd_wb_is_rs3_id  = (rd_addr_wb_i  == rs3_addr_id_i) && (rd_wb_valid ) && (rd_dst_bank_wb_i  == rs3_src_bank_id_i);
+
+assign fpu_gnt_stall    = fpu_req_id_i && !fpu_gnt_id_i;
+assign fpu_rvalid_stall = fpu_busy_ex_i;
 
 logic id_is_jump;
 logic ctrl_transfer;
@@ -95,60 +133,83 @@ assign ctrl_transfer = branch_decision_ex_i || id_is_jump || trap_id_i;
 
 // Resolve forwarding for rs1
 always_comb begin
-    fwd_op1_o = NO_FORWARD;
+    fwd_rs1_o = NO_FORWARD;
     if (rd_ex_is_rs1_id && reg_alu_wen_ex_i) begin
-        fwd_op1_o = FWD_EX_ALU_RES_TO_ID;
+        fwd_rs1_o = FWD_EX_ALU_RES_TO_ID;
     end
     else if (rd_mem_is_rs1_id && (reg_alu_wen_mem_i || reg_mem_wen_mem_i)) begin
         if (reg_alu_wen_mem_i)
-            fwd_op1_o = FWD_MEM_ALU_RES_TO_ID;
+            fwd_rs1_o = FWD_MEM_ALU_RES_TO_ID;
         else if (reg_mem_wen_mem_i)
-            fwd_op1_o = FWD_MEM_RDATA_TO_ID;
+            fwd_rs1_o = FWD_MEM_RDATA_TO_ID;
     end
     else if (rd_wb_is_rs1_id && (reg_alu_wen_wb_i || reg_mem_wen_wb_i)) begin
         if (reg_alu_wen_wb_i)
-            fwd_op1_o = FWD_WB_ALU_RES_TO_ID;
+            fwd_rs1_o = FWD_WB_ALU_RES_TO_ID;
         else if (reg_mem_wen_wb_i)
-            fwd_op1_o = FWD_WB_RDATA_TO_ID;
+            fwd_rs1_o = FWD_WB_RDATA_TO_ID;
     end
 end
 
 // Resolve forwarding for rs2
 always_comb begin
-    fwd_op2_o = NO_FORWARD;
+    fwd_rs2_o = NO_FORWARD;
     if (rd_ex_is_rs2_id && reg_alu_wen_ex_i) begin
-        fwd_op2_o = FWD_EX_ALU_RES_TO_ID;
+        fwd_rs2_o = FWD_EX_ALU_RES_TO_ID;
     end
     else if (rd_mem_is_rs2_id && (reg_alu_wen_mem_i || reg_mem_wen_mem_i)) begin
         if (reg_alu_wen_mem_i)
-            fwd_op2_o = FWD_MEM_ALU_RES_TO_ID;
+            fwd_rs2_o = FWD_MEM_ALU_RES_TO_ID;
         else if (reg_mem_wen_mem_i)
-            fwd_op2_o = FWD_MEM_RDATA_TO_ID;
+            fwd_rs2_o = FWD_MEM_RDATA_TO_ID;
     end
     else if (rd_wb_is_rs2_id && (reg_alu_wen_wb_i || reg_mem_wen_wb_i)) begin
         if (reg_alu_wen_wb_i)
-            fwd_op2_o = FWD_WB_ALU_RES_TO_ID;
+            fwd_rs2_o = FWD_WB_ALU_RES_TO_ID;
         else if (reg_mem_wen_wb_i)
-            fwd_op2_o = FWD_WB_RDATA_TO_ID;
+            fwd_rs2_o = FWD_WB_RDATA_TO_ID;
+    end
+end
+
+// Resolve forwarding for rs3
+always_comb begin
+    fwd_rs3_o = NO_FORWARD;
+    if (rd_ex_is_rs3_id && reg_alu_wen_ex_i) begin
+        fwd_rs3_o = FWD_EX_ALU_RES_TO_ID;
+    end
+    else if (rd_mem_is_rs3_id && (reg_alu_wen_mem_i || reg_mem_wen_mem_i)) begin
+        if (reg_alu_wen_mem_i)
+            fwd_rs3_o = FWD_MEM_ALU_RES_TO_ID;
+        else if (reg_mem_wen_mem_i)
+            fwd_rs3_o = FWD_MEM_RDATA_TO_ID;
+    end
+    else if (rd_wb_is_rs3_id && (reg_alu_wen_wb_i || reg_mem_wen_wb_i)) begin
+        if (reg_alu_wen_wb_i)
+            fwd_rs3_o = FWD_WB_ALU_RES_TO_ID;
+        else if (reg_mem_wen_wb_i)
+            fwd_rs3_o = FWD_WB_RDATA_TO_ID;
     end
 end
 
 // Resolve stalls
 always_comb begin
-    stall_id_o = 1'b0;
+    stall_ex_o = fpu_rvalid_stall;
+    
+    stall_id_o = stall_ex_o;
+    if (fpu_gnt_stall)
+        stall_id_o = 1'b1;
     if (reg_mem_wen_ex_i) // Load operation in EX
-        if(rd_ex_is_rs1_id || rd_ex_is_rs2_id)
+        if(rd_ex_is_rs1_id || rd_ex_is_rs2_id || rd_ex_is_rs3_id)
             stall_id_o = 1'b1;
     
     stall_if_o = stall_id_o || (!valid_if_i && !ctrl_transfer);
-    stall_ex_o = 1'b0;
     stall_mem_o = 1'b0;
 end
 
 // Resolve flushing
 always_comb begin
     flush_wb_o  = 1'b0;
-    flush_mem_o = flush_wb_o  || trap_ex_i;
+    flush_mem_o = flush_wb_o  || trap_ex_i || stall_ex_o;
     flush_ex_o  = flush_mem_o || branch_decision_ex_i || stall_id_o || trap_id_i;
     flush_id_o  = flush_ex_o  || id_is_jump || stall_if_o;
 end
@@ -172,5 +233,9 @@ always_comb begin
             exception_cause_o = EXC_CAUSE_INSTR_ADDR_MISAL;
     end
 end
+
+`ifdef JASPER
+`default_nettype wire
+`endif
 
 endmodule

@@ -38,6 +38,12 @@ class riscx_env extends uvm_env;
     clknrst_cfg   cfg_clknrst;
     // clknrst_cntxt cntxt_clknrst;
     clknrst_vif   vif_clknrst;
+    localparam int ILEN = 32;
+    localparam int FLEN = 32;
+
+    clknrst_cfg   cfg_clknrst;
+    // clknrst_cntxt cntxt_clknrst;
+    clknrst_vif   vif_clknrst;
 
     obi_cfg   instr_obi_cfg;
     obi_cntxt instr_obi_cntxt;
@@ -54,7 +60,13 @@ class riscx_env extends uvm_env;
     // rvvi_cntxt cntxt_rvvi;
     rvvi_vif   vif_rvvi;
 
+    rvvi_cfg   cfg_rvvi;
+    // rvvi_cntxt cntxt_rvvi;
+    rvvi_vif   vif_rvvi;
+
     `uvm_component_utils_begin(riscx_env)
+      `uvm_field_object(cfg_clknrst   , UVM_ALL_ON)
+    //   `uvm_field_object(cntxt_clknrst , UVM_ALL_ON)
       `uvm_field_object(cfg_clknrst   , UVM_ALL_ON)
     //   `uvm_field_object(cntxt_clknrst , UVM_ALL_ON)
       `uvm_field_object(instr_obi_cfg  , UVM_ALL_ON)
@@ -65,12 +77,16 @@ class riscx_env extends uvm_env;
     //   `uvm_field_object(data_obi_cntxt , UVM_ALL_ON)
       `uvm_field_object(cfg_rvvi           , UVM_ALL_ON)
     //   `uvm_field_object(cntxt_rvvi         , UVM_ALL_ON)
+      `uvm_field_object(cfg_rvvi           , UVM_ALL_ON)
+    //   `uvm_field_object(cntxt_rvvi         , UVM_ALL_ON)
     `uvm_component_utils_end
 
+    clknrst_agent agent_clknrst;
     clknrst_agent agent_clknrst;
     obi_agent     instr_obi_agent;
     bad_uvc_agent data_bad_uvc_agent;
     // obi_agent     data_obi_agent;
+    rvvi_agent    agent_rvvi;
     rvvi_agent    agent_rvvi;
     
     riscx_vseqr vsequencer;
@@ -82,6 +98,10 @@ class riscx_env extends uvm_env;
     function void build_phase (uvm_phase phase);
         super.build_phase(phase);
         
+        if(uvm_config_db#(clknrst_vif)::get(this, "", "vif_clknrst", vif_clknrst))
+            `uvm_info("RISC-X ENV", "Virtual interface for clknrst was successfully set!", UVM_HIGH)
+        else
+            `uvm_error("RISC-X ENV", "No interface for clknrst was set!")
         if(uvm_config_db#(clknrst_vif)::get(this, "", "vif_clknrst", vif_clknrst))
             `uvm_info("RISC-X ENV", "Virtual interface for clknrst was successfully set!", UVM_HIGH)
         else
@@ -98,6 +118,10 @@ class riscx_env extends uvm_env;
         //     `uvm_info("RISC-X ENV", "Virtual interface for Data OBI was successfully set!", UVM_HIGH)
         // else
         //     `uvm_error("RISC-X ENV", "No interface for Data OBI was set!")
+        if(uvm_config_db#(rvvi_vif)::get(this, "", "vif_rvvi", vif_rvvi))
+            `uvm_info("RISC-X ENV", "Virtual interface for RVVI was successfully set!", UVM_HIGH)
+        else
+            `uvm_error("RISC-X ENV", "No interface for RVVI was set!")
         if(uvm_config_db#(rvvi_vif)::get(this, "", "vif_rvvi", vif_rvvi))
             `uvm_info("RISC-X ENV", "Virtual interface for RVVI was successfully set!", UVM_HIGH)
         else
@@ -128,6 +152,7 @@ class riscx_env extends uvm_env;
         // data_obi_cntxt.mem = instr_obi_cntxt.mem;
         
         cfg_clknrst.cov_control   = CLKNRST_COV_DISABLE;
+        cfg_clknrst.cov_control   = CLKNRST_COV_DISABLE;
         instr_obi_cfg.cov_control = OBI_COV_DISABLE;
         data_bad_uvc_cfg.cov_control = BAD_UVC_COV_DISABLE;
         // data_obi_cfg.cov_control  = OBI_COV_DISABLE;
@@ -155,6 +180,7 @@ class riscx_env extends uvm_env;
         agent_rvvi      = rvvi_agent#(ILEN,XLEN,FLEN)        ::type_id::create("agent_rvvi"     , this);
         
         vsequencer = riscx_vseqr#(ILEN)::type_id::create("vsequencer", this);
+        vsequencer = riscx_vseqr#(ILEN)::type_id::create("vsequencer", this);
 
         `uvm_info("RISC-X ENV", "Build phase running", UVM_HIGH)
         // uvm_config_db#(int)::set(this, "*", "recording_detail", 1);
@@ -164,9 +190,12 @@ class riscx_env extends uvm_env;
         super.connect_phase(phase);
         
         vsequencer.sequencer_clknrst = agent_clknrst  .sequencer;
+        vsequencer.sequencer_clknrst = agent_clknrst  .sequencer;
         vsequencer.instr_obi_seqr    = instr_obi_agent.sequencer;
         vsequencer.data_bad_uvc_seqr  = data_bad_uvc_agent .sequencer;
         // vsequencer.data_obi_seqr     = data_obi_agent .sequencer;
+        
+        agent_rvvi.detected_insn_port.connect(vsequencer.detected_insn_imp);
         
         agent_rvvi.detected_insn_port.connect(vsequencer.detected_insn_imp);
     endfunction: connect_phase

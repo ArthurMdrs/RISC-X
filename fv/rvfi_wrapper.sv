@@ -32,6 +32,19 @@ module rvfi_wrapper (
     ,
     `RVFI_OUTPUTS
 );
+
+// logic [ 4:0] rvfi_frs1_addr;
+// logic [ 4:0] rvfi_frs2_addr;
+// logic [ 4:0] rvfi_frs3_addr;
+logic [ 4:0] rvfi_frd_addr;
+// logic rvfi_frs1_rvalid;
+// logic rvfi_frs2_rvalid;
+// logic rvfi_frs3_rvalid;
+logic        rvfi_frd_wvalid;
+// logic [31:0] rvfi_frs1_rdata;
+// logic [31:0] rvfi_frs2_rdata;
+// logic [31:0] rvfi_frs3_rdata;
+logic [31:0] rvfi_frd_wdata;
     
 // Outputs:         (* keep *)               wire
 // Tied-off inputs: (* keep *)               wire
@@ -68,6 +81,10 @@ module rvfi_wrapper (
 (* keep *)               wire [29:0] boot_addr;
     
 ////////////////////    PORT LIST - END    ////////////////////
+
+`ifdef JASPER
+`default_nettype none
+`endif
     
 // Tie-offs
 assign clk_i   = clock;
@@ -115,6 +132,10 @@ core #(
 );
 
 `include "rvfi_inst.sv"
+
+`ifdef JASPER
+`default_nettype wire
+`endif
 
 endmodule
 

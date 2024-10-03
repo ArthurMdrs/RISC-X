@@ -81,6 +81,10 @@ module if_stage import core_pkg::*; (
 logic [31:0] pc_if_n;
 logic core_ready;
 
+`ifdef JASPER
+`default_nettype none
+`endif
+
 // Indicator of compressed instructions
 assign is_compressed_if_o = ~(instr_if_o[1] && instr_if_o[0]);
     
@@ -176,6 +180,10 @@ OBI_controller OBI_controller_inst (
 
     // assert property (@(posedge clk_i) disable iff (!rst_n_i) (insn_obi_req_o && insn_obi_gnt_i && insn_obi_we |-> insn_obi_be != '0));
 
+`endif
+
+`ifdef JASPER
+`default_nettype wire
 `endif
 
 endmodule

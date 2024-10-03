@@ -310,3 +310,84 @@ index 5f364fc..f1f6d0b 100644
                          else:
                              if not args.debug:
                                  logging.error(
+diff --git a/scripts/spike_log_to_trace_csv.py b/scripts/spike_log_to_trace_csv.py
+index b6970bc..bd5d416 100644
+--- a/scripts/spike_log_to_trace_csv.py
++++ b/scripts/spike_log_to_trace_csv.py
+@@ -27,14 +27,42 @@ sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+ from riscv_trace_csv import *
+ from lib import *
+ 
++# The regex RD_RE will match expressions like this:
++# core   0: 3 0x80000060 (0xdd880813) x16 0x132f6dd8
++# core   0: 3 0x800002d2 (0x34049b73) x22 0x00000000 c832_mscratch 0xffffffff
++# core   0: 3 0x80000064 (0xf0080053) c768_mstatus 0x80006080 f0  0x132f6dd8
++# core 0: pri 0x addr    (   bin    ) reg 0x val     csr           0x csr_val
++# csr and csr_val are optional
+ RD_RE = re.compile(
+-    r"(core\s+\d+:\s+)?(?P<pri>\d)\s+0x(?P<addr>[a-f0-9]+?)\s+" \
+-    r"\((?P<bin>.*?)\)\s+(?P<reg>[xf]\s*\d*?)\s+0x(?P<val>[a-f0-9]+)" \
+-    r"(\s+(?P<csr>\S+)\s+0x(?P<csr_val>[a-f0-9]+))?")
++    r"(core\s+\d+:\s+)?" \
++    r"(?P<pri>\d)\s+" \
++    r"0x(?P<addr>[a-f0-9]+?)\s+" \
++    r"\((?P<bin>.*?)\)\s+" \
++    r"((?P<csr1>\S+)\s+" \
++    r"0x(?P<csr1_val>[a-f0-9]+)\s+)?" \
++    r"(?P<reg>[xf]\s*\d*?)\s+" \
++    r"0x(?P<val>[a-f0-9]+)" \
++    r"(\s+(?P<csr>\S+)\s+" \
++    r"0x(?P<csr_val>[a-f0-9]+))?"
++    )
++
++# The regex CORE_RE will match expressions like this:
++# core   0: 0x800002d2 (0x34049b73) csrrw   s6, mscratch, s1
++# core   0: 0x addr    (   bin    ) instr
+ CORE_RE = re.compile(
+-    r"core\s+\d+:\s+0x(?P<addr>[a-f0-9]+?)\s+\(0x(?P<bin>.*?)\)\s+(?P<instr>.*?)$")
++    r"core\s+\d+:\s+" \
++    r"0x(?P<addr>[a-f0-9]+?)\s+" \
++    r"\(0x(?P<bin>.*?)\)\s+" \
++    r"(?P<instr>.*?)$")
++
++# The regex ADDR_RE will match expressions like this:
++# x10,100(x1)
++# rd,imm(rs1)
+ ADDR_RE = re.compile(
+-    r"(?P<rd>[a-z0-9]+?),(?P<imm>[\-0-9]+?)\((?P<rs1>[a-z0-9]+)\)")
++    r"(?P<rd>[a-z0-9]+?)," \
++    r"(?P<imm>[\-0-9]+?)" \
++    r"\((?P<rs1>[a-z0-9]+)\)")
++
+ ILLE_RE = re.compile(r"trap_illegal_instruction")
+ 
+ LOGGER = logging.getLogger()
+@@ -128,6 +156,7 @@ def read_spike_trace(path, full_trace):
+ 
+     in_trampoline = True
+     instr = None
++    # myaux = 0
+ 
+     with open(path, 'r') as handle:
+         for line in handle:
+@@ -158,6 +187,11 @@ def read_spike_trace(path, full_trace):
+             # we need to stop immediately.
+             instr_match = CORE_RE.match(line)
+             if instr_match:
++                # if "fmv.w.x" in instr_match.group('instr'):
++                #     logging.info(instr_match.group('addr'))
++                #     myaux = 1
++                # else:
++                #     myaux = 0
+                 yield instr, False
+                 instr = read_spike_instr(instr_match, full_trace)
+                 if instr.instr_str == 'ecall':
+@@ -175,6 +209,8 @@ def read_spike_trace(path, full_trace):
+             # the --log-commits Spike option)?
+             commit_match = RD_RE.match(line)
+             if commit_match:
++                # if myaux:
++                #     logging.info('in commit')
+                 groups = commit_match.groupdict()
+                 instr.gpr.append(gpr_to_abi(groups["reg"].replace(' ', '')) +
+                                  ":" + groups["val"])

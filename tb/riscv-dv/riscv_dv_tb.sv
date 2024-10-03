@@ -32,7 +32,7 @@ import tb_pkg::*;
 
 localparam ISA_M = 0;
 localparam ISA_C = 1;
-localparam ISA_F = 0;
+localparam ISA_F = 1;
 
 // Primary inputs
 logic clk;
@@ -114,7 +114,7 @@ bit fetch_enable;
 section_info_t sections[$]; // Dynamic array of section information
 
 logic [31:0] regs_clone [32];
-assign regs_clone[1:31] = `CORE.id_stage_inst.register_file_inst.mem;
+assign regs_clone[1:31] = `CORE.id_stage_inst.register_file_inst.mem_x;
 assign regs_clone[0] = '0;
 
 logic [31:0] xptd_dmem [1024];
@@ -135,7 +135,7 @@ string sections_file = {"/mytest/asm_test/", prog_name, ".section"};
 
 // Generate clock
 localparam int PERIOD = 2;
-localparam int MAX_CYCLES = 100000;
+localparam int MAX_CYCLES = 1000000;
 initial begin
     clk = 0; 
     repeat(MAX_CYCLES) #(PERIOD/2) clk = ~clk;
