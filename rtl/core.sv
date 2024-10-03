@@ -43,11 +43,11 @@ module core #(
     input  logic rst_n_i,
 
     // Interface with data memory
-    input  logic [31:0] dmem_rdata_i,
-    output logic [31:0] dmem_wdata_o,
-    output logic [31:0] dmem_addr_o,
-    output logic        dmem_wen_o,
-    output logic  [3:0] dmem_ben_o,
+    // input  logic [31:0] dmem_rdata_i,
+    // output logic [31:0] dmem_wdata_o,
+    // output logic [31:0] dmem_addr_o,
+    // output logic        dmem_wen_o,
+    // output logic  [3:0] dmem_ben_o,
 
     // Interface with instruction memory
     // input  logic [31:0] imem_rdata_i,
@@ -63,6 +63,17 @@ module core #(
     input  logic        insn_obi_rvalid_i,
     output logic        insn_obi_rready_o,
     input  logic [31:0] insn_obi_rdata_i,
+    
+    // OBI interface for data memory
+    output logic        data_obi_req_o,
+    input  logic        data_obi_gnt_i,
+    output logic [31:0] data_obi_addr_o,
+    output logic        data_obi_we_o,
+    output logic [ 3:0] data_obi_be_o,
+    output logic [31:0] data_obi_wdata_o,
+    input  logic        data_obi_rvalid_i,
+    output logic        data_obi_rready_o,
+    input  logic [31:0] data_obi_rdata_i,
     
     // Hart ID, defined by system
     input  logic [31:0] hartid_i,
@@ -100,11 +111,13 @@ forward_t          fwd_rs1_id, fwd_rs2_id, fwd_rs3_id;
 alu_result_mux_t   alu_result_mux_id;
 
 // Memory access control signals, write data and read data
+logic        mem_req_id, mem_req_ex;
 logic        mem_wen_id, mem_wen_ex, mem_wen_mem;
 data_type_t  mem_data_type_id, mem_data_type_ex, mem_data_type_mem;
 logic        mem_sign_extend_id, mem_sign_extend_ex, mem_sign_extend_mem;
 logic [31:0] mem_wdata_id, mem_wdata_ex;//, mem_wdata_mem;
 logic [31:0] mem_rdata_mem, mem_rdata_wb;
+logic        data_obi_busy_mem;
 
 // Register file write enables and write data (distinguish between writes from ALU or from loads)
 logic        reg_alu_wen_id, reg_alu_wen_ex, reg_alu_wen_mem, reg_alu_wen_wb;
@@ -164,15 +177,15 @@ if_stage if_stage_inst (
     // .imem_addr_o  ( imem_addr_o ),
     
     // OBI interface for instruction memory
-    .insn_obi_req_o ( insn_obi_req_o ),
-    .insn_obi_gnt_i  ( insn_obi_gnt_i ),
-    .insn_obi_addr_o ( insn_obi_addr_o ),
-    .insn_obi_we_o  ( insn_obi_we_o ),
-    .insn_obi_be_o ( insn_obi_be_o ),
-    .insn_obi_wdata_o  ( insn_obi_wdata_o ),
-    .insn_obi_rvalid_i ( insn_obi_rvalid_i ),
+    .insn_obi_req_o     ( insn_obi_req_o ),
+    .insn_obi_gnt_i     ( insn_obi_gnt_i ),
+    .insn_obi_addr_o    ( insn_obi_addr_o ),
+    .insn_obi_we_o      ( insn_obi_we_o ),
+    .insn_obi_be_o      ( insn_obi_be_o ),
+    .insn_obi_wdata_o   ( insn_obi_wdata_o ),
+    .insn_obi_rvalid_i  ( insn_obi_rvalid_i ),
     .insn_obi_rready_o  ( insn_obi_rready_o ),
-    .insn_obi_rdata_i  ( insn_obi_rdata_i ),
+    .insn_obi_rdata_i   ( insn_obi_rdata_i ),
     
     // Output to ID stage
     .pc_if_o            ( pc_if ),
@@ -229,6 +242,7 @@ id_stage #(
     .alu_result_mux_id_o    ( alu_result_mux_id ),
     .rd_addr_id_o           ( rd_addr_id ),
     .rd_dst_bank_id_o       ( rd_dst_bank_id ),
+    .mem_req_id_o           ( mem_req_id ),
     .mem_wen_id_o           ( mem_wen_id ),
     .mem_data_type_id_o     ( mem_data_type_id ),
     .mem_sign_extend_id_o   ( mem_sign_extend_id ),
@@ -318,6 +332,7 @@ ex_stage #(
     .alu_result_mux_id_i    ( alu_result_mux_id ),
     .rd_addr_id_i           ( rd_addr_id ),
     .rd_dst_bank_id_i       ( rd_dst_bank_id ),
+    .mem_req_id_i           ( mem_req_id ),
     .mem_wen_id_i           ( mem_wen_id ),
     .mem_data_type_id_i     ( mem_data_type_id ),
     .mem_sign_extend_id_i   ( mem_sign_extend_id ),
@@ -339,6 +354,7 @@ ex_stage #(
     .rd_addr_ex_o         ( rd_addr_ex ),
     .rd_dst_bank_ex_o     ( rd_dst_bank_ex ),
     .alu_result_ex_o      ( alu_result_ex ),
+    .mem_req_ex_o         ( mem_req_ex ),
     .mem_wen_ex_o         ( mem_wen_ex ),
     .mem_data_type_ex_o   ( mem_data_type_ex ),
     .mem_sign_extend_ex_o ( mem_sign_extend_ex ),
@@ -386,16 +402,28 @@ mem_stage mem_stage_inst (
     .rst_n_i ( rst_n_i ),
 
     // Interface with data memory
-    .dmem_rdata_i ( dmem_rdata_i ),
-    .dmem_wdata_o ( dmem_wdata_o ),
-    .dmem_addr_o  ( dmem_addr_o ),
-    .dmem_wen_o   ( dmem_wen_o ),
-    .dmem_ben_o   ( dmem_ben_o ),
+    // .dmem_rdata_i ( dmem_rdata_i ),
+    // .dmem_wdata_o ( dmem_wdata_o ),
+    // .dmem_addr_o  ( dmem_addr_o ),
+    // .dmem_wen_o   ( dmem_wen_o ),
+    // .dmem_ben_o   ( dmem_ben_o ),
+    
+    // OBI interface for data memory
+    .data_obi_req_o     ( data_obi_req_o ),
+    .data_obi_gnt_i     ( data_obi_gnt_i ),
+    .data_obi_addr_o    ( data_obi_addr_o ),
+    .data_obi_we_o      ( data_obi_we_o ),
+    .data_obi_be_o      ( data_obi_be_o ),
+    .data_obi_wdata_o   ( data_obi_wdata_o ),
+    .data_obi_rvalid_i  ( data_obi_rvalid_i ),
+    .data_obi_rready_o  ( data_obi_rready_o ),
+    .data_obi_rdata_i   ( data_obi_rdata_i ),
     
     // Input from EX stage
     .rd_addr_ex_i         ( rd_addr_ex ),
     .rd_dst_bank_ex_i     ( rd_dst_bank_ex ),
     .alu_result_ex_i      ( alu_result_ex ),
+    .mem_req_ex_i         ( mem_req_ex ),
     .mem_wen_ex_i         ( mem_wen_ex ),
     .mem_data_type_ex_i   ( mem_data_type_ex ),
     .mem_sign_extend_ex_i ( mem_sign_extend_ex ),
@@ -412,6 +440,9 @@ mem_stage mem_stage_inst (
     .reg_alu_wen_mem_o ( reg_alu_wen_mem ),
     .reg_mem_wen_mem_o ( reg_mem_wen_mem ),
     .valid_mem_o       ( valid_mem ),
+    
+    // Output to controller
+    .data_obi_busy_mem_o ( data_obi_busy_mem ),
     
     // Control inputs
     .stall_mem_i ( stall_mem ),
@@ -536,6 +567,7 @@ controller controller_inst (
     .fpu_req_id_i  ( fpu_req_id ),
     .fpu_gnt_id_i  ( fpu_gnt_id ),
     .fpu_busy_ex_i ( fpu_busy_ex ),
+    .data_obi_busy_mem_i ( data_obi_busy_mem ),
     
     // Control Hazards (flushing)
     .flush_id_o  ( flush_id ),

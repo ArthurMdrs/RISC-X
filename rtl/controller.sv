@@ -61,6 +61,7 @@ module controller import core_pkg::*; (
     input  logic fpu_req_id_i,
     input  logic fpu_gnt_id_i,
     input  logic fpu_busy_ex_i,
+    input  logic data_obi_busy_mem_i,
     
     // Control Hazards (flushing)
     output logic flush_id_o,
@@ -193,7 +194,9 @@ end
 
 // Resolve stalls
 always_comb begin
-    stall_ex_o = fpu_rvalid_stall;
+    stall_mem_o = data_obi_busy_mem_i;
+    
+    stall_ex_o = stall_mem_o || fpu_rvalid_stall;
     
     stall_id_o = stall_ex_o;
     if (fpu_gnt_stall)
@@ -203,13 +206,13 @@ always_comb begin
             stall_id_o = 1'b1;
     
     stall_if_o = stall_id_o || (!valid_if_i && !ctrl_transfer);
-    stall_mem_o = 1'b0;
 end
 
 // Resolve flushing
 always_comb begin
-    flush_wb_o  = 1'b0;
-    flush_mem_o = flush_wb_o  || trap_ex_i || stall_ex_o;
+    flush_wb_o  = stall_mem_o;
+    // flush_mem_o = flush_wb_o  || trap_ex_i || stall_ex_o;
+    flush_mem_o = trap_ex_i || stall_ex_o;
     flush_ex_o  = flush_mem_o || branch_decision_ex_i || stall_id_o || trap_id_i;
     flush_id_o  = flush_ex_o  || id_is_jump || stall_if_o;
 end

@@ -46,6 +46,7 @@ module ex_stage import core_pkg::*; #(
     input  alu_result_mux_t alu_result_mux_id_i,
     input  logic [ 4:0]     rd_addr_id_i,
     input  reg_bank_mux_t   rd_dst_bank_id_i,
+    input  logic            mem_req_id_i,
     input  logic            mem_wen_id_i,
     input  data_type_t      mem_data_type_id_i,
     input  logic            mem_sign_extend_id_i,
@@ -67,6 +68,7 @@ module ex_stage import core_pkg::*; #(
     output logic [ 4:0]   rd_addr_ex_o,
     output reg_bank_mux_t rd_dst_bank_ex_o,
     output logic [31:0]   alu_result_ex_o,
+    output logic          mem_req_ex_o,
     output logic          mem_wen_ex_o,
     output data_type_t    mem_data_type_ex_o,
     output logic          mem_sign_extend_ex_o,
@@ -137,6 +139,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         alu_operation_ex     <= ALU_ADD;
         alu_operand_1_ex     <= '0;
         alu_operand_2_ex     <= '0;
+        mem_req_ex_o         <= '0;
         mem_wen_ex_o         <= '0;
         mem_data_type_ex_o   <= WORD;
         mem_sign_extend_ex_o <= '0;
@@ -157,6 +160,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         if (!stall_ex_i) begin
             // Insert bubble if flushing is needed
             if (flush_ex_i) begin
+                mem_req_ex_o     <= '0;
                 mem_wen_ex_o     <= '0;
                 reg_alu_wen_ex_o <= '0;
                 reg_mem_wen_ex_o <= '0;
@@ -171,6 +175,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 alu_operation_ex     <= alu_operation_id_i;
                 alu_operand_1_ex     <= alu_operand_1_id_i;
                 alu_operand_2_ex     <= alu_operand_2_id_i;
+                mem_req_ex_o         <= mem_req_id_i;
                 mem_wen_ex_o         <= mem_wen_id_i;
                 mem_data_type_ex_o   <= mem_data_type_id_i;
                 mem_sign_extend_ex_o <= mem_sign_extend_id_i;

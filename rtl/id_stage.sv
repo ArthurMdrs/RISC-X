@@ -50,6 +50,7 @@ module id_stage import core_pkg::*; #(
     output alu_result_mux_t alu_result_mux_id_o,
     output logic [ 4:0]     rd_addr_id_o,
     output reg_bank_mux_t   rd_dst_bank_id_o,
+    output logic            mem_req_id_o,
     output logic            mem_wen_id_o,
     output data_type_t      mem_data_type_id_o,
     output logic            mem_sign_extend_id_o,
@@ -191,6 +192,7 @@ decoder #(
     .rs3_is_used_o  ( rs3_is_used_id_o ),
     
     // Memory access related signals
+    .mem_req_o         ( mem_req_id_o ),
     .mem_wen_o         ( mem_wen_id_o ),
     .mem_data_type_o   ( mem_data_type_id_o ),
     .mem_sign_extend_o ( mem_sign_extend_id_o ),

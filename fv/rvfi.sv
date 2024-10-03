@@ -81,10 +81,17 @@ module rvfi import core_pkg::*; #(
     input  logic        valid_mem,
     input  logic        stall_mem,
     input  logic        flush_mem,
-    input  logic [31:0] dmem_wdata_o,
-    input  logic [31:0] dmem_addr_o,
-    input  logic        dmem_wen_o,
-    input  logic [ 3:0] dmem_ben_o,
+    // input  logic [31:0] dmem_wdata_o,
+    // input  logic [31:0] dmem_addr_o,
+    // input  logic        dmem_wen_o,
+    // input  logic [ 3:0] dmem_ben_o,
+    
+    // input  logic        data_obi_req,
+    input  logic        mem_req_mem,
+    input  logic [31:0] data_obi_addr,
+    input  logic        data_obi_we,
+    input  logic [ 3:0] data_obi_be,
+    input  logic [31:0] data_obi_wdata,
     
     // Input from WB stage
     input  logic          flush_wb,
@@ -401,10 +408,16 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
             // rvfi_valid_wb <= rvfi_valid_mem;
             rvfi_valid_wb <= valid_mem;
             pc_n_wb       <= pc_n_mem;
-            mem_addr_wb   <= dmem_addr_o;
-            mem_rmask_wb  <= dmem_ben_o;
-            mem_wmask_wb  <= (dmem_wen_o) ? (dmem_ben_o) : ('0);
-            mem_wdata_wb  <= dmem_wdata_o;
+            mem_addr_wb   <= data_obi_addr;
+            if (mem_req_mem) begin
+                mem_rmask_wb  <= (!data_obi_we) ? (data_obi_be) : ('0);
+                mem_wmask_wb  <= ( data_obi_we) ? (data_obi_be) : ('0);
+            end
+            else begin
+                mem_rmask_wb <= '0;
+                mem_wmask_wb <= '0;
+            end
+            mem_wdata_wb  <= data_obi_wdata;
             csr_wdata_wb  <= csr_wdata_mem;
             csr_rdata_wb  <= csr_rdata_mem;
             csr_wen_wb    <= csr_wen_mem;

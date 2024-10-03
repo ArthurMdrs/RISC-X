@@ -81,10 +81,17 @@ rvfi rvfi_inst (
     .valid_mem    ( core_inst.valid_mem ),
     .stall_mem    ( core_inst.stall_mem ),
     .flush_mem    ( core_inst.flush_mem ),
-    .dmem_wdata_o ( core_inst.dmem_wdata_o ),
-    .dmem_addr_o  ( core_inst.dmem_addr_o ),
-    .dmem_wen_o   ( core_inst.dmem_wen_o ),
-    .dmem_ben_o   ( core_inst.dmem_ben_o ),
+    // .dmem_wdata_o ( core_inst.dmem_wdata_o ),
+    // .dmem_addr_o  ( core_inst.dmem_addr_o ),
+    // .dmem_wen_o   ( core_inst.dmem_wen_o ),
+    // .dmem_ben_o   ( core_inst.dmem_ben_o ),
+    
+    // .data_obi_req   ( data_obi_req ),
+    .mem_req_mem    ( core_inst.mem_stage_inst.mem_req_mem ),
+    .data_obi_addr  ( data_obi_addr ),
+    .data_obi_we    ( data_obi_we ),
+    .data_obi_be    ( data_obi_be ),
+    .data_obi_wdata ( data_obi_wdata ),
     
     // Input from WB stage
     .flush_wb       ( core_inst.flush_wb ),
