@@ -34,7 +34,6 @@ package riscx_pkg;
     import clknrst_pkg::*;
     import obi_pkg    ::*;
     import rvvi_pkg   ::*;
-    import bad_uvc_pkg::*;
 
     `include "riscx_vseqr.sv"
     `include "riscx_vseq_lib.sv"

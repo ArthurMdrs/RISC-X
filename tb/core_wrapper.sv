@@ -37,9 +37,8 @@ module core_wrapper #(
     input  logic rst_n_i,
     
     // clknrst_if if_clknrst,
-    bad_uvc_if if_instr_bad_uvc,
-    bad_uvc_if if_data_bad_uvc,
     obi_if     if_instr_obi,
+    obi_if     if_data_obi,
     rvvi_if    if_rvvi,
     
     input  logic [31:0] hartid_i,
@@ -62,17 +61,6 @@ core #(
 ) core_inst (
     .clk_i   ( clk_i ),
     .rst_n_i ( rst_n_i ),
-
-    // Bad data interface
-    .dmem_rdata_i ( if_data_bad_uvc.rdata ),
-    .dmem_wdata_o ( if_data_bad_uvc.wdata ),
-    .dmem_addr_o  ( if_data_bad_uvc.addr ),
-    .dmem_wen_o   ( if_data_bad_uvc.we ),
-    .dmem_ben_o   ( if_data_bad_uvc.be ),
-    
-    // Bad instr interface
-    // .imem_rdata_i ( if_instr_bad_uvc.rdata ),
-    // .imem_addr_o  ( if_instr_bad_uvc.addr ),
     
     // OBI instr interface
     .insn_obi_req_o     ( if_instr_obi.req ),
@@ -85,17 +73,28 @@ core #(
     .insn_obi_rready_o  ( if_instr_obi.rready ),
     .insn_obi_rdata_i   ( if_instr_obi.rdata ),
     
+    // OBI data interface
+    .data_obi_req_o    ( if_data_obi.req ),
+    .data_obi_gnt_i    ( if_data_obi.gnt ),
+    .data_obi_addr_o   ( if_data_obi.addr ),
+    .data_obi_we_o     ( if_data_obi.we ),
+    .data_obi_be_o     ( if_data_obi.be ),
+    .data_obi_wdata_o  ( if_data_obi.wdata ),
+    .data_obi_rvalid_i ( if_data_obi.rvalid ),
+    .data_obi_rready_o ( if_data_obi.rready ),
+    .data_obi_rdata_i  ( if_data_obi.rdata ),
+    
     .hartid_i    ( hartid_i ),
     .mtvec_i     ( mtvec_i ),
     .boot_addr_i ( boot_addr_i )
 );
 
 // Tie-offs
-assign if_instr_bad_uvc.wdata = '0;
-assign if_instr_bad_uvc.we    = '0;
-assign if_instr_bad_uvc.be    = '1;
 
-
+wire [31:0] data_obi_addr  = if_data_obi.addr;
+wire        data_obi_we    = if_data_obi.we;
+wire [ 3:0] data_obi_be    = if_data_obi.be;
+wire [31:0] data_obi_wdata = if_data_obi.wdata;
 
 `include "rvfi_inst.sv"
 

@@ -55,11 +55,10 @@ assign clk   = if_clknrst.clk;
 assign rst_n = if_clknrst.rst_n;
 
 // Interfaces instances - begin
-    clknrst_if                  if_clknrst          ();
-    obi_if                      if_instr_obi        (.clk(clk), .rst_n(rst_n));
-    bad_uvc_if                  if_instr_bad_uvc    (.clk(clk), .rst_n(rst_n));
-    bad_uvc_if                  if_data_bad_uvc     (.clk(clk), .rst_n(rst_n));
-    rvvi_if#(ILEN,XLEN,FLEN)    if_rvvi             (.clk(clk), .rst_n(rst_n));
+    clknrst_if                  if_clknrst      ();
+    obi_if                      if_instr_obi    (.clk(clk), .rst_n(rst_n));
+    obi_if                      if_data_obi     (.clk(clk), .rst_n(rst_n));
+    rvvi_if#(ILEN,XLEN,FLEN)    if_rvvi         (.clk(clk), .rst_n(rst_n));
 // Interfaces instances - end
 
 //==============   Module instantiations - BEGIN   ==============//
@@ -73,10 +72,9 @@ core_wrapper #(
     .rst_n_i    ( rst_n ),
     
     // .if_clknrst(if_clknrst),
-    .if_instr_bad_uvc   ( if_instr_bad_uvc ),
-    .if_data_bad_uvc    ( if_data_bad_uvc ),
-    .if_instr_obi       ( if_instr_obi ),
-    .if_rvvi            ( if_rvvi ),
+    .if_instr_obi   ( if_instr_obi ),
+    .if_data_obi    ( if_data_obi ),
+    .if_rvvi        ( if_rvvi ),
     
     .hartid_i       ( hartid ),
     .mtvec_i        ( mtvec ),
@@ -98,14 +96,6 @@ string bin_file = {"./mytest/asm_test/", prog_name, ".bin"};
 
 //=================   Simulation - BEGIN   =================//
 
-// initial begin
-//     clk = 0;
-//     rst_n = 1;
-//     #3 rst_n = 0;
-//     #3 rst_n = 1;
-// end
-// always #2 clk=~clk;
-
 initial begin
     $timeformat(-9, 3, "ns", 12); // e.g.: "       900ns"
     $dumpfile("dump.vcd");
@@ -116,10 +106,10 @@ initial begin
     // rserver = uvm_report_server::get_server();
 
     // Virtual interfaces send to VIPs - begin
-        uvm_config_db#(virtual interface clknrst_if)::set(null, "uvm_test_top", "vif_clknrst"      , if_clknrst      );
-        uvm_config_db#(virtual interface obi_if    )::set(null, "uvm_test_top", "instr_obi_vif"    , if_instr_obi    );
-        uvm_config_db#(virtual interface bad_uvc_if)::set(null, "uvm_test_top", "data_bad_uvc_vif" , if_data_bad_uvc );
-        uvm_config_db#(virtual interface rvvi_if   )::set(null, "uvm_test_top", "vif_rvvi"         , if_rvvi         );
+        uvm_config_db#(virtual interface clknrst_if)::set(null, "uvm_test_top", "vif_clknrst"  , if_clknrst  );
+        uvm_config_db#(virtual interface obi_if    )::set(null, "uvm_test_top", "instr_obi_vif", if_instr_obi);
+        uvm_config_db#(virtual interface obi_if    )::set(null, "uvm_test_top", "data_obi_vif" , if_data_obi );
+        uvm_config_db#(virtual interface rvvi_if   )::set(null, "uvm_test_top", "vif_rvvi"     , if_rvvi     );
     // Virtual interfaces send to VIPs - end
 
     run_test("random_test");

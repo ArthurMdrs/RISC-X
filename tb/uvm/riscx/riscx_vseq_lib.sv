@@ -92,9 +92,9 @@ class riscx_dv_vseq extends riscx_base_vseq;
     clknrst_reset_and_start_clk_seq clknrst_reset_and_start_clk_seq_inst;
     
     obi_load_mem_seq obi_load_mem_seq_inst;
-    obi_memory_seq   obi_memory_seq_inst;
+    obi_memory_seq   obi_instr_memory_seq_inst;
     
-    bad_uvc_memory_seq data_bad_uvc_memory_seq_inst;
+    obi_memory_seq   obi_data_memory_seq_inst;
 
     function new(string name="riscx_dv_vseq");
         super.new(name);
@@ -113,14 +113,14 @@ class riscx_dv_vseq extends riscx_base_vseq;
             
             // This block goes forever
             begin : instr_obi
-                `uvm_do_on(obi_load_mem_seq_inst, p_sequencer.instr_obi_seqr);
-                `uvm_do_on(obi_memory_seq_inst  , p_sequencer.instr_obi_seqr);
+                `uvm_do_on(obi_load_mem_seq_inst    , p_sequencer.instr_obi_seqr);
+                `uvm_do_on(obi_instr_memory_seq_inst, p_sequencer.instr_obi_seqr);
             end : instr_obi
             
             // This block goes forever
-            begin : data_bad_uvc
-                `uvm_do_on(data_bad_uvc_memory_seq_inst, p_sequencer.data_bad_uvc_seqr);
-            end : data_bad_uvc
+            begin : data_obi
+                `uvm_do_on(obi_data_memory_seq_inst, p_sequencer.data_obi_seqr);
+            end : data_obi
             
             // Because of join_any, the fork block finishes when we get should_drop_objection
             begin : drop_objection

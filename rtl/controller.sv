@@ -196,7 +196,7 @@ end
 always_comb begin
     stall_mem_o = data_obi_busy_mem_i;
     
-    stall_ex_o = stall_mem_o || fpu_rvalid_stall;
+    stall_ex_o = stall_mem_o || fpu_rvalid_stall || !valid_if_i;
     
     stall_id_o = stall_ex_o;
     if (fpu_gnt_stall)
@@ -205,7 +205,8 @@ always_comb begin
         if(rd_ex_is_rs1_id || rd_ex_is_rs2_id || rd_ex_is_rs3_id)
             stall_id_o = 1'b1;
     
-    stall_if_o = stall_id_o || (!valid_if_i && !ctrl_transfer);
+    // stall_if_o = stall_id_o || (!valid_if_i && !ctrl_transfer);
+    stall_if_o = stall_id_o;
 end
 
 // Resolve flushing

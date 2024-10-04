@@ -313,7 +313,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
     end else begin
         if (!stall_mem) begin
             instr_mem      <= instr_ex;
-            trap_mem <= rvfi_trap_ex || (trap_ex && !stall_ex);
+            // trap_mem <= rvfi_trap_ex || (trap_ex && !stall_ex); // Moved to if(flush)
             intr_mem <= intr_ex;
             rs1_addr_mem   <= rs1_addr_ex;
             rs2_addr_mem   <= rs2_addr_ex;
@@ -329,12 +329,14 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
             // pc_n_mem <= (branch_decision_ex) ? (branch_target_ex) : (pc_n_ex);
             // Insert bubble if flushing is needed
             if (flush_mem) begin
+                trap_mem <= '0;
                 pc_n_mem       <= '0;    
                 csr_wdata_mem  <= '0;
                 csr_rdata_mem  <= '0;
                 csr_wen_mem    <= '0;
             end
             else begin
+                trap_mem <= rvfi_trap_ex || (trap_ex && !stall_ex);
                 pc_n_mem       <= (branch_decision_ex) ? (branch_target_ex) : (pc_n_ex);
                 csr_wdata_mem  <= csr_wdata_ex;
                 csr_rdata_mem  <= csr_rdata_ex;

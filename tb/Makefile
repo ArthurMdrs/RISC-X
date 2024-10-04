@@ -115,6 +115,7 @@ $(RISCV_DV_ROOT)/.git:
 $(RVFI_HOME)/rvfi_macros.vh: 
 	@curl -L -o $(RVFI_HOME)/rvfi_macros.vh https://raw.githubusercontent.com/ArthurMdrs/riscv-formal/cv32e40p_v1.8.2/checks/original_checks/rvfi_macros.vh
 
+deps: $(DEPS)
 
 
 ######################################################################################################################
@@ -179,7 +180,7 @@ c-test: $(DEPS)
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike --gcc_opts="-I$(PROGS_PATH)/include" \
 		--c_test $(PROGS_PATH) --debug debug.log
 
-# asm-test IS WORKING!
+# asm-test IS WORKING?
 asm-test: $(DEPS)
 	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm --noclean --iss_timeout 600 \
 		--custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi $(ABI) \
@@ -191,6 +192,12 @@ asm-test-dir: $(DEPS)
 		--custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi $(ABI) \
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike --gcc_opts="-I$(PROGS_PATH)/include" \
 		--asm_test $(PROGS_PATH)
+
+log2csv-spike:
+	@for log_file in $(wildcard $(DV_OUT_DIR)/spike_sim/*.log); do \
+		csv_file=$$(echo $$log_file | sed 's/\.log$$/\.csv/') ; \
+		cd $(RISCV_DV_ROOT) && python3 -c "import scripts.spike_log_to_trace_csv as l2t; l2t.process_spike_sim_log('$$log_file', '$$csv_file', 0)"; \
+	done
 
 
 

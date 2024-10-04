@@ -532,7 +532,7 @@ class rvvi_tr_log #(
         logic [11:0] imm_bits;
         case (instr[15:13])
             3'b000: begin
-                if (instr[4:2] == '0)
+                if (instr[11:7] == '0)
                     return "c.nop";
                 rd  = translate_register(instr[11:7]);
                 imm_bits = {instr[12], instr[6:2]};

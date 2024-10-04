@@ -37,6 +37,8 @@ module OBI_controller #(
     output logic                resp_valid_o,  // Note: Consumer is assumed to be 'ready' whenever resp_valid_o = 1
     output logic [WIDTH-1:0]    resp_rdata_o,
     output logic                resp_err_o,
+    
+    // input  logic                flush_i,
 
     // OBI interface
     output logic                obi_req_o,
@@ -69,7 +71,7 @@ module OBI_controller #(
             
     // Assigns 
 
-        assign resp_valid_o = obi_rvalid_i;
+        assign resp_valid_o = obi_rvalid_i && (state == WAITING || state == DUMPING);
         assign obi_rready_o = core_rready_i; // Isso tá certo??? TODO
 
     always_ff@(posedge clk or negedge rst_n) begin
@@ -90,13 +92,13 @@ module OBI_controller #(
                 */
 
                 IDLE: begin
-                    addr_aux_i       = core_addr_i;
-                    we_aux_i         = core_we_i;
-                    be_aux_i         = core_be_i;
-                    wdata_aux_i      = core_wdata_i;
+                    addr_aux_i       <= core_addr_i;
+                    we_aux_i         <= core_we_i;
+                    be_aux_i         <= core_be_i;
+                    wdata_aux_i      <= core_wdata_i;
                     
                     if (core_valid_i)
-                        state = next_state;   
+                        state <= next_state;
                 end
                 
                 /*
@@ -107,7 +109,7 @@ module OBI_controller #(
                 */
                 REQUESTING: begin
                     if (obi_gnt_i)
-                        state = next_state;
+                        state <= next_state;
                 end
 
                 /*
@@ -118,9 +120,9 @@ module OBI_controller #(
                 */
             
                 WAITING: begin
-                    rdata_aux_i     = obi_rdata_i;
+                    rdata_aux_i     <= obi_rdata_i;
                     if (obi_rvalid_i)
-                        state = next_state;
+                        state <= next_state;
                 end
 
                 /*
@@ -130,7 +132,7 @@ module OBI_controller #(
 
                 DUMPING: begin
                     if (core_rready_i)
-                        state = next_state;
+                        state <= next_state;
                 end
             endcase
         end

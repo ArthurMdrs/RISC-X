@@ -1,3 +1,37 @@
+// FPU RTL
++incdir+${RTL_HOME}/cvfpu/src/common_cells/include
+${RTL_HOME}/cvfpu/src/common_cells/src/cf_math_pkg.sv
+${RTL_HOME}/cvfpu/src/common_cells/src/rr_arb_tree.sv
+${RTL_HOME}/cvfpu/src/common_cells/src/lzc.sv
+${RTL_HOME}/cvfpu/src/fpnew_pkg.sv
+${RTL_HOME}/cvfpu/src/fpnew_cast_multi.sv
+${RTL_HOME}/cvfpu/src/fpnew_classifier.sv
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/clk/rtl/gated_clk_cell.v
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/fdsu/rtl/pa_fdsu_ctrl.v
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/fdsu/rtl/pa_fdsu_ff1.v
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/fdsu/rtl/pa_fdsu_pack_single.v
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/fdsu/rtl/pa_fdsu_prepare.v
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/fdsu/rtl/pa_fdsu_round_single.v
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/fdsu/rtl/pa_fdsu_special.v
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/fdsu/rtl/pa_fdsu_srt_single.v
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/fdsu/rtl/pa_fdsu_top.v
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/fpu/rtl/pa_fpu_dp.v
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/fpu/rtl/pa_fpu_frbus.v
+${RTL_HOME}/cvfpu/vendor/opene906/E906_RTL_FACTORY/gen_rtl/fpu/rtl/pa_fpu_src_type.v
+${RTL_HOME}/cvfpu/src/fpnew_divsqrt_th_32.sv
+${RTL_HOME}/cvfpu/src/fpnew_divsqrt_th_64_multi.sv
+${RTL_HOME}/cvfpu/src/fpnew_divsqrt_multi.sv
+${RTL_HOME}/cvfpu/src/fpnew_fma.sv
+${RTL_HOME}/cvfpu/src/fpnew_fma_multi.sv
+${RTL_HOME}/cvfpu/src/fpnew_noncomp.sv
+${RTL_HOME}/cvfpu/src/fpnew_opgroup_block.sv
+${RTL_HOME}/cvfpu/src/fpnew_opgroup_fmt_slice.sv
+${RTL_HOME}/cvfpu/src/fpnew_opgroup_multifmt_slice.sv
+${RTL_HOME}/cvfpu/src/fpnew_rounding.sv
+${RTL_HOME}/cvfpu/src/fpnew_top.sv
+
+////////////////////////////////////////////////////////////
+
 // Core RTL
 ${RTL_HOME}/pkg/core_pkg.sv
 
@@ -37,11 +71,6 @@ ${RISCX_UVM_SRC}/mem_model/riscx_mem_model_pkg.sv
 ${RISCX_UVM_SRC}/clknrst/clknrst_pkg.sv
 ${RISCX_UVM_SRC}/clknrst/clknrst_if.sv
 
-// bad_uvc UVC
-+incdir+${RISCX_UVM_SRC}/bad_uvc
-${RISCX_UVM_SRC}/bad_uvc/bad_uvc_pkg.sv
-${RISCX_UVM_SRC}/bad_uvc/bad_uvc_if.sv
-
 // OBI UVC
 +incdir+${RISCX_UVM_SRC}/obi
 ${RISCX_UVM_SRC}/obi/obi_pkg.sv
@@ -55,8 +84,6 @@ ${RISCX_UVM_SRC}/rvvi/rvvi_if.sv
 ////////////////////////////////////////////////////////////
 
 // RISC-X ENV
-//+incdir+${RISCX_UVM_SRC}/bad_riscx
-//${RISCX_UVM_SRC}/bad_riscx/riscx_pkg.sv
 +incdir+${RISCX_UVM_SRC}/riscx
 ${RISCX_UVM_SRC}/riscx/riscx_pkg.sv
 
@@ -64,5 +91,4 @@ ${RISCX_UVM_SRC}/riscx/riscx_pkg.sv
 
 // Testbench files
 ${TB_HOME}/core_wrapper.sv
-//${TB_HOME}/bad_tb_top.sv
 ${TB_HOME}/tb_top.sv
