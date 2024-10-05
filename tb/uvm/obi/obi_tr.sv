@@ -40,8 +40,6 @@ class obi_tr #(int XLEN=32, int ALEN=32) extends uvm_sequence_item;
     
     // Response phase signals
     rand logic [XLEN  -1:0] rdata;
-    
-    int id;
 
     `uvm_object_param_utils_begin(obi_tr)
         `uvm_field_int(gnt_latency, UVM_ALL_ON)
@@ -51,7 +49,6 @@ class obi_tr #(int XLEN=32, int ALEN=32) extends uvm_sequence_item;
         `uvm_field_int(be, UVM_ALL_ON)
         `uvm_field_int(wdata, UVM_ALL_ON)
         `uvm_field_int(rdata, UVM_ALL_ON)
-        `uvm_field_int(id, UVM_ALL_ON)
     `uvm_object_utils_end
 
     function new(string name="obi_tr");
@@ -59,10 +56,12 @@ class obi_tr #(int XLEN=32, int ALEN=32) extends uvm_sequence_item;
     endfunction: new
 
     constraint valid_gnt_latency { 
+        soft
         gnt_latency >= 0;
         gnt_latency <= 10;
     }
     constraint valid_rvalid_latency { 
+        soft
         rvalid_latency >= 0;
         rvalid_latency <= 10;
     }

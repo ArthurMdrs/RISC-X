@@ -33,10 +33,11 @@ class riscx_vseqr #(
     // obi_cfg   cfg;
     // obi_cntxt cntxt;
 
-    `uvm_component_utils_begin(riscx_vseqr)
-        // `uvm_field_object(cfg  , UVM_DEFAULT)
-        // `uvm_field_object(cntxt, UVM_DEFAULT)
-    `uvm_component_utils_end
+    `uvm_component_utils(riscx_vseqr)
+    // `uvm_component_utils_begin(riscx_vseqr)
+    //     `uvm_field_object(cfg  , UVM_DEFAULT)
+    //     `uvm_field_object(cntxt, UVM_DEFAULT)
+    // `uvm_component_utils_end
     
     clknrst_sqr sequencer_clknrst;
     obi_seqr    instr_obi_seqr;

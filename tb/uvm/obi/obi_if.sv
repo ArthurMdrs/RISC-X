@@ -52,24 +52,34 @@ interface obi_if #(int XLEN=32, int ALEN=32) (input clk, input rst_n);
     endtask
     
     task addr_ch_collect_tr(obi_tr tr);
+        int unsigned latency;
+        
+        latency = 0;
         while (!(req===1'b1 && gnt===1'b1)) begin
             @(posedge clk);
+            latency++;
         end
         
         tr.addr = addr;
         tr.we = we;
         tr.be = be;
         tr.wdata = wdata;
+        tr.gnt_latency = latency;
         
         // @(posedge clk);
     endtask : addr_ch_collect_tr
     
     task resp_ch_collect_tr(obi_tr tr);
+        int unsigned latency;
+        
+        latency = 0;
         while (!(rvalid===1'b1 && rready===1'b1)) begin
             @(posedge clk);
+            latency++;
         end
         
         tr.rdata = rdata;
+        tr.rvalid_latency = latency;
         
         // @(posedge clk);
     endtask : resp_ch_collect_tr

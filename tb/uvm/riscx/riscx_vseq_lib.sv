@@ -103,7 +103,7 @@ class riscx_dv_vseq extends riscx_base_vseq;
     // If a sequence is called via a `uvm_do variant, then it is defined as a 
     // subsequence and it's pre/post_body() methods are not executed
     virtual task body();
-    
+        
         `uvm_do_on(clknrst_reset_and_start_clk_seq_inst, p_sequencer.sequencer_clknrst);
         
         fork
@@ -133,4 +133,37 @@ class riscx_dv_vseq extends riscx_base_vseq;
 
 endclass: riscx_dv_vseq
 
+    // Without `uvm_do_on macro:
+    // virtual task body();
+    //     $cast(clknrst_reset_and_start_clk_seq_inst, create_item(clknrst_reset_and_start_clk_seq_inst.get_type(), p_sequencer.sequencer_clknrst, "SEQ"));
+    //     $cast(obi_load_mem_seq_inst               , create_item(obi_load_mem_seq_inst               .get_type(), p_sequencer.instr_obi_seqr   , "SEQ"));
+    //     $cast(obi_instr_memory_seq_inst           , create_item(obi_instr_memory_seq_inst           .get_type(), p_sequencer.instr_obi_seqr   , "SEQ"));
+    //     $cast(obi_data_memory_seq_inst            , create_item(obi_data_memory_seq_inst            .get_type(), p_sequencer.data_obi_seqr    , "SEQ"));
+        
+    //     clknrst_reset_and_start_clk_seq_inst.start(p_sequencer.sequencer_clknrst, this, , 0);
+        
+    //     fork
+    //         // begin : clknrst
+                
+    //         // end : clknrst
+            
+    //         // This block goes forever
+    //         begin : instr_obi
+    //             obi_load_mem_seq_inst.start(p_sequencer.instr_obi_seqr, this, , 0);
+    //             obi_instr_memory_seq_inst.start(p_sequencer.instr_obi_seqr, this, , 0);
+    //         end : instr_obi
+            
+    //         // This block goes forever
+    //         begin : data_obi
+    //             obi_data_memory_seq_inst.start(p_sequencer.data_obi_seqr, this, , 0);
+    //         end : data_obi
+            
+    //         // Because of join_any, the fork block finishes when we get should_drop_objection
+    //         begin : drop_objection
+    //             wait (p_sequencer.should_drop_objection === 1'b1);
+    //             `uvm_info("RISC-X Sequence", "Got signal to drop objection.", UVM_HIGH)
+    //         end : drop_objection
+    //     join_any
+        
+    // endtask: body
 //==============================================================//

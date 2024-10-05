@@ -71,17 +71,15 @@ class obi_random_seq #(int XLEN=32, int ALEN=32) extends obi_base_sequence#(XLEN
     
     virtual task body();
         obi_tr mon_tr;
-        int id;
-        logic [31:0] addr, rdata;
+        logic [ALEN-1:0] addr;
+        logic [XLEN-1:0] rdata;
         
-        id = 0;
         repeat(10) begin
             p_sequencer.mon_tr_fifo.get(mon_tr);
             // `uvm_info("OBI RND SEQ", $sformatf("Got transaction from monitor:\n%s", mon_tr.sprint()), UVM_HIGH)
             `uvm_info("OBI RND SEQ", "Got transaction from monitor.", UVM_HIGH)
             
-            `uvm_create(req)
-            void'(req.randomize());
+            start_item(req);
             
             addr = mon_tr.addr;
             if (mon_tr.we) begin
@@ -102,11 +100,7 @@ class obi_random_seq #(int XLEN=32, int ALEN=32) extends obi_base_sequence#(XLEN
                 req.rdata = rdata;
             end
             
-            // void'(req.randomize() with {field_1==value_1; field_2==value_2;});
-            
-            req.id = id;
-            id++;
-            `uvm_send(req)
+            finish_item(req);
             
         end
     endtask: body
@@ -143,19 +137,19 @@ class obi_memory_seq #(int XLEN=32, int ALEN=32) extends obi_base_sequence#(XLEN
     
     virtual task body();
         obi_tr mon_tr;
-        int id;
-        logic [31:0] addr, rdata;
+        logic [ALEN-1:0] addr;
+        logic [XLEN-1:0] rdata;
         
         `uvm_info("OBI MEM SEQ", $sformatf("Started memory sequence."), UVM_LOW)
         
-        id = 0;
+        req = obi_tr#(XLEN, ALEN)::type_id::create("req");
+        
         forever begin
             p_sequencer.mon_tr_fifo.get(mon_tr);
             // `uvm_info("OBI RND SEQ", $sformatf("Got transaction from monitor:\n%s", mon_tr.sprint()), UVM_HIGH)
             // `uvm_info("OBI RND SEQ", "Got transaction from monitor.", UVM_HIGH)
             
-            `uvm_create(req)
-            void'(req.randomize());
+            start_item(req);
             
             addr = mon_tr.addr;
             if (mon_tr.we) begin
@@ -176,11 +170,7 @@ class obi_memory_seq #(int XLEN=32, int ALEN=32) extends obi_base_sequence#(XLEN
                 req.rdata = rdata;
             end
             
-            // void'(req.randomize() with {field_1==value_1; field_2==value_2;});
-            
-            req.id = id;
-            id++;
-            `uvm_send(req)
+            finish_item(req);
             
         end
         

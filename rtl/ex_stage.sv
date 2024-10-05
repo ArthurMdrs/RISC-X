@@ -157,7 +157,6 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         csr_op_ex_o          <= CSR_READ;
         csr_wdata_ex_o       <= '0;
         csr_addr_ex_o        <= CSR_USTATUS;
-        csr_rdata_q          <= '0;
         valid_ex_o           <= '0;
         alu_result_mux_ex    <= BASIC_ALU_RESULT;
     end else begin
@@ -196,7 +195,6 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                     // csr_op_ex_o    <= csr_op_id_i;
                     csr_wdata_ex_o <= alu_operand_1_id_i; // wdata is passed through operand 1
                     csr_addr_ex_o  <= csr_addr_t'(alu_operand_2_id_i[11:0]); // addr is passed through operand 2
-                    csr_rdata_q    <= csr_rdata_ex_i;
                 end
                 alu_result_mux_ex <= alu_result_mux_id_i;
                 valid_ex_o        <= valid_id_i;
@@ -363,16 +361,21 @@ end
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
         csr_acc_cyc1 <= 1'b0;
+        csr_rdata_q  <= '0;
     end
     else begin
         if (!stall_ex_i) begin
-                if (csr_access_id_i) begin
-                    csr_acc_cyc1 <= 1'b1;
-                end
-                // csr_acc_cyc1 <= csr_access_id_i; // Maybe do this
+                // if (csr_access_id_i) begin
+                //     csr_acc_cyc1 <= 1'b1;
+                // end
+                csr_acc_cyc1 <= csr_access_id_i;
         end
         else begin
             csr_acc_cyc1 <= 1'b0;
+        end
+        
+        if (csr_acc_cyc1) begin
+            csr_rdata_q  <= csr_rdata_ex_i;
         end
     end
 end
