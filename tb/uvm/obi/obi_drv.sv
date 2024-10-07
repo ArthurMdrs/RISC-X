@@ -95,8 +95,11 @@ class obi_drv #(int XLEN=32, int ALEN=32) extends uvm_driver #(obi_tr#(.XLEN(XLE
     endtask : addr_ch_post_reset_drv
 
     task resp_ch_post_reset_drv();
+        string msg;
         seq_item_port.get_next_item(req);
         void'(begin_tr(req, "OBI_DRIVER_TR"));
+        msg = $sformatf("Driving response channel. rvalid latency = %0d", req.rvalid_latency);
+        `uvm_info("OBI DRIVER", msg, UVM_HIGH)
         vif.resp_ch_drive_tr(req);
         seq_item_port.item_done();
         end_tr(req); 

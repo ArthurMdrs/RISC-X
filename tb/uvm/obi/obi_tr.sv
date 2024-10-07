@@ -42,11 +42,11 @@ class obi_tr #(int XLEN=32, int ALEN=32) extends uvm_sequence_item;
     rand logic [XLEN  -1:0] rdata;
 
     `uvm_object_param_utils_begin(obi_tr)
-        `uvm_field_int(gnt_latency, UVM_ALL_ON)
-        `uvm_field_int(rvalid_latency, UVM_ALL_ON)
+        `uvm_field_int(gnt_latency, UVM_ALL_ON | UVM_DEC)
+        `uvm_field_int(rvalid_latency, UVM_ALL_ON | UVM_DEC)
         `uvm_field_int(addr, UVM_ALL_ON)
         `uvm_field_int(we, UVM_ALL_ON)
-        `uvm_field_int(be, UVM_ALL_ON)
+        `uvm_field_int(be, UVM_ALL_ON | UVM_BIN)
         `uvm_field_int(wdata, UVM_ALL_ON)
         `uvm_field_int(rdata, UVM_ALL_ON)
     `uvm_object_utils_end

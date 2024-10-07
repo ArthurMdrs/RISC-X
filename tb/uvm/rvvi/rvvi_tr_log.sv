@@ -306,6 +306,8 @@ class rvvi_tr_log #(
     function string decode_op(logic [31:0] instruction);
         string rd, rs1, rs2;
         string func;
+        if (!(instruction[31:25] inside {7'h00, 7'h20}))
+            return "UNKNOWN";
         rd  = translate_register(instruction[11:7]);
         rs1 = translate_register(instruction[19:15]);
         rs2 = translate_register(instruction[24:20]);

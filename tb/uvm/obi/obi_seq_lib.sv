@@ -150,6 +150,7 @@ class obi_memory_seq #(int XLEN=32, int ALEN=32) extends obi_base_sequence#(XLEN
             // `uvm_info("OBI RND SEQ", "Got transaction from monitor.", UVM_HIGH)
             
             start_item(req);
+            req.randomize(rvalid_latency);
             
             addr = mon_tr.addr;
             if (mon_tr.we) begin

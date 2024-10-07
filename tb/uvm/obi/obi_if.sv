@@ -54,6 +54,9 @@ interface obi_if #(int XLEN=32, int ALEN=32) (input clk, input rst_n);
     task addr_ch_collect_tr(obi_tr tr);
         int unsigned latency;
         
+        while (!(req===1'b1)) begin
+            @(posedge clk);
+        end
         latency = 0;
         while (!(req===1'b1 && gnt===1'b1)) begin
             @(posedge clk);
@@ -75,7 +78,7 @@ interface obi_if #(int XLEN=32, int ALEN=32) (input clk, input rst_n);
         latency = 0;
         while (!(rvalid===1'b1 && rready===1'b1)) begin
             @(posedge clk);
-            latency++;
+            // latency++; // TODO: fix latency count
         end
         
         tr.rdata = rdata;
@@ -91,19 +94,17 @@ interface obi_if #(int XLEN=32, int ALEN=32) (input clk, input rst_n);
         gnt <= 1'b0;
         
         do begin
-            if (wait_gnt_cycles == 0)
+            if (gnt_latency == 0) // if true, we're in the last cycle of waiting
                 gnt <= 1'b1;
-            if (req===1'b1 && wait_gnt_cycles != 0)
-                wait_gnt_cycles--;
             @(posedge clk);
+            if (req===1'b1 && gnt_latency != 0)
+                gnt_latency--;
         end while (!(req===1'b1 && gnt===1'b1));
         
         gnt <= 1'b0;
     endtask : addr_ch_drive_tr
     
     task resp_ch_drive_tr(obi_tr tr);
-        int wait_rvalid_cycles;
-        wait_rvalid_cycles = tr.rvalid_latency;
         rvalid <= 1'b0;
         
         repeat (tr.rvalid_latency) begin
