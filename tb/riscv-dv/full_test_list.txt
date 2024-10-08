@@ -7,3 +7,4 @@ riscv_mmu_stress_test
 riscv_no_fence_test
 riscv_illegal_instr_test
 riscv_unaligned_load_store_test
+riscv_floating_point_arithmetic_test

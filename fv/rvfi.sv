@@ -350,7 +350,7 @@ end
 ////////////////////////          WRITE BACK          /////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// Pipeline registers EX->MEM
+// Pipeline registers MEM->WB
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
         rvfi_valid_wb <= '0;
@@ -379,9 +379,11 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         csr_wen_wb    <= '0;
     end else begin
         order_wb <= order_wb + {63'b0, rvfi_valid};
-        instr_wb      <= instr_mem;
+        instr_wb <= instr_mem;
         trap_wb  <= trap_mem;
         intr_wb  <= intr_mem;
+        pc_wb    <= pc_mem;
+        // pc_n_wb  <= pc_n_mem;
         rs1_addr_wb   <= rs1_addr_mem;
         rs2_addr_wb   <= rs2_addr_mem;
         rs1_rdata_wb  <= rs1_rdata_mem;
@@ -392,8 +394,6 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         frs1_rdata_wb <= frs1_rdata_mem;
         frs2_rdata_wb <= frs2_rdata_mem;
         frs3_rdata_wb <= frs3_rdata_mem;
-        pc_wb    <= pc_mem;
-        // pc_n_wb  <= pc_n_mem;
         // Insert bubble if flushing is needed
         if (flush_wb) begin
             rvfi_valid_wb <= '0;

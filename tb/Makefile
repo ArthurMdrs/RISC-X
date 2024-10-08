@@ -24,7 +24,7 @@ PROGS_PATH := $(abspath $(TB_HOME)/programs)
 ##########################                          RISCV-DV VARS                           ##########################
 ######################################################################################################################
 
-ISA := rv32ic_zicsr_zifencei
+ISA := rv32ifc_zicsr_zifencei
 ABI := ilp32
 DV_OUT_DIR := $(TB_HOME)/mytest
 # DV_FILE_LIST := $(RISCV_DV_ROOT)/files.f
@@ -198,6 +198,9 @@ log2csv-spike:
 		csv_file=$$(echo $$log_file | sed 's/\.log$$/\.csv/') ; \
 		cd $(RISCV_DV_ROOT) && python3 -c "import scripts.spike_log_to_trace_csv as l2t; l2t.process_spike_sim_log('$$log_file', '$$csv_file', 0)"; \
 	done
+
+dv-help:
+	@$(DV_RUN_CMD) -h
 
 
 

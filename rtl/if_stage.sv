@@ -79,6 +79,7 @@ module if_stage import core_pkg::*; (
 ///////////////////////////////////////////////////////////////////////////////
 
 logic [31:0] pc_if_n;
+// logic [31:0] pc_obi;
 logic core_ready;
 
 `ifdef JASPER
@@ -102,6 +103,8 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         end
     end
 end
+
+// assign pc_obi = (valid_if_o) ? (pc_if_n) : (pc_if_o);
 
 // Determine next instruction address (PC)
 pc_controller pc_controller_inst (
@@ -132,6 +135,7 @@ OBI_controller OBI_controller_inst (
     .core_valid_i           ( 1'b1 ),
     .core_ready_o           ( core_ready ),
     .core_addr_i            ( pc_if_o ),
+    // .core_addr_i            ( pc_obi ),
     .core_we_i              ( 1'b0 ),
     .core_be_i              ( 4'b1111 ),
     .core_wdata_i           ( 32'b0 ),

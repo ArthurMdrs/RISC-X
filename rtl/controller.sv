@@ -199,8 +199,8 @@ always_comb begin
     stall_ex_o = stall_mem_o || fpu_rvalid_stall || !valid_if_i;
     
     stall_id_o = stall_ex_o;
-    if (fpu_gnt_stall)
-        stall_id_o = 1'b1;
+    // if (fpu_gnt_stall)
+    //     stall_id_o = 1'b1;
     if (reg_mem_wen_ex_i) // Load operation in EX
         if(rd_ex_is_rs1_id || rd_ex_is_rs2_id || rd_ex_is_rs3_id)
             stall_id_o = 1'b1;

@@ -304,6 +304,7 @@ id_stage #(
     .fpu_op_mod_id_o   ( fpu_op_mod_id ),
     .fpu_req_id_o      ( fpu_req_id ),
     
+    // .stall_ex_i ( stall_ex ),
     .fpu_busy_ex_i ( fpu_busy_ex )
 );
 

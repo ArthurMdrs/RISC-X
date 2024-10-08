@@ -51,6 +51,19 @@ import core_pkg::*;
 // RVFI signals
 `RVFI_WIRES
 
+// logic [ 4:0] rvfi_frs1_addr;
+// logic [ 4:0] rvfi_frs2_addr;
+// logic [ 4:0] rvfi_frs3_addr;
+logic [ 4:0] rvfi_frd_addr;
+// logic rvfi_frs1_rvalid;
+// logic rvfi_frs2_rvalid;
+// logic rvfi_frs3_rvalid;
+logic        rvfi_frd_wvalid;
+// logic [31:0] rvfi_frs1_rdata;
+// logic [31:0] rvfi_frs2_rdata;
+// logic [31:0] rvfi_frs3_rdata;
+logic [31:0] rvfi_frd_wdata;
+
 // wire clk_i   = if_clknrst.clk  ;
 // wire rst_n_i = if_clknrst.rst_n;
 
@@ -130,8 +143,20 @@ assign if_rvvi.x_wdata = x_wdata;
 assign if_rvvi.x_wb    = x_wb;
 
 // F Registers
-assign if_rvvi.f_wdata = '{default:'0};
-assign if_rvvi.f_wb    = '{default:'0};
+logic [31:0][31:0] f_wdata;   // F write data value
+logic [31:0]       f_wb   ;   // F data writeback (change) flag
+always_comb begin
+    foreach(if_rvvi.f_wb[i]) begin
+        f_wdata[i] = '0;
+        f_wb[i]    = '0;
+    end
+    if (rvfi_frd_wvalid) begin
+        f_wdata[rvfi_frd_addr] = rvfi_frd_wdata;
+        f_wb[rvfi_frd_addr]    = '1;
+    end
+end
+assign if_rvvi.f_wdata = f_wdata;
+assign if_rvvi.f_wb    = f_wb;
 
 
 // V Registers

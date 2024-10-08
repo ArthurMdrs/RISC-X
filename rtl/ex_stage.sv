@@ -111,13 +111,8 @@ module ex_stage import core_pkg::*; #(
 /////////////////////////           EXECUTE           /////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-logic [2:0] [31:0] fpu_operands_i;
-logic [31:0]       fpu_result;
-logic              fpu_rvalid;
-logic              fpu_busy_int;
-
 alu_operation_t  alu_operation_ex;
-logic [31:0]     alu_operand_1_ex, alu_operand_2_ex;
+logic [31:0]     alu_operand_1_ex, alu_operand_2_ex, alu_operand_3_ex;
 logic [31:0]     alu_result_ex;
 logic [31:0]     basic_alu_result;
 alu_result_mux_t alu_result_mux_ex;
@@ -129,6 +124,15 @@ logic csr_acc_cyc1; // Indicates it's the first cycle of a CSR access
 
 logic instr_addr_misaligned_ex;
 logic exception_ex;
+
+logic [2:0] [31:0] fpu_operands_ex;
+logic [31:0]       fpu_result;
+logic              fpu_tr_cnt; // max 1 outstanding transaction in the FPU
+logic              fpu_req_ex; //, fpu_req_eff; // eff = effective
+logic [2:0]        fpu_rnd_mode_ex;
+logic [3:0]        fpu_op_ex;
+logic              fpu_op_mod_ex;
+
 
 `ifdef JASPER
 `default_nettype none
@@ -142,6 +146,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         alu_operation_ex     <= ALU_ADD;
         alu_operand_1_ex     <= '0;
         alu_operand_2_ex     <= '0;
+        alu_operand_3_ex     <= '0;
         mem_req_ex_o         <= '0;
         mem_wen_ex_o         <= '0;
         mem_data_type_ex_o   <= WORD;
@@ -159,6 +164,10 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         csr_addr_ex_o        <= CSR_USTATUS;
         valid_ex_o           <= '0;
         alu_result_mux_ex    <= BASIC_ALU_RESULT;
+        fpu_req_ex           <= '0;
+        fpu_rnd_mode_ex      <= '0;
+        fpu_op_ex            <= '0;
+        fpu_op_mod_ex        <= '0;
     end else begin
         if (!stall_ex_i) begin
             // Insert bubble if flushing is needed
@@ -170,7 +179,8 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 is_branch_ex     <= '0;
                 csr_op_ex_o      <= CSR_READ;
                 csr_access_ex_o  <= '0;
-                valid_ex_o       <= 1'b0;
+                valid_ex_o       <= '0;
+                fpu_req_ex       <= '0;
             end
             else begin
                 rd_addr_ex_o         <= rd_addr_id_i;
@@ -178,6 +188,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 alu_operation_ex     <= alu_operation_id_i;
                 alu_operand_1_ex     <= alu_operand_1_id_i;
                 alu_operand_2_ex     <= alu_operand_2_id_i;
+                alu_operand_3_ex     <= alu_operand_3_id_i;
                 mem_req_ex_o         <= mem_req_id_i;
                 mem_wen_ex_o         <= mem_wen_id_i;
                 mem_data_type_ex_o   <= mem_data_type_id_i;
@@ -192,12 +203,15 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 csr_access_ex_o      <= csr_access_id_i;
                 csr_op_ex_o          <= csr_op_id_i;
                 if (csr_access_id_i) begin
-                    // csr_op_ex_o    <= csr_op_id_i;
                     csr_wdata_ex_o <= alu_operand_1_id_i; // wdata is passed through operand 1
                     csr_addr_ex_o  <= csr_addr_t'(alu_operand_2_id_i[11:0]); // addr is passed through operand 2
                 end
                 alu_result_mux_ex <= alu_result_mux_id_i;
                 valid_ex_o        <= valid_id_i;
+                fpu_req_ex        <= fpu_req_id_i;
+                fpu_rnd_mode_ex   <= fpu_rnd_mode_id_i;
+                fpu_op_ex         <= fpu_op_id_i;
+                fpu_op_mod_ex     <= fpu_op_mod_id_i;
             end
         end
     end
@@ -269,19 +283,28 @@ generate
         localparam int unsigned TRUE_SIMD_CLASS  = 0;
         localparam int unsigned ENABLE_SIMD_MASK = 0;
         
-        fpnew_pkg::roundmode_e fpu_rnd_mode;
-        // fpnew_pkg::roundmode_e fpu_rnd_mode_fpnew;
-        assign fpu_rnd_mode = (fpu_rnd_mode_id_i == fpnew_pkg::DYN) ? (fpnew_pkg::roundmode_e'(fpu_frm_i)) : (fpnew_pkg::roundmode_e'(fpu_rnd_mode_id_i));
-        fpnew_pkg::operation_e fpu_op;
-        assign fpu_op = fpnew_pkg::operation_e'(fpu_op_id_i);
+        fpnew_pkg::roundmode_e fpu_rnd_mode_eff; // eff = effective
+        // assign fpu_rnd_mode_eff = (fpu_rnd_mode_id_i == fpnew_pkg::DYN) ? (fpnew_pkg::roundmode_e'(fpu_frm_i)) : (fpnew_pkg::roundmode_e'(fpu_rnd_mode_id_i));
+        assign fpu_rnd_mode_eff = (fpu_rnd_mode_ex == fpnew_pkg::DYN) ? (fpnew_pkg::roundmode_e'(fpu_frm_i)) : (fpnew_pkg::roundmode_e'(fpu_rnd_mode_ex));
+        fpnew_pkg::operation_e fpu_op_eff; // eff = effective
+        // assign fpu_op_eff = fpnew_pkg::operation_e'(fpu_op_id_i);
+        assign fpu_op_eff = fpnew_pkg::operation_e'(fpu_op_ex);
         fpnew_pkg::status_t fpu_flags;
         assign csr_fpu_flags_ex_o = {fpu_flags.NV, fpu_flags.DZ, fpu_flags.OF, fpu_flags.UF, fpu_flags.NX};
         
-        assign fpu_operands_i[0] = alu_operand_1_id_i;
-        assign fpu_operands_i[1] = alu_operand_2_id_i;
-        assign fpu_operands_i[2] = alu_operand_3_id_i;
+        // assign fpu_operands_ex[0] = alu_operand_1_id_i;
+        // assign fpu_operands_ex[1] = alu_operand_2_id_i;
+        // assign fpu_operands_ex[2] = alu_operand_3_id_i;
+        assign fpu_operands_ex[0] = alu_operand_1_ex;
+        assign fpu_operands_ex[1] = alu_operand_2_ex;
+        assign fpu_operands_ex[2] = alu_operand_3_ex;
         
-        // assign fpu_rnd_mode_fpnew = (fpu_rnd_mode == 3'b111) ? fpu_frm_i : fpu_rnd_mode;
+        logic fpu_req_eff; // eff = effective
+        logic fpu_rvalid;
+        logic fpu_rready_eff; // eff = effective
+        
+        assign fpu_rready_eff = !stall_ex_i;
+        assign fpu_req_eff = fpu_req_ex && (fpu_tr_cnt == '0);
 
         fpnew_top #(
             .Features       (FPU_FEATURES),
@@ -294,10 +317,11 @@ generate
             .clk_i          (clk_i),
             .rst_ni         (rst_n_i),
             // Input signals
-            .operands_i     (fpu_operands_i),
-            .rnd_mode_i     (fpu_rnd_mode),
-            .op_i           (fpu_op),
-            .op_mod_i       (fpu_op_mod_id_i),
+            .operands_i     (fpu_operands_ex),
+            .rnd_mode_i     (fpu_rnd_mode_eff),
+            .op_i           (fpu_op_eff),
+            // .op_mod_i       (fpu_op_mod_id_i),
+            .op_mod_i       (fpu_op_mod_ex),
             .src_fmt_i      (fpnew_pkg::FP32),
             .dst_fmt_i      (fpnew_pkg::FP32),
             .int_fmt_i      (fpnew_pkg::INT32),
@@ -305,7 +329,8 @@ generate
             .tag_i          (1'b0),
             .simd_mask_i    (1'b0),
             // Input Handshake
-            .in_valid_i     (fpu_req_id_i),
+            // .in_valid_i     (fpu_req_id_i),
+            .in_valid_i     (fpu_req_eff),
             .in_ready_o     (fpu_gnt_id_o),
             .flush_i        (1'b0),
             // Output signals
@@ -314,35 +339,38 @@ generate
             .tag_o          (/* unused */),
             // Output handshake
             .out_valid_o    (fpu_rvalid), 
-            .out_ready_i    (1'b1),
+            // .out_ready_i    (1'b1),
+            .out_ready_i    (fpu_rready_eff),
             // Indication of valid data in flight
             .busy_o         (/* unused */)
         );
         
-        wire fpu_tr_cnt_up = fpu_req_id_i && fpu_gnt_id_o;
-        wire fpu_tr_cnt_dn = fpu_rvalid;
+        // wire fpu_tr_cnt_up = fpu_req_id_i && fpu_gnt_id_o;
+        wire fpu_tr_cnt_up = fpu_req_eff && fpu_gnt_id_o;
+        wire fpu_tr_cnt_dn = fpu_rvalid && fpu_rready_eff;
         always_ff @(posedge clk_i, negedge rst_n_i) begin
             if (!rst_n_i) begin
-                fpu_busy_int <= 1'b0;
+                fpu_tr_cnt <= 1'b0;
             end else begin
                 unique case ({fpu_tr_cnt_up, fpu_tr_cnt_dn})
-                    2'b00: fpu_busy_int <= fpu_busy_int; // No  new input tr, no output done
-                    2'b01: fpu_busy_int <= 1'b0;         // No  new input tr,    output done
-                    2'b10: fpu_busy_int <= 1'b1;         // Got new input tr, no output done
-                    2'b11: fpu_busy_int <= 1'b1;         // Got new input tr,    output done
-                    default: fpu_busy_int <= 1'b0;
+                    2'b00: fpu_tr_cnt <= fpu_tr_cnt;        // No  new input tr, no output done
+                    2'b01: fpu_tr_cnt <= fpu_tr_cnt - 1;    // No  new input tr,    output done
+                    2'b10: fpu_tr_cnt <= fpu_tr_cnt + 1;    // Got new input tr, no output done
+                    2'b11: fpu_tr_cnt <= fpu_tr_cnt;        // Got new input tr,    output done
+                    default: fpu_tr_cnt <= 1'b0;
                 endcase
             end
         end
-        assign fpu_busy_ex_o = fpu_busy_int && !fpu_rvalid;
+        assign fpu_busy_ex_o = (fpu_tr_cnt != '0) && !fpu_rvalid;
     end
     else begin
-        assign fpu_operands_i = '0;
+        assign fpu_operands_ex = '0;
         assign fpu_gnt_id_o = '0;
         assign fpu_result = '0;
         assign csr_fpu_flags_ex_o = '0;
-        assign fpu_rvalid = '0;
+        // assign fpu_rvalid = '0;
         assign fpu_busy_ex_o = '0;
+        assign fpu_req_eff = '0;
     end
 endgenerate
 

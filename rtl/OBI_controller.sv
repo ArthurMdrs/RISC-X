@@ -72,17 +72,19 @@ module OBI_controller #(
     // Assigns 
 
         assign resp_valid_o = obi_rvalid_i && (state == WAITING || state == DUMPING);
-        assign obi_rready_o = core_rready_i; // Isso tá certo??? TODO
 
     always_ff@(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
-            addr_aux_i          = 32'b0;
-            we_aux_i            = 0;
-            be_aux_i            = 4'b0;
-            wdata_aux_i         = 32'b0;
-            state               = IDLE;
+            addr_aux_i          <= 32'b0;
+            we_aux_i            <= 0;
+            be_aux_i            <= 4'b0;
+            wdata_aux_i         <= 32'b0;
+            state               <= IDLE;
         end
         else begin
+            
+            state <= next_state;
+            
             case (state)
 
                 /*
@@ -96,9 +98,6 @@ module OBI_controller #(
                     we_aux_i         <= core_we_i;
                     be_aux_i         <= core_be_i;
                     wdata_aux_i      <= core_wdata_i;
-                    
-                    if (core_valid_i)
-                        state <= next_state;
                 end
                 
                 /*
@@ -107,10 +106,8 @@ module OBI_controller #(
                 a 1, nesse momento devemos passar todos os dados para a memória, e passar para o proximo
                 estado.
                 */
-                REQUESTING: begin
-                    if (obi_gnt_i)
-                        state <= next_state;
-                end
+                // REQUESTING: begin
+                // end
 
                 /*
                 WAITING: Enviados Todos os dados para a memória devemos aguardar sua resposta, desse modo, 
@@ -121,8 +118,12 @@ module OBI_controller #(
             
                 WAITING: begin
                     rdata_aux_i     <= obi_rdata_i;
-                    if (obi_rvalid_i)
-                        state <= next_state;
+                    // if (next_state == REQUESTING) begin
+                    //     addr_aux_i       <= core_addr_i;
+                    //     we_aux_i         <= core_we_i;
+                    //     be_aux_i         <= core_be_i;
+                    //     wdata_aux_i      <= core_wdata_i;
+                    // end
                 end
 
                 /*
@@ -130,22 +131,25 @@ module OBI_controller #(
                 hanshake entre o core e a memória seja satisfeito, assegurando que o dado requisitado chegue ao core.
                 */
 
-                DUMPING: begin
-                    if (core_rready_i)
-                        state <= next_state;
-                end
+                // DUMPING: begin
+                // end
             endcase
         end
     end
 
     always_comb begin
-        core_ready_o = 0;
+        core_ready_o = 1'b0;
         obi_addr_o   = core_addr_i;
         obi_we_o     = core_we_i;
         obi_be_o     = core_be_i;
         obi_wdata_o  = core_wdata_i;
         obi_req_o    = core_valid_i;
+        obi_rready_o = core_rready_i;
+        
         resp_rdata_o = obi_rdata_i;
+        
+        next_state = state;
+        
         case(state)
             IDLE:       begin
                 
@@ -155,38 +159,66 @@ module OBI_controller #(
                 obi_be_o         = core_be_i;
                 obi_wdata_o      = core_wdata_i;
                 obi_req_o        = core_valid_i;
-                core_ready_o     = 1;
-                if (obi_gnt_i)
-                    next_state = WAITING;
-                else
-                    next_state = REQUESTING;
+                core_ready_o     = 1'b1;
+                
+                if (core_valid_i) begin
+                    if (obi_gnt_i) begin    // Address channel handshake complete
+                        next_state = WAITING;
+                    end
+                    else begin              // We will have to wait for obi_gnt
+                        next_state = REQUESTING;
+                    end
+                end
             end
 
             REQUESTING: begin
-
-                next_state      = WAITING;
-                obi_req_o       = 1;
-                
                 //obi_addr_o      = {addr_aux_i[31:2],2'b0};
                 obi_addr_o      = addr_aux_i;
                 obi_we_o        = we_aux_i;
                 obi_be_o        = be_aux_i;
                 obi_wdata_o     = wdata_aux_i;
-               
+                obi_req_o       = 1'b1;
+                
+                if (obi_gnt_i) begin    // Address channel handshake complete
+                    next_state = WAITING;
+                end
             end
             WAITING:    begin
-                obi_req_o       = 0;
+                obi_req_o       = 1'b0;
                 resp_rdata_o    = obi_rdata_i;
-                if (core_rready_i)
-                    next_state      = IDLE;
-                else
-                    next_state      = DUMPING;
-                    
+                
+                if (obi_rvalid_i) begin
+                    if (core_rready_i) begin    // Response channel handshake complete
+                        next_state  = IDLE;
+                        
+                        // TODO: below is an attempt to send req the same cycle we get rvalid
+                        // It doesn't work!!
+                        // obi_addr_o       = core_addr_i;
+                        // obi_we_o         = core_we_i;
+                        // obi_be_o         = core_be_i;
+                        // obi_wdata_o      = core_wdata_i;
+                        // obi_req_o   = core_valid_i;
+                        // if (core_valid_i) begin
+                        //     if (obi_gnt_i) begin    // Address channel handshake complete
+                        //         next_state = WAITING;
+                        //     end
+                        //     else begin              // We will have to wait for obi_gnt
+                        //         next_state = REQUESTING;
+                        //     end
+                        // end
+                    end
+                    else begin                  // We will have to wait for obi_rready
+                        next_state = DUMPING;
+                    end
+                end
             end
             DUMPING:    begin  // resp_valid_o
-                next_state      = IDLE;
-                obi_req_o       = 0;
+                obi_req_o       = 1'b0;
                 resp_rdata_o    = rdata_aux_i;
+                
+                if (core_rready_i) begin
+                    next_state = IDLE;
+                end
             end
             default: 
                 next_state      = IDLE;

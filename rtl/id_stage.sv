@@ -112,6 +112,7 @@ module id_stage import core_pkg::*; #(
     output logic       fpu_op_mod_id_o,
     output logic       fpu_req_id_o,
     
+    // input  logic stall_ex_i,
     input  logic fpu_busy_ex_i
     
 );
@@ -336,7 +337,22 @@ end
 // Deassert FPU req if we don't have a valid instruction
 // assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !flush_ex_i; // && !stall_ex_i;
 // assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !stall_id_i;
-assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !fpu_busy_ex_i;
+// assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !fpu_busy_ex_i;
+always_comb begin
+    fpu_req_id_o = fpu_req_id_int && valid_id_o;
+    if (illegal_instr_id_o)
+        fpu_req_id_o = 1'b0;
+    // TODO: All the commented code below might be unecessary
+    // if (branch_decision_ex_i)
+    //     fpu_req_id_o = 1'b0;
+    // if (fpu_busy_ex_i)
+    //     fpu_req_id_o = 1'b0;
+    // if (stall_ex_i) // Combinatorial loop??
+    //     fpu_req_id_o = 1'b0;
+    // TODO: might need to deassert on EX traps (only happens with ISA_C = 0)
+    // TODO: might need to deassert on load stalls (make a SVA cover to check this behaviour)
+end
+
 
 // Traps: illegal instruction decoded, jump target misaligned, mret
 assign exception_id = illegal_instr_id_o || instr_addr_misaligned_id_o || is_mret_id_o;
