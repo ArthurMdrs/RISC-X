@@ -86,7 +86,6 @@ module ex_stage import core_pkg::*; #(
     output logic [31:0]    csr_wdata_ex_o,
     output csr_operation_t csr_op_ex_o,
     output logic           csr_access_ex_o,
-    output logic [ 4:0]    csr_fpu_flags_ex_o,
     
     // Input from CSRs
     input  logic [31:0] csr_rdata_ex_i,
@@ -104,7 +103,9 @@ module ex_stage import core_pkg::*; #(
     output logic          fpu_gnt_id_o,
     // output logic [31:0]    fpu_result_o,
     // output logic           fpu_rvalid_o,
-    output logic          fpu_busy_ex_o
+    output logic          fpu_busy_ex_o,
+    output logic [ 4:0]   fpu_fflags_ex_o,
+    output logic          fpu_fflags_we_ex_o
 );
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -283,6 +284,10 @@ generate
         localparam int unsigned TRUE_SIMD_CLASS  = 0;
         localparam int unsigned ENABLE_SIMD_MASK = 0;
         
+        logic fpu_req_eff; // eff = effective
+        logic fpu_rvalid;
+        logic fpu_rready_eff; // eff = effective
+        
         fpnew_pkg::roundmode_e fpu_rnd_mode_eff; // eff = effective
         // assign fpu_rnd_mode_eff = (fpu_rnd_mode_id_i == fpnew_pkg::DYN) ? (fpnew_pkg::roundmode_e'(fpu_frm_i)) : (fpnew_pkg::roundmode_e'(fpu_rnd_mode_id_i));
         assign fpu_rnd_mode_eff = (fpu_rnd_mode_ex == fpnew_pkg::DYN) ? (fpnew_pkg::roundmode_e'(fpu_frm_i)) : (fpnew_pkg::roundmode_e'(fpu_rnd_mode_ex));
@@ -290,7 +295,8 @@ generate
         // assign fpu_op_eff = fpnew_pkg::operation_e'(fpu_op_id_i);
         assign fpu_op_eff = fpnew_pkg::operation_e'(fpu_op_ex);
         fpnew_pkg::status_t fpu_flags;
-        assign csr_fpu_flags_ex_o = {fpu_flags.NV, fpu_flags.DZ, fpu_flags.OF, fpu_flags.UF, fpu_flags.NX};
+        assign fpu_fflags_ex_o = {fpu_flags.NV, fpu_flags.DZ, fpu_flags.OF, fpu_flags.UF, fpu_flags.NX};
+        assign fpu_fflags_we_ex_o = fpu_rvalid && fpu_rready_eff;
         
         // assign fpu_operands_ex[0] = alu_operand_1_id_i;
         // assign fpu_operands_ex[1] = alu_operand_2_id_i;
@@ -298,10 +304,6 @@ generate
         assign fpu_operands_ex[0] = alu_operand_1_ex;
         assign fpu_operands_ex[1] = alu_operand_2_ex;
         assign fpu_operands_ex[2] = alu_operand_3_ex;
-        
-        logic fpu_req_eff; // eff = effective
-        logic fpu_rvalid;
-        logic fpu_rready_eff; // eff = effective
         
         assign fpu_rready_eff = !stall_ex_i;
         assign fpu_req_eff = fpu_req_ex && (fpu_tr_cnt == '0);
@@ -367,7 +369,7 @@ generate
         assign fpu_operands_ex = '0;
         assign fpu_gnt_id_o = '0;
         assign fpu_result = '0;
-        assign csr_fpu_flags_ex_o = '0;
+        assign fpu_fflags_ex_o = '0;
         // assign fpu_rvalid = '0;
         assign fpu_busy_ex_o = '0;
         assign fpu_req_eff = '0;

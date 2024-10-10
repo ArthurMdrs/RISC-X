@@ -86,6 +86,7 @@ module decoder import core_pkg::*; #(
 
 
     ////////FPU/////////////////
+    input  logic [1:0] mstatus_fs_i,
     output logic [2:0] fpu_rnd_mode_o,
     output logic [3:0] fpu_op_o,
     output logic       fpu_op_mod_o,
@@ -201,7 +202,7 @@ always_comb begin
                         illegal_instr_o = 1'b1;
                 end
                 /*3'b001: begin // c.fld
-                    if (ISA_F) begin
+                    if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                         alu_operation_o  = ALU_ADD;
                         alu_source_2_o   = ALU_SCR2_IMM;
                         immediate_type_o = IMM_CLS; // wrong immediate?
@@ -233,7 +234,7 @@ always_comb begin
                     rd_addr_C  = {2'b01, instr_i[4:2]};
                 end
                 3'b011: begin // c.flw
-                    if (ISA_F) begin
+                    if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                         alu_operation_o  = ALU_ADD;
                         alu_source_2_o   = ALU_SCR2_IMM;
                         immediate_type_o = IMM_CLS;
@@ -252,7 +253,7 @@ always_comb begin
                     end
                 end
                 /*3'b101:begin // c.fsd
-                    if (ISA_F) begin
+                    if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                         alu_operation_o  = ALU_ADD;
                         alu_source_2_o   = ALU_SCR2_IMM;
                         immediate_type_o = IMM_CLS; // wrong immediate?
@@ -282,7 +283,7 @@ always_comb begin
                     rs2_addr_C = {2'b01, instr_i[4:2]};
                 end
                 3'b111: begin // c.fsw
-                    if (ISA_F) begin
+                    if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                         alu_operation_o  = ALU_ADD;
                         alu_source_2_o   = ALU_SCR2_IMM;
                         immediate_type_o = IMM_CLS;
@@ -517,7 +518,7 @@ always_comb begin
                     end
                 end
                 3'b011: begin // c.flwsp
-                    if (ISA_F) begin
+                    if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                         alu_operation_o  = ALU_ADD;
                         alu_source_2_o   = ALU_SCR2_IMM;
                         immediate_type_o = IMM_CSPL;
@@ -595,7 +596,7 @@ always_comb begin
                     rs1_addr_C = 5'd2; // x2/sp
                 end
                 3'b111: begin // c.fswsp
-                    if (ISA_F) begin
+                    if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                         alu_operation_o  = ALU_ADD;
                         alu_source_2_o   = ALU_SCR2_IMM;
                         immediate_type_o = IMM_CSPS;
@@ -874,10 +875,10 @@ always_comb begin
                     
                     // Floating point
                     CSR_FFLAGS: 
-                        if(!ISA_F /*|| fs_off_i*/) illegal_instr_o = 1'b1;
+                        if(!ISA_F || (mstatus_fs_i == FS_OFF)) illegal_instr_o = 1'b1;
                     CSR_FRM,
                     CSR_FCSR:
-                        if(!ISA_F /*|| fs_off_i*/) begin
+                        if(!ISA_F || (mstatus_fs_i == FS_OFF)) begin
                             illegal_instr_o = 1'b1;
                         end
                         else begin
@@ -895,7 +896,7 @@ always_comb begin
         /////////////////////////////////////////////
         // TODO: raise illegal instruction for invalid rounding mode??
         OPCODE_OP_FP:begin
-            if (ISA_F) begin
+            if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                 //rs1_is_used_o = 1'b1;
                 //rs2_is_used_o = 1'b1;
                 fpu_req_o = 1'b1;
@@ -1042,7 +1043,7 @@ always_comb begin
         end
         
         OPCODE_FMADD_FP: begin // fmadd.s
-            if (ISA_F) begin
+            if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                 fpu_req_o = 1'b1;
                 reg_alu_wen_o = 1'b1;
                 rs1_src_bank_o = F_REG;
@@ -1062,7 +1063,7 @@ always_comb begin
         end
         
         OPCODE_FMSUB_FP: begin // fmsub.s
-            if (ISA_F) begin
+            if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                 fpu_req_o = 1'b1;
                 reg_alu_wen_o = 1'b1;
                 rs1_src_bank_o = F_REG;
@@ -1083,7 +1084,7 @@ always_comb begin
         end
         
         OPCODE_FNMSUB_FP: begin // fnmsub.s
-            if (ISA_F) begin
+            if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                 fpu_req_o = 1'b1;
                 reg_alu_wen_o = 1'b1;
                 rs1_src_bank_o = F_REG;
@@ -1103,7 +1104,7 @@ always_comb begin
         end
         
         OPCODE_FNMADD_FP: begin // fnmadd.s
-            if (ISA_F) begin
+            if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                 fpu_req_o = 1'b1;
                 reg_alu_wen_o = 1'b1;
                 rs1_src_bank_o = F_REG;
@@ -1124,7 +1125,7 @@ always_comb begin
         end
         
         OPCODE_STORE_FP: begin // fsw
-            if (ISA_F) begin
+            if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                 alu_operation_o  = ALU_ADD;
                 alu_source_2_o   = ALU_SCR2_IMM;
                 immediate_type_o = IMM_S;
@@ -1144,7 +1145,7 @@ always_comb begin
         end
         
         OPCODE_LOAD_FP: begin // flw
-            if (ISA_F) begin
+            if (ISA_F && (mstatus_fs_i != FS_OFF)) begin
                 alu_operation_o  = ALU_ADD;
                 alu_source_2_o   = ALU_SCR2_IMM;
                 immediate_type_o = IMM_I;

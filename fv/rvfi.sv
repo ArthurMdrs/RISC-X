@@ -65,6 +65,7 @@ module rvfi import core_pkg::*; #(
     input  pc_source_t    pc_source_id,
     input  logic [31:0]   jump_target_id,
     input  logic          mem_wen_id,
+    input  logic          is_mret_id,
     
     // Input from EX stage
     input  logic           valid_ex,
@@ -101,7 +102,12 @@ module rvfi import core_pkg::*; #(
     input  logic [31:0]   reg_wdata_wb,
     input  logic [31:0]   mem_rdata_wb,
     
+    // Input from CSR
     input  logic [31:0] misa,
+    input  mstatus_t    mstatus,
+    input  mstatus_t    mstatus_n,
+    input  logic        implicit_wr_to_fs,
+    input  csr_addr_t   csr_addr,
     
     `RVFI_OUTPUTS,
     
@@ -161,6 +167,13 @@ logic [ 3:0] mem_wmask_wb, mem_rmask_wb;
 logic [31:0] mem_wdata_wb;//, mem_rdata_wb;
 logic [31:0] csr_wdata_wb, csr_rdata_wb;
 logic        csr_wen_wb;
+
+logic [31:0] csr_mstatus_wdata_ex, csr_mstatus_rdata_ex;
+logic        csr_mstatus_wen_ex;
+logic [31:0] csr_mstatus_wdata_mem, csr_mstatus_rdata_mem;
+logic        csr_mstatus_wen_mem;
+logic [31:0] csr_mstatus_wdata_wb, csr_mstatus_rdata_wb;
+logic        csr_mstatus_wen_wb;
 
 `ifdef JASPER
 `default_nettype none
@@ -491,7 +504,7 @@ assign rvfi_csr_``name``_wdata = csr_wdata_wb;
 `assign_rvfi_csr(marchid)
 `assign_rvfi_csr(mimpid)
 
-`assign_rvfi_csr(mstatus)
+// `assign_rvfi_csr(mstatus)
 `assign_rvfi_csr(mie)
 `assign_rvfi_csr(mtvec)
 
@@ -503,6 +516,119 @@ assign rvfi_csr_``name``_wdata = csr_wdata_wb;
 `assign_rvfi_csr(fflags)
 `assign_rvfi_csr(frm)
 
+///////////////////////////////////////////////////////////////////////////////
+////////////////////       CONTROL/STATUS REGISTERS       /////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+// Pipeline registers ID->EX
+always_ff @(posedge clk_i, negedge rst_n_i) begin
+    if (!rst_n_i) begin
+        csr_mstatus_wdata_ex <= '0;
+        csr_mstatus_rdata_ex <= '0;
+        csr_mstatus_wen_ex   <= '0;
+    end else begin
+        if (!stall_ex) begin
+            csr_mstatus_rdata_ex <= {mstatus.sd, 8'b0, mstatus.tsr, mstatus.tw, mstatus.tvm,
+                                     mstatus.mxr, mstatus.sum, mstatus.mprv, mstatus.xs, mstatus.fs,
+                                     mstatus.mpp, mstatus.vs, mstatus.spp, mstatus.mpie, mstatus.ube,
+                                     mstatus.spie, 1'b0, mstatus.mie, 1'b0, mstatus.sie, 1'b0};
+            if (is_mret_id) begin
+                csr_mstatus_wen_ex   <= 1'b1;
+                csr_mstatus_wdata_ex <= {mstatus_n.sd, 8'b0, mstatus_n.tsr, mstatus_n.tw, mstatus_n.tvm,
+                                         mstatus_n.mxr, mstatus_n.sum, mstatus_n.mprv, mstatus_n.xs, mstatus_n.fs,
+                                         mstatus_n.mpp, mstatus_n.vs, mstatus_n.spp, mstatus_n.mpie, mstatus_n.ube,
+                                         mstatus_n.spie, 1'b0, mstatus_n.mie, 1'b0, mstatus_n.sie, 1'b0};
+            end
+            else begin
+                csr_mstatus_wen_ex   <= 1'b0;
+            end
+            // Insert bubble if flushing is needed
+            // if (flush_ex) begin
+            // end
+            // else begin
+            // end
+        end
+    end
+end
+
+// Pipeline registers EX->MEM
+always_ff @(posedge clk_i, negedge rst_n_i) begin
+    if (!rst_n_i) begin
+        csr_mstatus_wdata_mem <= '0;
+        csr_mstatus_rdata_mem <= '0;
+        csr_mstatus_wen_mem   <= '0;
+    end else begin
+        // csr_mstatus_rdata_mem <= mstatus;
+        // csr_mstatus_wen_mem   <= (mstatus != mstatus_n);
+        // csr_mstatus_wdata_mem <= mstatus_n;
+        if (!stall_mem) begin
+            // csr_mstatus_rdata_mem <= {mstatus.sd, 8'b0, mstatus.tsr, mstatus.tw, mstatus.tvm,
+            //                           mstatus.mxr, mstatus.sum, mstatus.mprv, mstatus.xs, mstatus.fs,
+            //                           mstatus.mpp, mstatus.vs, mstatus.spp, mstatus.mpie, mstatus.ube,
+            //                           mstatus.spie, 1'b0, mstatus.mie, 1'b0, mstatus.sie, 1'b0};
+            // csr_mstatus_wen_mem   <= (mstatus != mstatus_n);
+            // csr_mstatus_wdata_mem <= {mstatus_n.sd, 8'b0, mstatus_n.tsr, mstatus_n.tw, mstatus_n.tvm,
+            //                           mstatus_n.mxr, mstatus_n.sum, mstatus_n.mprv, mstatus_n.xs, mstatus_n.fs,
+            //                           mstatus_n.mpp, mstatus_n.vs, mstatus_n.spp, mstatus_n.mpie, mstatus_n.ube,
+            //                           mstatus_n.spie, 1'b0, mstatus_n.mie, 1'b0, mstatus_n.sie, 1'b0};
+            
+            csr_mstatus_rdata_mem <= csr_mstatus_rdata_ex;
+            if (csr_op_ex != CSR_READ && csr_addr == CSR_MSTATUS) begin
+                // csr_mstatus_rdata_mem <= csr_rdata_ex;
+                csr_mstatus_wen_mem   <= 1'b1;
+                csr_mstatus_wdata_mem <= csr_wdata_ex;
+            end
+            else if (implicit_wr_to_fs) begin
+                csr_mstatus_wen_mem   <= 1'b1;
+                csr_mstatus_wdata_mem <= {mstatus_n.sd, 8'b0, mstatus_n.tsr, mstatus_n.tw, mstatus_n.tvm,
+                                          mstatus_n.mxr, mstatus_n.sum, mstatus_n.mprv, mstatus_n.xs, mstatus_n.fs,
+                                          mstatus_n.mpp, mstatus_n.vs, mstatus_n.spp, mstatus_n.mpie, mstatus_n.ube,
+                                          mstatus_n.spie, 1'b0, mstatus_n.mie, 1'b0, mstatus_n.sie, 1'b0};
+            end
+            else begin
+                // csr_mstatus_rdata_mem <= csr_mstatus_rdata_ex;
+                csr_mstatus_wen_mem   <= csr_mstatus_wen_ex;
+                csr_mstatus_wdata_mem <= csr_mstatus_wdata_ex;
+            end
+            
+            // if (flush_mem) begin
+            //     csr_mstatus_rdata_mem <= '0;
+            //     csr_mstatus_wen_mem   <= '0;    
+            //     csr_mstatus_wdata_mem <= '0;
+            // end
+            // else begin
+            //     csr_mstatus_rdata_mem <= mstatus;
+            //     csr_mstatus_wen_mem   <= (mstatus != mstatus_n);
+            //     csr_mstatus_wdata_mem <= mstatus_n;
+            // end
+        end
+    end
+end
+
+// Pipeline registers MEM->WB
+always_ff @(posedge clk_i, negedge rst_n_i) begin
+    if (!rst_n_i) begin
+        csr_mstatus_wdata_wb <= '0;
+        csr_mstatus_rdata_wb <= '0;
+        csr_mstatus_wen_wb   <= '0;
+    end else begin
+        // if (flush_wb) begin
+        //     csr_mstatus_wdata_wb  <= '0;
+        //     csr_mstatus_rdata_wb  <= '0;
+        //     csr_mstatus_wen_wb    <= '0;
+        // end
+        // else begin
+            csr_mstatus_wdata_wb  <= csr_mstatus_wdata_mem;
+            csr_mstatus_rdata_wb  <= csr_mstatus_rdata_mem;
+            csr_mstatus_wen_wb    <= csr_mstatus_wen_mem;
+        // end
+    end
+end
+
+assign rvfi_csr_mstatus_rmask = '1;
+assign rvfi_csr_mstatus_rdata = csr_mstatus_rdata_wb;
+assign rvfi_csr_mstatus_wmask = {32{csr_mstatus_wen_wb}};
+assign rvfi_csr_mstatus_wdata = csr_mstatus_wdata_wb;
 
 `ifdef JASPER
 `default_nettype wire

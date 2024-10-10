@@ -145,9 +145,10 @@ csr_operation_t csr_op_id, csr_op_ex;
 logic [31:0]    csr_wdata_ex;
 logic [31:0]    csr_rdata_ex;
 csr_addr_t      csr_addr_ex;
-logic [31:0]    mtvec, mepc;
 logic           save_pc_id, save_pc_ex;
 logic [ 4:0]    exception_cause;
+logic [31:0]    mtvec, mepc;
+logic [ 1:0]    mstatus_fs;
 
 // FPU signals
 logic [2:0] fpu_rnd_mode_id;
@@ -155,7 +156,8 @@ logic [3:0] fpu_op_id;
 logic       fpu_op_mod_id;
 logic       fpu_req_id, fpu_gnt_id;
 logic       fpu_busy_ex;
-logic [4:0] csr_fpu_flags_ex;
+logic [4:0] fpu_fflags_ex;
+logic       fpu_fflags_we_ex;
 logic [2:0] frm_csr_ex;
 
 
@@ -283,9 +285,10 @@ id_stage #(
     .csr_op_id_o     ( csr_op_id ),
     
     // Control inputs
-    .stall_id_i ( stall_id ),
-    .flush_id_i (flush_id),
-    .branch_decision_ex_i      ( branch_decision_ex ),
+    .stall_id_i             ( stall_id ),
+    .flush_id_i             (flush_id),
+    .branch_decision_ex_i   ( branch_decision_ex ),
+    .mstatus_fs_i           ( mstatus_fs ),
     
     // Inputs for forwarding
     .fwd_rs1_id_i       ( fwd_rs1_id ),
@@ -373,7 +376,6 @@ ex_stage #(
     .csr_wdata_ex_o     ( csr_wdata_ex ),
     .csr_op_ex_o        ( csr_op_ex ),
     .csr_access_ex_o    ( csr_access_ex ),
-    .csr_fpu_flags_ex_o ( csr_fpu_flags_ex ),
     
     // Input from CSRs
     .csr_rdata_ex_i       ( csr_rdata_ex ),
@@ -383,13 +385,15 @@ ex_stage #(
     .flush_ex_i ( flush_ex ),
     
     // FPU signals
-    .fpu_rnd_mode_id_i ( fpu_rnd_mode_id ),
-    .fpu_op_id_i       ( fpu_op_id ),
-    .fpu_op_mod_id_i   ( fpu_op_mod_id ),
-    .fpu_req_id_i      ( fpu_req_id ),
-    .fpu_gnt_id_o      ( fpu_gnt_id ),
-    .fpu_busy_ex_o     ( fpu_busy_ex ),
-    .fpu_frm_i         ( frm_csr_ex )
+    .fpu_rnd_mode_id_i  ( fpu_rnd_mode_id ),
+    .fpu_op_id_i        ( fpu_op_id ),
+    .fpu_op_mod_id_i    ( fpu_op_mod_id ),
+    .fpu_req_id_i       ( fpu_req_id ),
+    .fpu_gnt_id_o       ( fpu_gnt_id ),
+    .fpu_busy_ex_o      ( fpu_busy_ex ),
+    .fpu_frm_i          ( frm_csr_ex ),
+    .fpu_fflags_ex_o    ( fpu_fflags_ex ),
+    .fpu_fflags_we_ex_o ( fpu_fflags_we_ex )
 );
 
 
@@ -510,21 +514,26 @@ csr #(
     .mtvec_i  ( mtvec_i ),
     
     // Output some CSRs
-    .mtvec_o ( mtvec ),
-    .mepc_o  ( mepc ),
+    .mtvec_o        ( mtvec ),
+    .mepc_o         ( mepc ),
+    .mstatus_fs_o   ( mstatus_fs ),
     
     // Trap handling
-    .save_pc_id_i ( save_pc_id ),
-    .save_pc_ex_i ( save_pc_ex ),
-    .pc_id_i      ( pc_id ),
-    .pc_ex_i      ( pc_ex ),
-    .exception_cause_i ( exception_cause ),
+    .save_pc_id_i       ( save_pc_id ),
+    .save_pc_ex_i       ( save_pc_ex ),
+    .pc_id_i            ( pc_id ),
+    .pc_ex_i            ( pc_ex ),
+    .exception_cause_i  ( exception_cause ),
+    .is_mret_i          ( is_mret_id ),
     
     // Floating-point ports
-    .fflags_i   ( csr_fpu_flags_ex ),
-    .fflag_we_i ( 1'b0 ),
-    .fregs_we_i ( 1'b0 ),
-    .frm_o      ( frm_csr_ex )
+    .fflags_i    ( fpu_fflags_ex ),
+    .fflags_we_i ( fpu_fflags_we_ex ),
+    .frm_o       ( frm_csr_ex ),
+    
+    //
+    .rd_dst_bank_wb_i ( rd_dst_bank_wb ),
+    .reg_wen_wb_i     ( reg_wen_wb )
 );
 
 

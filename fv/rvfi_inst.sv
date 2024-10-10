@@ -65,6 +65,7 @@ rvfi rvfi_inst (
     .pc_source_id     ( core_inst.pc_source_id ),
     .jump_target_id   ( core_inst.jump_target_id ),
     .mem_wen_id       ( core_inst.mem_wen_id ),
+    .is_mret_id       ( core_inst.is_mret_id ),
     
     // Input from EX stage
     .valid_ex           ( core_inst.valid_ex ),
@@ -100,8 +101,13 @@ rvfi rvfi_inst (
     .reg_wen_wb     ( core_inst.reg_wen_wb ),
     .reg_wdata_wb   ( core_inst.reg_wdata_wb ),
     .mem_rdata_wb   ( core_inst.mem_rdata_wb ),
-  
-    .misa ( core_inst.csr_inst.misa ),
+    
+    // Input from CSR
+    .misa               ( core_inst.csr_inst.misa ),
+    .mstatus            ( core_inst.csr_inst.mstatus ),
+    .mstatus_n          ( core_inst.csr_inst.mstatus_n ),
+    .implicit_wr_to_fs  ( core_inst.csr_inst.implicit_wr_to_fs ),
+    .csr_addr           ( core_inst.csr_addr_ex ),
   
     `RVFI_CONN,
     

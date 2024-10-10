@@ -195,10 +195,10 @@ always_comb begin
                 csr_wb[CSR_MHARTID]    = 1'b1;
             end
             
-            (rvfi_insn[31:20]==CSR_MSTATUS): begin
-                csr_wdata[CSR_MSTATUS] = rvfi_csr_mstatus_wdata;
-                csr_wb[CSR_MSTATUS]    = 1'b1;
-            end
+            // (rvfi_insn[31:20]==CSR_MSTATUS): begin
+            //     csr_wdata[CSR_MSTATUS] = rvfi_csr_mstatus_wdata;
+            //     csr_wb[CSR_MSTATUS]    = 1'b1;
+            // end
             (rvfi_insn[31:20]==CSR_MIE): begin
                 csr_wdata[CSR_MIE] = rvfi_csr_mie_wdata;
                 csr_wb[CSR_MIE]    = 1'b1;
@@ -217,6 +217,11 @@ always_comb begin
                 csr_wb[CSR_MCAUSE]    = 1'b1;
             end
         endcase
+    end
+        
+    if (rvfi_csr_mstatus_wmask != '0) begin
+        csr_wdata[CSR_MSTATUS] = rvfi_csr_mstatus_wdata;
+        csr_wb[CSR_MSTATUS]    = 1'b1;
     end
 end
 assign if_rvvi.csr    = csr_wdata;

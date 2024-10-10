@@ -91,9 +91,10 @@ module id_stage import core_pkg::*; #(
     output csr_operation_t csr_op_id_o,
     
     // Control inputs
-    input  logic stall_id_i,
-    input  logic flush_id_i,
-    input  logic branch_decision_ex_i,
+    input  logic        stall_id_i,
+    input  logic        flush_id_i,
+    input  logic        branch_decision_ex_i,
+    input  logic [ 1:0] mstatus_fs_i,
     
     // Inputs for forwarding
     input  forward_t    fwd_rs1_id_i,
@@ -135,6 +136,7 @@ logic [31:0]       immediate_id;
 
 logic fpu_req_id_int;
 
+logic is_mret_int;
 logic exception_id;
 
 `ifdef JASPER
@@ -211,7 +213,8 @@ decoder #(
     .csr_op_o     ( csr_op_id_o ),
     
     // Indicate MRET
-    .is_mret_o ( is_mret_id_o ),
+    // .is_mret_o ( is_mret_id_o ),
+    .is_mret_o ( is_mret_int ),
     
     // Decoded an illegal instruction
     .illegal_instr_o ( illegal_instr_id_o ),
@@ -221,6 +224,7 @@ decoder #(
     .is_compressed_i ( is_compressed_id ),
     
     // FPU signals
+    .mstatus_fs_i   ( mstatus_fs_i ),
     .fpu_rnd_mode_o ( fpu_rnd_mode_id_o ),
     .fpu_op_o       ( fpu_op_id_o ),
     .fpu_op_mod_o   ( fpu_op_mod_id_o ),
@@ -353,6 +357,7 @@ always_comb begin
     // TODO: might need to deassert on load stalls (make a SVA cover to check this behaviour)
 end
 
+assign is_mret_id_o = is_mret_int && !stall_id_i;
 
 // Traps: illegal instruction decoded, jump target misaligned, mret
 assign exception_id = illegal_instr_id_o || instr_addr_misaligned_id_o || is_mret_id_o;

@@ -38,7 +38,7 @@ DV_SIM_TEST := $(DV_ALL_SIM_TESTS)
 DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) --iss_timeout 600 \
 					   --noclean --simulator xlm --custom_target $(DV_RISCX_TARGET) \
 					   --iss_yaml $(DV_ISS_YAML) --csr_yaml $(RISCV_DV_ADDS)/csr_description.yaml \
-					   --isa $(ISA) --mabi $(ABI) 
+					   --isa $(ISA) --mabi $(ABI) --priv m
 DV_RUN_CMD := cd $(RISCV_DV_ROOT) && python3 run.py
 DV_COV_CMD := cd $(RISCV_DV_ROOT) && python3 cov.py
 

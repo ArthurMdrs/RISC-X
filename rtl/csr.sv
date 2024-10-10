@@ -47,6 +47,7 @@ module csr import core_pkg::*; #(
     // Output some CSRs
     output logic [31:0] mtvec_o,
     output logic [31:0] mepc_o,
+    output logic [ 1:0] mstatus_fs_o,
     
     // Trap handling
     input  logic        save_pc_id_i, // Save ID PC to mepc
@@ -54,14 +55,16 @@ module csr import core_pkg::*; #(
     input  logic [31:0] pc_id_i,
     input  logic [31:0] pc_ex_i,
     input  logic [ 4:0] exception_cause_i,
+    input               is_mret_i,
 
     // Floating-point ports
-    input logic [4:0] fflags_i,
-    input logic fflag_we_i,
-    input logic fregs_we_i,
-    output logic [2:0] frm_o
+    input  logic [4:0] fflags_i,
+    input  logic       fflags_we_i,
+    output logic [2:0] frm_o,
 
-
+    // 
+    input reg_bank_mux_t rd_dst_bank_wb_i,
+    input logic          reg_wen_wb_i
 );
 
 logic [31:0] csr_wdata_actual;
@@ -86,7 +89,11 @@ assign mhartid   = hartid_i;
 
 // Machine Status Registers
 mstatus_t mstatus, mstatus_n;
-// These mstatus fields are actually WPRI: uie, hie, upie
+// Track certain types of writes
+logic wr_to_f_reg;
+logic wr_to_fcsr;
+logic wr_to_mstatus;
+logic implicit_wr_to_fs;
 
 // Machine Trap-Vector Base-Address Register
 logic [31:0] mtvec, mtvec_n;
@@ -156,29 +163,31 @@ always_comb begin
     fflags_n = fflags;
     frm_n    = frm;
     
-    if(ISA_F) if(fflag_we_i) fflags_n = fflags_i | fflags;
+    wr_to_fcsr = 1'b0;
+    wr_to_mstatus = 1'b0;
 
-
+    // Deal with direct writes by CSR instructions
     if (csr_wen) begin
         case (csr_addr_i)
             CSR_MSTATUS: begin
-                mstatus_n.sie  = csr_wdata_actual[ 1];
-                mstatus_n.mie  = csr_wdata_actual[ 3];
-                mstatus_n.spie = csr_wdata_actual[ 5];
-                mstatus_n.ube  = csr_wdata_actual[ 6];
-                mstatus_n.mpie = csr_wdata_actual[ 7];
-                mstatus_n.spp  = csr_wdata_actual[ 8];
-                mstatus_n.vs   = csr_wdata_actual[10: 9];
+                // mstatus_n.sie  = csr_wdata_actual[ 1];
+                // mstatus_n.mie  = csr_wdata_actual[ 3];
+                // mstatus_n.spie = csr_wdata_actual[ 5];
+                // mstatus_n.ube  = csr_wdata_actual[ 6];
+                // mstatus_n.mpie = csr_wdata_actual[ 7];
+                // mstatus_n.spp  = csr_wdata_actual[ 8];
+                // mstatus_n.vs   = csr_wdata_actual[10: 9];
                 mstatus_n.mpp  = csr_wdata_actual[12:11];
-                mstatus_n.fs   = csr_wdata_actual[14:13];
-                mstatus_n.xs   = csr_wdata_actual[16:15];
-                mstatus_n.mprv = csr_wdata_actual[17];
-                mstatus_n.sum  = csr_wdata_actual[18];
-                mstatus_n.mxr  = csr_wdata_actual[19];
-                mstatus_n.tvm  = csr_wdata_actual[20];
-                mstatus_n.tw   = csr_wdata_actual[21];
-                mstatus_n.tsr  = csr_wdata_actual[22];
-                mstatus_n.sd   = csr_wdata_actual[31];
+                mstatus_n.fs   = (ISA_F) ? (csr_wdata_actual[14:13]) : (FS_OFF);
+                // mstatus_n.xs   = csr_wdata_actual[16:15];
+                // mstatus_n.mprv = csr_wdata_actual[17];
+                // mstatus_n.sum  = csr_wdata_actual[18];
+                // mstatus_n.mxr  = csr_wdata_actual[19];
+                // mstatus_n.tvm  = csr_wdata_actual[20];
+                // mstatus_n.tw   = csr_wdata_actual[21];
+                // mstatus_n.tsr  = csr_wdata_actual[22];
+                // mstatus_n.sd   = csr_wdata_actual[31];
+                wr_to_mstatus = 1'b1;
             end
             CSR_MIE: begin
                 mie_n = csr_wdata_actual;
@@ -198,15 +207,41 @@ always_comb begin
                 mscratch_n = csr_wdata_actual;
             end
 
-            CSR_FFLAGS: fflags_n = (ISA_F) ? csr_wdata_actual[4:0]:'0; 
-            CSR_FRM: frm_n = (ISA_F) ? csr_wdata_actual[2:0]:'0;
+            CSR_FFLAGS: begin
+                fflags_n = (ISA_F) ? (csr_wdata_actual[4:0]) : ('0);
+                wr_to_fcsr = 1'b1;
+            end
+            CSR_FRM: begin
+                frm_n = (ISA_F) ? (csr_wdata_actual[2:0]) : ('0);
+                wr_to_fcsr = 1'b1;
+            end
             CSR_FCSR: begin
-                fflags_n = (ISA_F) ? csr_wdata_actual[4:0] : '0;
-                frm_n    = (ISA_F) ? csr_wdata_actual[7:5] : '0;
+                fflags_n = (ISA_F) ? (csr_wdata_actual[4:0]) : ('0);
+                frm_n    = (ISA_F) ? (csr_wdata_actual[7:5]) : ('0);
+                wr_to_fcsr = 1'b1;
             end
 
         endcase
     end
+    
+    if (ISA_F) begin
+        wr_to_f_reg = reg_wen_wb_i && (rd_dst_bank_wb_i == F_REG);
+        // F status field implicit update
+        // Can happen because: 
+        // - write to f GPR (unless we're writing to mstatus)
+        // - write to fflags/frm/fcsr (explicit or implicit)
+        implicit_wr_to_fs = (wr_to_f_reg && !wr_to_mstatus) || wr_to_fcsr || fflags_we_i;
+        if (implicit_wr_to_fs) begin
+            mstatus_n.fs = FS_DIRTY;
+        end
+        // fflags implicit update
+        if (fflags_we_i) begin
+            fflags_n = fflags_i | fflags;
+        end
+    end
+    
+    // State dirty field indicates if either fs, vs or xs are dirty
+    mstatus_n.sd = (mstatus_n.fs == FS_DIRTY);
     
     // Save PC to mepc when traps occur
     unique case (1'b1)
@@ -218,6 +253,14 @@ always_comb begin
     if (save_pc_ex_i || save_pc_id_i) begin
         mcause_code_n = exception_cause_i;
     end
+    
+    // TODO: implement implicit write to mstatus when mret is executed
+    // mret instruction
+    if (is_mret_i) begin
+        mstatus_n.mie = mstatus.mpie;
+        mstatus_n.mpie = 1'b1;
+        mstatus_n.mpp  = PRIV_LVL_M;
+    end
 end
 
 // Update CSR values with next values
@@ -225,6 +268,7 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
         set_initial_mtvec <= '1;
         mstatus <= '0;
+        mstatus.mpp <= PRIV_LVL_M;
         mie  <= '0;
         mtvec <= '0;
         mepc  <= '0;
@@ -247,10 +291,10 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         mscratch <= mscratch_n;
 
         // Adicionei aqui
-        if(ISA_F) begin
+        // if(ISA_F) begin
             fflags <= fflags_n;
             frm <= frm_n;
-        end
+        // end
     end
 end
 
@@ -276,6 +320,18 @@ assign mtvec_o = mtvec;
 // assign mepc_o = mepc;
 // Output next value of mepc to account for writes followed by xRET 
 assign mepc_o = mepc_n;
+
+assign mstatus_fs_o = mstatus.fs;
+
+
+`ifdef SVA_ON
+    
+    // Can't have mret at the same time as other traps
+    // assert property (@(posedge clk_i) disable iff (!rst_n_i) !(is_mret_i && (save_pc_ex_i || save_pc_id_i)));
+    // Can't have explicit and implicit fflags write at the same time
+    // assert property (@(posedge clk_i) disable iff (!rst_n_i) !(fflags_we_i && (csr_wen && (csr_addr_i == CSR_FFLAGS || csr_addr_i == CSR_FCSR))));
+    
+`endif
 
 `ifdef JASPER
 `default_nettype wire

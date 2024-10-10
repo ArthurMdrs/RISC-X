@@ -470,11 +470,22 @@ typedef struct packed {
     logic tsr;  // Trap SRET
     logic sd;   // State Dirty
 } mstatus_t;
+// These mstatus fields are actually WPRI: uie, hie, upie
 
 typedef struct packed {
     logic sbe;  // Supervisor mode endianess control
     logic mbe;  // Machine mode endianess control
 } mstatush_t;
+
+localparam logic [1:0] FS_OFF     = 2'b00;
+localparam logic [1:0] FS_INITIAL = 2'b01;
+localparam logic [1:0] FS_CLEAN   = 2'b10;
+localparam logic [1:0] FS_DIRTY   = 2'b11;
+
+localparam logic [1:0] PRIV_LVL_U = 2'b00;
+localparam logic [1:0] PRIV_LVL_S = 2'b01;
+localparam logic [1:0] PRIV_LVL_H = 2'b10;
+localparam logic [1:0] PRIV_LVL_M = 2'b11;
 
 
 
