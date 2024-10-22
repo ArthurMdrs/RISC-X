@@ -106,7 +106,12 @@ module rvfi import core_pkg::*; #(
     input  logic [31:0] misa,
     input  mstatus_t    mstatus,
     input  mstatus_t    mstatus_n,
-    input  logic        implicit_wr_to_fs,
+    // input  logic        implicit_wr_to_fs,
+    input  logic        wr_to_f_reg,
+    input  logic        wr_to_mstatus,
+    input  logic        wr_to_fcsr,
+    input  logic        fpu_fflags_we_ex,
+    input  logic [ 4:0] fpu_fflags_ex,
     input  csr_addr_t   csr_addr,
     
     `RVFI_OUTPUTS,
@@ -578,13 +583,20 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
                 csr_mstatus_wen_mem   <= 1'b1;
                 csr_mstatus_wdata_mem <= csr_wdata_ex;
             end
-            else if (implicit_wr_to_fs) begin
+            else if ((wr_to_f_reg && !wr_to_mstatus) || wr_to_fcsr || (fpu_fflags_we_ex && |fpu_fflags_ex)) begin
                 csr_mstatus_wen_mem   <= 1'b1;
                 csr_mstatus_wdata_mem <= {mstatus_n.sd, 8'b0, mstatus_n.tsr, mstatus_n.tw, mstatus_n.tvm,
                                           mstatus_n.mxr, mstatus_n.sum, mstatus_n.mprv, mstatus_n.xs, mstatus_n.fs,
                                           mstatus_n.mpp, mstatus_n.vs, mstatus_n.spp, mstatus_n.mpie, mstatus_n.ube,
                                           mstatus_n.spie, 1'b0, mstatus_n.mie, 1'b0, mstatus_n.sie, 1'b0};
             end
+            // else if (implicit_wr_to_fs) begin
+            //     csr_mstatus_wen_mem   <= 1'b1;
+            //     csr_mstatus_wdata_mem <= {mstatus_n.sd, 8'b0, mstatus_n.tsr, mstatus_n.tw, mstatus_n.tvm,
+            //                               mstatus_n.mxr, mstatus_n.sum, mstatus_n.mprv, mstatus_n.xs, mstatus_n.fs,
+            //                               mstatus_n.mpp, mstatus_n.vs, mstatus_n.spp, mstatus_n.mpie, mstatus_n.ube,
+            //                               mstatus_n.spie, 1'b0, mstatus_n.mie, 1'b0, mstatus_n.sie, 1'b0};
+            // end
             else begin
                 // csr_mstatus_rdata_mem <= csr_mstatus_rdata_ex;
                 csr_mstatus_wen_mem   <= csr_mstatus_wen_ex;

@@ -35,7 +35,7 @@ DV_ISS_YAML := $(RISCV_DV_ADDS)/iss.yaml
 DV_STEPS := iss_sim
 DV_ALL_SIM_TESTS := $(shell tr '\n' ',' < full_test_list.txt | sed 's/,$$//')
 DV_SIM_TEST := $(DV_ALL_SIM_TESTS)
-DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) --iss_timeout 600 \
+DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) --iss_timeout 1800 \
 					   --noclean --simulator xlm --custom_target $(DV_RISCX_TARGET) \
 					   --iss_yaml $(DV_ISS_YAML) --csr_yaml $(RISCV_DV_ADDS)/csr_description.yaml \
 					   --isa $(ISA) --mabi $(ABI) --priv m
@@ -106,10 +106,16 @@ run: sim
 ##########################                           DEPENDENCIES                           ##########################
 ######################################################################################################################
 
-DEPS := $(RISCV_DV_ROOT)/.git $(RVFI_HOME)/rvfi_macros.vh
+DEPS := $(RISCV_DV_ROOT)/.git $(RTL_HOME)/cvfpu/.git $(RVFI_HOME)/rvfi_macros.vh
 
-$(RISCV_DV_ROOT)/.git:
-	@git submodule update --init --recursive
+# $(RISCV_DV_ROOT)/.git:
+# 	@git submodule update --init --recursive
+# 	@cd $(TOOLS_HOME)/patches && make apply-patch 
+
+$(RISCV_DV_ROOT)/.git $(RTL_HOME)/cvfpu/.git:
+	@git submodule update --init $(RISCV_DV_ROOT)
+	@git submodule update --init $(RTL_HOME)/cvfpu
+	@cd $(RTL_HOME)/cvfpu && git submodule update --init src/common_cells
 	@cd $(TOOLS_HOME)/patches && make apply-patch 
 
 $(RVFI_HOME)/rvfi_macros.vh: 

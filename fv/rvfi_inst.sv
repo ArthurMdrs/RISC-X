@@ -106,7 +106,12 @@ rvfi rvfi_inst (
     .misa               ( core_inst.csr_inst.misa ),
     .mstatus            ( core_inst.csr_inst.mstatus ),
     .mstatus_n          ( core_inst.csr_inst.mstatus_n ),
-    .implicit_wr_to_fs  ( core_inst.csr_inst.implicit_wr_to_fs ),
+    // .implicit_wr_to_fs  ( core_inst.csr_inst.implicit_wr_to_fs ),
+    .wr_to_f_reg        ( core_inst.csr_inst.wr_to_f_reg ),
+    .wr_to_mstatus      ( core_inst.csr_inst.wr_to_mstatus ),
+    .wr_to_fcsr         ( core_inst.csr_inst.wr_to_fcsr ),
+    .fpu_fflags_we_ex   ( core_inst.fpu_fflags_we_ex ),
+    .fpu_fflags_ex      ( core_inst.fpu_fflags_ex ),
     .csr_addr           ( core_inst.csr_addr_ex ),
   
     `RVFI_CONN,
