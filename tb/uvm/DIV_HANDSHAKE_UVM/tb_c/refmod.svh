@@ -55,10 +55,16 @@ class refmod extends uvm_component;
             tr_output.aux = 3;
           end
           else begin
-            result = $signed(tr_input.dividendo) / $signed(tr_input.divisor)  ;
-            rem    = $signed(tr_input.dividendo) % $signed (tr_input.divisor) ;
+            result = $signed(tr_input.dividendo) / $signed(tr_input.divisor);
             tr_output.c = result;
-            tr_output.r = rem;
+             if (tr_input.dividendo[31]) begin 
+              rem    = $signed(tr_input.dividendo) % $signed (tr_input.divisor) ;
+              tr_output.r = -rem;
+             end
+             else begin 
+              rem    = $signed(tr_input.dividendo) % $signed (tr_input.divisor) ;
+              tr_output.r = rem;
+             end
             tr_output.aux = 4;
           end
           end
