@@ -82,7 +82,7 @@ class clknrst_drv extends uvm_driver #(clknrst_tr);
         case (req.action)
             CLKNRST_ACTION_START_CLK: begin
                 if (vif.clk_active) begin
-                    `uvm_warning("CLKNRST DRIVER", $sformatf("Attempting to start clock generation while it is already active. Ignoring req:\n%s", req.sprint()))
+                    `uvm_warning("CLKNRST DRIVER", $sformatf("Attempting to start a clock that is already active. Ignoring transaction:\n%s", req.sprint()))
                 end
                 else begin
                     if (req.clk_period != 0) begin
@@ -99,17 +99,16 @@ class clknrst_drv extends uvm_driver #(clknrst_tr);
             
             CLKNRST_ACTION_STOP_CLK: begin
                 if (!vif.clk_active) begin
-                    `uvm_warning("CLKNRST DRIVER", $sformatf("Attempting to stop clock generation while it is already inactive. Ignoring req:\n%s", req.sprint()))
+                    `uvm_warning("CLKNRST DRIVER", $sformatf("Attempting to stop a clock that is already inactive. Ignoring transaction:\n%s", req.sprint()))
                 end
                 else begin
-                    // wait (vif.clk == 1'b0);
                     vif.stop_clk();
                 end
             end
         
             CLKNRST_ACTION_RESTART_CLK: begin
                 if (vif.clk_active) begin
-                    `uvm_warning("CLKNRST DRIVER", $sformatf("Attempting to restart clock generation while it is already active. Ignoring req:\n%s", req.sprint()))
+                    `uvm_warning("CLKNRST DRIVER", $sformatf("Attempting to restart clock that is already active. Ignoring transaction:\n%s", req.sprint()))
                 end
                 else begin
                     vif.start_clk();

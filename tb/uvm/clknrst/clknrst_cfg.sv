@@ -42,7 +42,7 @@ class clknrst_cfg extends uvm_object;
     function new (string name = "clknrst_cfg");
         super.new(name);
         is_active = UVM_ACTIVE;
-        cov_control = CLKNRST_COV_ENABLE;
+        cov_control = CLKNRST_COV_DISABLE;
         initial_rst_val = CLKNRST_INITIAL_VALUE_1;
     endfunction: new
 

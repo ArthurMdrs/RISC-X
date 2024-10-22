@@ -112,11 +112,19 @@ DEPS := $(RISCV_DV_ROOT)/.git $(RTL_HOME)/cvfpu/.git $(RVFI_HOME)/rvfi_macros.vh
 # 	@git submodule update --init --recursive
 # 	@cd $(TOOLS_HOME)/patches && make apply-patch 
 
-$(RISCV_DV_ROOT)/.git $(RTL_HOME)/cvfpu/.git:
+# $(RISCV_DV_ROOT)/.git $(RTL_HOME)/cvfpu/.git:
+# 	@git submodule update --init $(RISCV_DV_ROOT)
+# 	@git submodule update --init $(RTL_HOME)/cvfpu
+# 	@cd $(RTL_HOME)/cvfpu && git submodule update --init src/common_cells
+# 	@cd $(TOOLS_HOME)/patches && make apply-patch
+
+$(RISCV_DV_ROOT)/.git:
 	@git submodule update --init $(RISCV_DV_ROOT)
+	@cd $(TOOLS_HOME)/patches && make apply-patch
+
+$(RTL_HOME)/cvfpu/.git:
 	@git submodule update --init $(RTL_HOME)/cvfpu
 	@cd $(RTL_HOME)/cvfpu && git submodule update --init src/common_cells
-	@cd $(TOOLS_HOME)/patches && make apply-patch 
 
 $(RVFI_HOME)/rvfi_macros.vh: 
 	@curl -L -o $(RVFI_HOME)/rvfi_macros.vh https://raw.githubusercontent.com/ArthurMdrs/riscv-formal/cv32e40p_v1.8.2/checks/original_checks/rvfi_macros.vh
