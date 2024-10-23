@@ -15,7 +15,7 @@ module opdiv(
 
     logic ena, a_signal,b_signal, c_signal, next_in_ready_o, next_out_valid_o, compair;
     logic [5:0] qbits;
-    logic signed [31:0] state, next, k;
+    logic signed [31:0] state, next, k,r_temp;
     logic signed [32:0] a_reg, b_reg,minuend;
     logic [31:0] left_updade,right_updade;
     logic signed [31:0] next_k,Quatient;
@@ -186,12 +186,24 @@ module opdiv(
                     c = {32{1'b0}};
                     r = a_signal ? ~a_reg[30:0]+1:a_reg[30:0];
                 end else  begin
-                    r = compair ? minuend - b_reg: minuend ;
+                        r_temp =  compair ? minuend - b_reg: minuend ;
                         case({a_signal,b_signal})
-                            2'b00: c = {1'b0,Quatient[30:0]};
-                            2'b11: c = {1'b0,Quatient[30:0]};
-                            2'b10: c = {1'b1,~Quatient[30:0]+1};
-                            2'b01: c = {1'b1,~Quatient[30:0]+1};
+                            2'b00:begin 
+                                    c = {1'b0,Quatient[30:0]};
+                                    r = r_temp;
+                            end
+                            2'b11:begin
+                                    c = {1'b0,Quatient[30:0]};
+                                    r = ~r_temp+1;
+                            end
+                            2'b10:begin
+                                    c = {1'b1,~Quatient[30:0]+1};
+                                    r = ~r_temp+1;
+                            end
+                            2'b01:begin 
+                                    c = {1'b1,~Quatient[30:0]+1};
+                                    r = r_temp;
+                            end
                         endcase
                 end else begin  
                      if(b_reg[31:0] == 0)begin
