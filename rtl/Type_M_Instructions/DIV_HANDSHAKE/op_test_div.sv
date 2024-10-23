@@ -48,7 +48,7 @@ module tb();
         //if(temp=="START")begin 
         if(!nreset)begin
             a    <= -1613826193;
-            b    <= -371251114;
+            b    <= 0;
             pass <= 0 ;
             signal_division <= 1;
         end else if(inst0opdiv.out_valid_o)begin 
@@ -61,7 +61,7 @@ module tb();
                 $display("%d/%d =  %d,%d,%d",inst0opdiv.a,inst0opdiv.b,inst0opdiv.c,inst0opdiv.r,a%b,"pass");
               end
               else  begin
-                $display("%b/%b =  %b,%b, %b %b",inst0opdiv.a,inst0opdiv.b,inst0opdiv.c,inst0opdiv.r,$abs(a)%$abs(b),$abs(a)/$abs(b),"Fail");
+                $display("%d/%d =  %d,%d, %d %d",inst0opdiv.a,inst0opdiv.b,inst0opdiv.c,inst0opdiv.r,$abs(a)%$abs(b),$abs(a)/$abs(b),"Fail");
                 //$display("%d/%d =  %d,%d, %d ",inst0opdiv.a,inst0opdiv.b,inst0opdiv.c,inst0opdiv.r,$abs(a)%$abs(b),uint'(a)/unit'(b));
 
                 pass <= 0;
