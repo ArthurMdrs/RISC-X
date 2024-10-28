@@ -9,11 +9,11 @@ module opdiv(
     input  logic                in_valid_i          ,   //  
     output logic                in_ready_o          ,   //  
     output logic                out_valid_o         ,   //  
-    input  logic                signal_division     ,
+    input  logic                signal_division    ,
     input  logic                out_ready_i     // 
 );
 
-    logic ena, a_signal,b_signal, c_signal, next_in_ready_o, next_out_valid_o, compair;
+    logic ena, a_signal,b_signal,signal_division_intern, c_signal, next_in_ready_o, next_out_valid_o, compair;
     logic [5:0] qbits;
     logic signed [31:0] state, next, k,r_temp;
     logic signed [32:0] a_reg, b_reg,minuend;
@@ -22,7 +22,7 @@ module opdiv(
     counter_bit inst0Count(
 
                 .ena    (ena),
-                .A      (signal_division ? {1'b0,a_reg[30:0]} : a_reg),
+                .A      (signal_division_intern ? {1'b0,a_reg[30:0]} : a_reg),
                 .nBits  (qbits)
     );
     enum {IDLE,INITIALISE_AND_COUNTER_BITS,SET_AK_MINUEND,LOOP,UPDATE_MINUEND_RIGHT,UPDATE_MINUEND_LEFT,INCREASE_K,DONE} states;
@@ -40,12 +40,14 @@ module opdiv(
             out_valid_o <= 0;
             k           <= 0;
             in_ready_o  <= 0;
+            signal_division_intern <= signal_division;
         end else begin
+            signal_division_intern <= (in_valid_i && in_ready_o)? signal_division: signal_division_intern;
             case(next)
                 INITIALISE_AND_COUNTER_BITS:
                 begin
                         Quatient    <= 0;
-                        if(signal_division)begin
+                        if(signal_division_intern)begin
                             a_reg[30:0] <= a[31]  ? {1'b0,~a[30:0]+1}: a[30:0];
                             b_reg[30:0] <= b[31]  ? {1'b0,~b[30:0]+1}: b[30:0];
                             a_reg[32:31]   <= 0;
@@ -57,8 +59,8 @@ module opdiv(
                         ena         <= 1;
                         minuend     <= 0;
                         k           <= qbits;     
-                        a_signal    <= a[31] & signal_division;
-                        b_signal    <= b[31] & signal_division;                          
+                        a_signal    <= a[31] & signal_division_intern;
+                        b_signal    <= b[31] & signal_division_intern;                          
                 end
                 SET_AK_MINUEND:
                 begin  
@@ -177,7 +179,7 @@ module opdiv(
     endcase
     always_comb 
         if(out_valid_o && out_ready_i)begin
-            if(signal_division)
+            if(signal_division_intern)
                 if(b_reg[30:0] == 0)begin
                     c = {32{1'b1}};
                     r = a_signal ? ~a_reg[30:0]+1:a_reg[30:0];
