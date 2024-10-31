@@ -1,4 +1,4 @@
-# SimVision Command Script (Wed Sep 18 11:25:46 -03 2024)
+# SimVision Command Script (Wed Oct 23 10:59:41 -03 2024)
 #
 # Version 23.09.s003
 #
@@ -55,7 +55,6 @@ preferences set toolbar-TimeSearch-WatchWindow {
   shown 0
 }
 preferences set expand-attributes begin_time
-preferences set key-bindings {PageUp PageUp Edit>Undo Ctrl+z View>Zoom>Next {Alt+Right arrow} View>Zoom>In Alt+i PageDown PageDown ScrollDown {Down arrow} Edit>Copy Ctrl+c View>Zoom>FullY_widget y Edit>Create>Group Ctrl+g Simulation>NextInScope F7 Edit>Select>All Ctrl+a Format>Radix>Decimal Ctrl+Shift+D Edit>Ungroup Ctrl+Shift+G TopOfPage Home Edit>Create>Condition Ctrl+e {command -console SimVision {%w sidebar access designbrowser selectall}} Alt+a ScrollLeft {Left arrow} View>Zoom>FullX_widget = Edit>SelectAllText Alt+a Edit>TextSearchConsole Alt+s Windows>SendTo>Waveform Ctrl+w Simulation>Return Shift+F5 View>CallstackDown {Ctrl+Down arrow} Select>All Ctrl+a Edit>Delete Del Format>Radix>Octal Ctrl+Shift+O Edit>Cut Ctrl+x Simulation>Run F2 Edit>Create>Marker Ctrl+m View>Center Alt+c View>CallstackInWindow Ctrl+k Edit>SelectAll Ctrl+a File>OpenDatabase Ctrl+o Edit>Redo Ctrl+y Format>Radix>Binary Ctrl+Shift+B View>ExpandSequenceTime>AtCursor Alt+x ScrollUp {Up arrow} File>CloseWindow Ctrl+Shift+w ScrollRight {Right arrow} View>Zoom>FullX Alt+= Edit>Create>Bus Ctrl+b Explore>NextEdge Ctrl+\] View>Zoom>Cursor-Baseline Alt+z View>Zoom>OutX Alt+o Edit>GoToLine Ctrl+g View>Zoom>Fit Alt+= View>Zoom>OutX_widget o View>CallstackUp {Ctrl+Up arrow} View>Bookmarks>Add Ctrl+b Format>Radix>Hexadecimal Ctrl+Shift+H Edit>Search Ctrl+f Simulation>Next F6 View>ShowValues Ctrl+s View>Zoom>InX Alt+i Edit>Create>MarkerAtCursor Ctrl+Shift+M View>Zoom>Out Alt+o Edit>TextSearch Ctrl+f Format>Signed Ctrl+Shift+S Edit>Paste Ctrl+v View>Zoom>Previous {Alt+Left arrow} View>CollapseSequenceTime>AtCursor Alt+s Format>Radix>ASCII Ctrl+Shift+A View>Zoom>InX_widget i Explore>PreviousEdge {Ctrl+[} Simulation>Step F5 BottomOfPage End}
 
 #
 # Databases
@@ -63,7 +62,7 @@ preferences set key-bindings {PageUp PageUp Edit>Undo Ctrl+z View>Zoom>Next {Alt
 array set dbNames ""
 set dbNames(realName1) [ database require waves -hints {
 	file ./waves.shm/waves.trn
-	file /home/pedro.medeiros/Tools/RISC-X/tb/uvm/divisor/divisor/tb_c/waves.shm/waves.trn
+	file /home/pedro.medeiros/Tools/RISC-X_Type_M/tb/uvm/DIV_HANDSHAKE_UVM/tb_c/waves.shm/waves.trn
 }]
 if {$dbNames(realName1) == ""} {
     set dbNames(realName1) waves
@@ -82,12 +81,12 @@ mmap new  -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor or
 #
 # Waveform windows
 #
-if {[catch {window new WaveWindow -name "Waveform 1" -geometry 2192x1165+-10+59}] != ""} {
-    window geometry "Waveform 1" 2192x1165+-10+59
+if {[catch {window new WaveWindow -name "Waveform 1" -geometry 1871x958+-10+59}] != ""} {
+    window geometry "Waveform 1" 1871x958+-10+59
 }
 window target "Waveform 1" on
 waveform using {Waveform 1}
-waveform sidebar select designbrowser
+waveform sidebar select tracesignals
 waveform set \
     -primarycursor TimeA \
     -signalnames name \
@@ -113,10 +112,6 @@ set id [waveform add -signals [subst  {
 	} ]]
 waveform format $id -color #9900ff -bgcolor #000000
 set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.c[31:0]}]}
-	} ]]
-waveform format $id -color #ffffff
-set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.a[31:0]}]}
 	} ]]
 waveform format $id -radix %x -color #9900ff -bgcolor #000000
@@ -125,11 +120,6 @@ set id [waveform add -signals [subst  {
 	} ]]
 waveform format $id -radix %x -color #9900ff -bgcolor #000000
 set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.c[31:0]}]}
-	} ]]
-waveform format $id -radix %x -color #ffffff
-set id [waveform add -cdivider divider]
-set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.in_valid_i}]}
 	} ]]
 waveform format $id -color #99ff00 -bgcolor #000000
@@ -137,6 +127,25 @@ set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.in_ready_o}]}
 	} ]]
 waveform format $id -color #99ff00 -bgcolor #000000
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.signal_division}]}
+	} ]]
+set id [waveform add -cdivider divider]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.c[31:0]}]}
+	} ]]
+waveform format $id -color #ffffff
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.r[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.c[31:0]}]}
+	} ]]
+waveform format $id -radix %x -color #ffffff
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.r[31:0]}]}
+	} ]]
+waveform format $id -radix %x
 set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.out_valid_o}]}
 	} ]]
@@ -154,7 +163,7 @@ set id [waveform add -signals [subst  {
 	} ]]
 set id [waveform add -cdivider divider]
 
-waveform xview limits 15ns 1015ns
+waveform xview limits 0 1000ns
 
 #
 # Waveform Window Links

@@ -57,7 +57,7 @@ module top;
       uvm_config_db #(virtual in_div_if)::set(null, "uvm_test_top.env_h.agent_in_h.*", "in_vi", in_vi);
       uvm_config_db #(virtual out_div_if)::set(null, "uvm_test_top.env_h.agent_out_h.*", "out_vi", out_vi);
 
-      run_test("test");
+      run_test("div_signed_test");
    end
 endmodule
 

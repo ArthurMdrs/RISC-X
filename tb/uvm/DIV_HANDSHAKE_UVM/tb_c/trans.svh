@@ -1,20 +1,22 @@
 //Transaction Out - a_tr
 class tr_out extends uvm_sequence_item;
   
-   rand logic [31:0] c;
-   rand logic [31:0] r;
+  rand logic [31:0] c;
+  rand logic [31:0] r;
   int aux;
 
-// 
+ 
   `uvm_object_utils_begin(tr_out)  // needed for transaction recording
-     `uvm_field_int(c, UVM_ALL_ON | UVM_DEC)
-     `uvm_field_int(r, UVM_ALL_ON | UVM_DEC)
+    //  `uvm_field_int(c, UVM_ALL_ON | UVM_DEC)
+    //  `uvm_field_int(r, UVM_ALL_ON | UVM_DEC)
+     `uvm_field_int(c, UVM_ALL_ON | UVM_HEX)
+     `uvm_field_int(r, UVM_ALL_ON | UVM_HEX)
      `uvm_field_int(aux, UVM_ALL_ON | UVM_DEC | UVM_NOCOMPARE)
   `uvm_object_utils_end
 
 function string convert2string();
-    return $sformatf("Resultado = 32'h%h", c);
-    return $sformatf("Resultado = 32'h%h", r);
+    return {$sformatf("Quociente = 32'h%h\n", c),
+            $sformatf("Resto     = 32'h%h", r)};
 endfunction
 
 
@@ -36,21 +38,24 @@ class tr_in extends uvm_sequence_item;
      `uvm_field_int(signal_division, UVM_ALL_ON | UVM_DEC)
   `uvm_object_utils_end
   
-  //constraint non_zero_divisor { divisor != 32'b0;}
   //constraint signal_division_positive { signal_division == 0;}
-  constraint signal_division_small { signal_division == 1; }
+  constraint signal_division_negative { soft signal_division == 1; }
   
 
 function string convert2string();
     string my_str;
     if (signal_division)
-        my_str = {$sformatf("divisor = 32'h%h\ndividendo = 32'h%h\n", divisor, dividendo), 
-                  $sformatf("divisor = %0d\ndividendo = %0d\n", $signed(divisor), $signed(dividendo)),
-                  $sformatf("signed division")};
+        my_str = {
+                    $sformatf("dividendo = 32'h%h\ndivisor = 32'h%h\n", dividendo, divisor), 
+                    $sformatf("dividendo = %0d\ndivisor = %0d\n", $signed(dividendo), $signed(divisor)),
+                    $sformatf("signed division")
+                };
     else
-        my_str = {$sformatf("divisor = 32'h%h\ndividendo = 32'h%h\n", divisor, dividendo), 
-                  $sformatf("divisor = %0d\ndividendo = %0d\n", $unsigned(divisor), $unsigned(dividendo)),
-                  $sformatf("UNsigned division")};
+        my_str = {
+                    $sformatf("dividendo = 32'h%h\ndivisor = 32'h%h\n", dividendo, divisor), 
+                    $sformatf("dividendo = %0d\ndivisor = %0d\n", $unsigned(dividendo), $unsigned(divisor)),
+                    $sformatf("UNsigned division")
+                };
     return my_str;
 endfunction
 
@@ -75,7 +80,7 @@ class div_dist1_tr extends tr_in;
         dividendo_gt_divisor dist {1:=9, 0:=1};
     }
     constraint shamt_dist { 
-        shamt dist {[0:5]:=1, [6:11]:=1, [12:17]:=2, [18:23]:=3, [24:29]:=3, [30:31]:=2};
+        shamt dist {[0:5]:=1, [6:11]:=1, [12:17]:=1, [18:23]:=3, [24:29]:=3, [30:31]:=2};
     }
     constraint greater_than { 
         solve dividendo_gt_divisor,shamt before dividendo, divisor;
@@ -102,7 +107,7 @@ class div_dist1_tr extends tr_in;
 
 endclass : div_dist1_tr
 
-//Case underlfow = Dividendo baixo e divisor baixo;
+//Case underflow = Dividendo baixo e divisor baixo;
 
 class item extends tr_in;
 
@@ -121,7 +126,7 @@ class item extends tr_in;
 
 endclass : item
 
-//Case Overlfow = Dividendo baixo e divisor baixo;
+//Case Overflow = Dividendo baixo e divisor baixo;
 
 class item2 extends tr_in;
 
