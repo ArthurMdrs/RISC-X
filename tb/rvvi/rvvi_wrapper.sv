@@ -1,3 +1,31 @@
+// Copyright 2024 UFCG
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+////////////////////////////////////////////////////////////////////////////////
+// Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
+//                                                                            //
+// Additional contributions by:                                               //
+//                                                                            //
+//                                                                            //
+// Design Name:    RVVI wrapper                                               //
+// Project Name:   RISC-X                                                     //
+// Language:       SystemVerilog                                              //
+//                                                                            //
+// Description:    Wrapper for RISC-X core that includes the RVVI interface.  //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 module rvvi_wrapper #(
     parameter bit ISA_M = 0,
     parameter bit ISA_C = 0,
@@ -32,6 +60,19 @@ import core_pkg::*;
 
 // RVFI signals
 `RVFI_WIRES
+
+// logic [ 4:0] rvfi_frs1_addr;
+// logic [ 4:0] rvfi_frs2_addr;
+// logic [ 4:0] rvfi_frs3_addr;
+logic [ 4:0] rvfi_frd_addr;
+// logic rvfi_frs1_rvalid;
+// logic rvfi_frs2_rvalid;
+// logic rvfi_frs3_rvalid;
+logic        rvfi_frd_wvalid;
+// logic [31:0] rvfi_frs1_rdata;
+// logic [31:0] rvfi_frs2_rdata;
+// logic [31:0] rvfi_frs3_rdata;
+logic [31:0] rvfi_frd_wdata;
 
 core #(
     .ISA_M(ISA_M),
@@ -76,7 +117,7 @@ assign rvvi.pc_rdata[0][0] = rvfi_pc_rdata;
 logic [31:0][31:0] x_wdata;   // X write data value
 logic [31:0]       x_wb   ;   // X data writeback (change) flag
 always_comb begin
-    foreach(rvvi.x_wdata[0][0][i]) begin
+    foreach(rvvi.x_wb[0][0][i]) begin
         x_wdata[i] = '0;
         x_wb[i]    = '0;
     end
@@ -89,8 +130,22 @@ assign rvvi.x_wdata[0][0] = x_wdata;
 assign rvvi.x_wb[0][0]    = x_wb;
 
 // F Registers
-assign rvvi.f_wdata[0][0] = '{default:'0};
-assign rvvi.f_wb[0][0]    = '{default:'0};
+// assign rvvi.f_wdata[0][0] = '{default:'0};
+// assign rvvi.f_wb[0][0]    = '{default:'0};
+logic [31:0][31:0] f_wdata;   // F write data value
+logic [31:0]       f_wb   ;   // F data writeback (change) flag
+always_comb begin
+    foreach(rvvi.f_wb[0][0][i]) begin
+        f_wdata[i] = '0;
+        f_wb[i]    = '0;
+    end
+    if (rvfi_frd_wvalid) begin
+        f_wdata[rvfi_frd_addr] = rvfi_frd_wdata;
+        f_wb[rvfi_frd_addr]    = '1;
+    end
+end
+assign rvvi.f_wdata[0][0] = f_wdata;
+assign rvvi.f_wb[0][0]    = f_wb;
 
 
 // V Registers
@@ -149,6 +204,23 @@ always_comb begin
             (rvfi_insn[31:20]==CSR_MCAUSE): begin
                 csr_wdata[CSR_MCAUSE] = rvfi_csr_mcause_wdata;
                 csr_wb[CSR_MCAUSE]    = 1'b1;
+            end
+            (rvfi_insn[31:20]==CSR_MSCRATCH): begin
+                csr_wdata[CSR_MSCRATCH] = rvfi_csr_mscratch_wdata;
+                csr_wb[CSR_MSCRATCH]    = 1'b1;
+            end
+            
+            (rvfi_insn[31:20]==CSR_FFLAGS): begin
+                csr_wdata[CSR_FFLAGS] = rvfi_csr_fflags_wdata;
+                csr_wb[CSR_FFLAGS]    = 1'b1;
+            end
+            (rvfi_insn[31:20]==CSR_FRM): begin
+                csr_wdata[CSR_FRM] = rvfi_csr_frm_wdata;
+                csr_wb[CSR_FRM]    = 1'b1;
+            end
+            (rvfi_insn[31:20]==CSR_FCSR): begin
+                csr_wdata[CSR_FCSR] = rvfi_csr_fcsr_wdata;
+                csr_wb[CSR_FCSR]    = 1'b1;
             end
         endcase
     end

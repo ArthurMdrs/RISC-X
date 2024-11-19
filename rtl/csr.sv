@@ -1,3 +1,31 @@
+// Copyright 2024 UFCG
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+////////////////////////////////////////////////////////////////////////////////
+// Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
+//                                                                            //
+// Additional contributions by:                                               //
+//                                                                            //
+//                                                                            //
+// Design Name:    Control and Status Registers                               //
+// Project Name:   RISC-X                                                     //
+// Language:       SystemVerilog                                              //
+//                                                                            //
+// Description:    RISC-X Control and Status Registers (CSRs).                //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 module csr import core_pkg::*; #(
     parameter bit ISA_M = 0,
     parameter bit ISA_C = 0,
@@ -6,12 +34,13 @@ module csr import core_pkg::*; #(
     input  logic clk_i,
     input  logic rst_n_i,
     
-    // Porsts for CSR read/modify instructions
+    // Ports for CSR read/modify instructions
     input  csr_addr_t      csr_addr_i,
     input  logic    [31:0] csr_wdata_i,
     input  csr_operation_t csr_op_i,
     output logic    [31:0] csr_rdata_o,
     
+    // Initial values of CSRs
     input  logic    [31:0] hartid_i,
     input  logic    [23:0] mtvec_i,
     
@@ -24,7 +53,15 @@ module csr import core_pkg::*; #(
     input  logic        save_pc_ex_i, // Save EX PC to mepc
     input  logic [31:0] pc_id_i,
     input  logic [31:0] pc_ex_i,
-    input  logic [ 4:0] exception_cause_i
+    input  logic [ 4:0] exception_cause_i,
+
+    // Floating-point ports
+    input logic [4:0] fflags_i,
+    input logic fflag_we_i,
+    input logic fregs_we_i,
+    output logic [2:0] frm_o
+
+
 );
 
 logic [31:0] csr_wdata_actual;
@@ -67,6 +104,16 @@ logic [31:0] mscratch, mscratch_n;
 // Machine Interrupt Enable Register
 logic [31:0] mie, mie_n;
 
+// Adicionei aqui
+
+// FPU Registers
+logic [4:0] fflags, fflags_n;
+logic [2:0] frm, frm_n;
+
+`ifdef JASPER
+`default_nettype none
+`endif
+
 // Define read operation
 always_comb begin
     case (csr_addr_i)
@@ -88,20 +135,30 @@ always_comb begin
         CSR_MCAUSE: csr_rdata_o = mcause;
         CSR_MSCRATCH: csr_rdata_o = mscratch;
         
+        CSR_FFLAGS: csr_rdata_o = (ISA_F) ? {27'b0, fflags}:'0;
+        CSR_FRM:    csr_rdata_o = (ISA_F) ? {29'b0, frm}:'0;
+        CSR_FCSR:   csr_rdata_o = (ISA_F) ? {24'b0, frm, fflags}:'0;
+
         default: csr_rdata_o = '0;
     endcase
 end
 
 // Define next values of CSRs
 always_comb begin
-    mstatus_n = mstatus;
-    mie_n = mie;
-    mtvec_n = (set_initial_mtvec) ? ({mtvec_i, 8'b0}) : (mtvec);
-    mepc_n = mepc;
+    mstatus_n     = mstatus;
+    mie_n         = mie;
+    mtvec_n       = (set_initial_mtvec) ? ({mtvec_i, 8'b0}) : (mtvec);
+    mepc_n        = mepc;
     mcause_intr_n = mcause[31];
     mcause_code_n = mcause[4:0];
-    mscratch_n = mscratch;
+    mscratch_n    = mscratch;
+
+    fflags_n = fflags;
+    frm_n    = frm;
     
+    if(ISA_F) if(fflag_we_i) fflags_n = fflags_i | fflags;
+
+
     if (csr_wen) begin
         case (csr_addr_i)
             CSR_MSTATUS: begin
@@ -140,6 +197,14 @@ always_comb begin
             CSR_MSCRATCH: begin
                 mscratch_n = csr_wdata_actual;
             end
+
+            CSR_FFLAGS: fflags_n = (ISA_F) ? csr_wdata_actual[4:0]:'0; 
+            CSR_FRM: frm_n = (ISA_F) ? csr_wdata_actual[2:0]:'0;
+            CSR_FCSR: begin
+                fflags_n = (ISA_F) ? csr_wdata_actual[4:0] : '0;
+                frm_n    = (ISA_F) ? csr_wdata_actual[7:5] : '0;
+            end
+
         endcase
     end
     
@@ -166,6 +231,10 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         // mcause[31] <= '0;
         mcause[4:0] <= '0;
         mscratch <= '0;
+
+        // Adicionei aqui
+        fflags <= '0;
+        frm <= '0;
     end
     else begin
         set_initial_mtvec <= '0;
@@ -176,6 +245,12 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         // mcause[31] <= mcause_intr_n;
         mcause[4:0] <= mcause_code_n;
         mscratch <= mscratch_n;
+
+        // Adicionei aqui
+        if(ISA_F) begin
+            fflags <= fflags_n;
+            frm <= frm_n;
+        end
     end
 end
 
@@ -196,9 +271,14 @@ always_comb begin
 end
 
 // Output some CSRs
+assign frm_o = (ISA_F) ? frm : '0;
 assign mtvec_o = mtvec;
 // assign mepc_o = mepc;
 // Output next value of mepc to account for writes followed by xRET 
 assign mepc_o = mepc_n;
+
+`ifdef JASPER
+`default_nettype wire
+`endif
 
 endmodule

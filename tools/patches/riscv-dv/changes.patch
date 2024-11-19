@@ -1,0 +1,393 @@
+diff --git a/cov.py b/cov.py
+index e9e1a9c..e67ce44 100644
+--- a/cov.py
++++ b/cov.py
+@@ -16,12 +16,17 @@ limitations under the License.
+ Regression script for RISC-V random instruction generator
+ """
+ 
++# pyright: reportMissingImports=false, reportUndefinedVariable=false
++
+ import argparse
+ import os
+ import re
+ import sys
+ import logging
+ 
++riscv_dv_root = os.environ.get('RISCV_DV_ROOT')
++sys.path.append(f'{riscv_dv_root}')
++
+ from scripts.lib import *
+ from scripts.spike_log_to_trace_csv import *
+ from scripts.ovpsim_log_to_trace_csv import *
+@@ -325,7 +330,9 @@ def main():
+     try:
+         parser = setup_parser()
+         args = parser.parse_args()
+-        cwd = os.path.dirname(os.path.realpath(__file__))
++        riscv_dv_root = os.environ.get('RISCV_DV_ROOT')
++        cwd = riscv_dv_root
++        # cwd = os.path.dirname(os.path.realpath(__file__))
+         setup_logging(args.verbose)
+         # Load configuration from the command line and the configuration file.
+         cfg = load_config(args, cwd)
+diff --git a/run.py b/run.py
+index 5f364fc..f1f6d0b 100644
+--- a/run.py
++++ b/run.py
+@@ -16,6 +16,8 @@ limitations under the License.
+ Regression script for RISC-V random instruction generator
+ """
+ 
++# pyright: reportMissingImports=false, reportUndefinedVariable=false
++
+ import argparse
+ import os
+ import random
+@@ -23,13 +25,20 @@ import re
+ import sys
+ import logging
+ 
++riscv_dv_additions = os.environ.get('RISCV_DV_ADDS')
++sys.path.append(riscv_dv_additions)
++
+ from scripts.lib import *
+ from scripts.spike_log_to_trace_csv import *
++from scripts.riscx_log_to_trace_csv import *
+ from scripts.ovpsim_log_to_trace_csv import *
+ from scripts.whisper_log_trace_csv import *
+ from scripts.sail_log_to_trace_csv import *
+ from scripts.instr_trace_compare import *
+ 
++# from riscx_log_to_trace_csv import *
++
++
+ from types import SimpleNamespace
+ 
+ LOGGER = logging.getLogger()
+@@ -190,6 +199,9 @@ def get_iss_cmd(base_cmd, elf, log):
+       cmd      : Command for ISS simulation
+     """
+     cmd = re.sub("\<elf\>", elf, base_cmd)
++    bin = elf[:-2] + ".bin"
++    cmd = re.sub("\<bin\>", bin, cmd)
++    cmd = re.sub("\<log\>", log, cmd)
+     cmd += (" &> {}".format(log))
+     return cmd
+ 
+@@ -422,6 +434,8 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
+       mabi       : MABI variant passed to GCC
+       debug_cmd  : Produce the debug cmd log without running
+     """
++    # riscv_dv_root = os.environ.get('RISCV_DV_ROOT')
++    # cwd = riscv_dv_root
+     cwd = os.path.dirname(os.path.realpath(__file__))
+     for test in test_list:
+         for i in range(0, test['iterations']):
+@@ -461,6 +475,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
+             if not re.search('mabi', cmd):
+                 cmd += (" -mabi={}".format(mabi))
+             logging.info("Compiling {}".format(asm))
++            # print(cmd)
+             run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
+             # Convert the ELF to plain binary, used in RTL sim
+             logging.info("Converting to {}".format(binary))
+@@ -469,8 +484,8 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
+             run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
+ 
+ 
+-def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+-                 setting_dir, debug_cmd):
++def run_assembly(asm_test, iss_yaml, isa, mabi, priv, gcc_opts, iss_opts, output_dir,
++                 setting_dir, timeout_s, debug_cmd):
+     """Run a directed assembly test with ISS
+ 
+     Args:
+@@ -478,16 +493,19 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+       iss_yaml    : ISS configuration file in YAML format
+       isa         : ISA variant passed to the ISS
+       mabi        : MABI variant passed to GCC
++      priv:       : privilege modes
+       gcc_opts    : User-defined options for GCC compilation
+       iss_opts    : Instruction set simulators
+       output_dir  : Output directory of compiled test files
+       setting_dir : Generator setting directory
++      timeout_s   : Timeout limit in seconds
+       debug_cmd   : Produce the debug cmd log without running
+     """
+-    if not asm_test.endswith(".S"):
++    if not (asm_test.endswith(".S") or asm_test.endswith(".s")):
+         logging.error("{} is not an assembly .S file".format(asm_test))
+         return
+     cwd = os.path.dirname(os.path.realpath(__file__))
++    # cwd = os.environ.get('RISCV_DV_ROOT')
+     asm_test = os.path.expanduser(asm_test)
+     report = ("{}/iss_regr.log".format(output_dir)).rstrip()
+     asm = re.sub(r"^.*\/", "", asm_test)
+@@ -521,17 +539,20 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+         run_cmd("mkdir -p {}/{}_sim".format(output_dir, iss))
+         log = ("{}/{}_sim/{}.log".format(output_dir, iss, asm))
+         log_list.append(log)
+-        base_cmd = parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd)
++        base_cmd = parse_iss_yaml(iss, iss_yaml, isa, priv, setting_dir, debug_cmd)
+         logging.info("[{}] Running ISS simulation: {}".format(iss, elf))
+         cmd = get_iss_cmd(base_cmd, elf, log)
+-        run_cmd(cmd, 10, debug_cmd=debug_cmd)
++        if iss == "risc-x":
++            # logging.info("cmd = {}".format(cmd[:(cmd.index('&>')+3)]+log[:-4]+"_xrun.log"))
++            cmd = cmd[:(cmd.index('&>')+3)] + log[:-4] + "_xrun.log"
++        run_cmd(cmd, timeout_s, debug_cmd=debug_cmd)
+         logging.info("[{}] Running ISS simulation: {} ...done".format(iss, elf))
+     if len(iss_list) == 2:
+         compare_iss_log(iss_list, log_list, report)
+ 
+ 
+-def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
+-                          output_dir, setting_dir, debug_cmd):
++def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, priv, gcc_opts, iss,
++                          output_dir, setting_dir, timeout_s, debug_cmd):
+     """Run a directed assembly test from a directory with spike
+ 
+     Args:
+@@ -539,21 +560,24 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
+       iss_yaml        : ISS configuration file in YAML format
+       isa             : ISA variant passed to the ISS
+       mabi            : MABI variant passed to GCC
++      priv:       : privilege modes
+       gcc_opts        : User-defined options for GCC compilation
+       iss             : Instruction set simulators
+       output_dir      : Output directory of compiled test files
+       setting_dir     : Generator setting directory
++      timeout_s   : Timeout limit in seconds
+       debug_cmd       : Produce the debug cmd log without running
+     """
+-    result = run_cmd("find {} -name \"*.S\"".format(asm_test_dir))
++    # result = run_cmd("find {} -name \"*.S\"".format(asm_test_dir))
++    result = run_cmd("find {} -maxdepth 1 \\( -name \"*.S\" -o -name \"*.s\" \\)".format(asm_test_dir))
+     if result:
+         asm_list = result.splitlines()
+         logging.info("Found {} assembly tests under {}".format(
+             len(asm_list), asm_test_dir))
+         for asm_file in asm_list:
+-            run_assembly(asm_file, iss_yaml, isa, mabi, gcc_opts, iss,
++            run_assembly(asm_file, iss_yaml, isa, mabi, priv, gcc_opts, iss,
+                          output_dir,
+-                         setting_dir, debug_cmd)
++                         setting_dir, timeout_s, debug_cmd)
+             if "," in iss:
+                 report = ("{}/iss_regr.log".format(output_dir)).rstrip()
+                 save_regr_report(report)
+@@ -581,6 +605,7 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+         logging.error("{} is not a .c file".format(c_test))
+         return
+     cwd = os.path.dirname(os.path.realpath(__file__))
++    # cwd = os.environ.get('RISCV_DV_ROOT')
+     c_test = os.path.expanduser(c_test)
+     report = ("{}/iss_regr.log".format(output_dir)).rstrip()
+     c = re.sub(r"^.*\/", "", c_test)
+@@ -602,6 +627,11 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+     cmd += (" -march={}".format(isa))
+     cmd += (" -mabi={}".format(mabi))
+     run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
++    
++    # result = subprocess.run(['ls',"/home/pedro.medeiros/Tools/RISC-X/tb/riscv-dv/mytest/directed_c_test"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
++    # print(result.stdout)
++    # logging.info("{}".format(result.stdout))
++    
+     # Convert the ELF to plain binary, used in RTL sim
+     logging.info("Converting to {}".format(binary))
+     cmd = ("{} -O binary {} {}".format(
+@@ -683,6 +713,9 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, iss_opts,
+                     elf = prefix + ".o"
+                     log = ("{}/{}_{}.log".format(log_dir, test['test'], i))
+                     cmd = get_iss_cmd(base_cmd, elf, log)
++                    if iss == "risc-x":
++                        # logging.info("cmd = {}".format(cmd[:(cmd.index('&>')+3)]+log[:-4]+"_xrun.log"))
++                        cmd = cmd[:(cmd.index('&>')+3)] + log[:-4] + "_xrun.log"
+                     if 'iss_opts' in test:
+                         cmd += ' '
+                         cmd += test['iss_opts']
+@@ -713,6 +746,8 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error, exp, debug_cmd):
+     report = ("{}/iss_regr.log".format(output_dir)).rstrip()
+     run_cmd("rm -rf {}".format(report))
+     for test in test_list:
++        # report = ("{}/cmp_{}.log".format(output_dir, test['test'])).rstrip()
++        # run_cmd("rm -rf {}".format(report))
+         for i in range(0, test['iterations']):
+             elf = ("{}/asm_test/{}_{}.o".format(output_dir, test['test'], i))
+             logging.info("Comparing ISS sim result {}/{} : {}".format(
+@@ -721,7 +756,7 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error, exp, debug_cmd):
+             run_cmd(("echo 'Test binary: {}' >> {}".format(elf, report)))
+             for iss in iss_list:
+                 log_list.append(
+-                    "{}/{}_sim/{}.{}.log".format(output_dir, iss, test['test'], i))
++                    "{}/{}_sim/{}_{}.log".format(output_dir, iss, test['test'], i))
+             compare_iss_log(iss_list, log_list, report, stop_on_first_error,
+                             exp)
+     save_regr_report(report)
+@@ -740,6 +775,8 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0,
+             csv_list.append(csv)
+             if iss == "spike":
+                 process_spike_sim_log(log, csv)
++            elif iss == "risc-x":
++                process_riscx_sim_log(log, csv)
+             elif iss == "ovpsim":
+                 process_ovpsim_sim_log(log, csv, stop_on_first_error)
+             elif iss == "sail":
+@@ -754,12 +791,20 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0,
+         logging.info(result)
+ 
+ 
++# def save_regr_report(report):
++#     passed_cnt = run_cmd("grep PASSED {} | wc -l".format(report)).strip()
++#     failed_cnt = run_cmd("grep FAILED {} | wc -l".format(report)).strip()
++#     summary = ("{} PASSED, {} FAILED".format(passed_cnt, failed_cnt))
++#     logging.info(summary)
++#     run_cmd(("echo {} >> {}".format(summary, report)))
++#     logging.info("ISS regression report is saved to {}".format(report))
++    
+ def save_regr_report(report):
+-    passed_cnt = run_cmd("grep PASSED {} | wc -l".format(report)).strip()
+-    failed_cnt = run_cmd("grep FAILED {} | wc -l".format(report)).strip()
+-    summary = ("{} PASSED, {} FAILED".format(passed_cnt, failed_cnt))
++    passed_cnt = run_cmd("grep PASSED {} | grep -v '^# Summary:' | wc -l".format(report)).strip()
++    failed_cnt = run_cmd("grep FAILED {} | grep -v '^# Summary:' | wc -l".format(report)).strip()
++    summary = "# Summary: {} PASSED, {} FAILED".format(passed_cnt, failed_cnt)
+     logging.info(summary)
+-    run_cmd(("echo {} >> {}".format(summary, report)))
++    run_cmd("echo {} >> {}".format(summary, report))
+     logging.info("ISS regression report is saved to {}".format(report))
+ 
+ 
+@@ -1003,6 +1048,8 @@ def main():
+     try:
+         cwd = os.path.dirname(os.path.realpath(__file__))
+         os.environ["RISCV_DV_ROOT"] = cwd
++        
++        # cwd = os.environ.get('RISCV_DV_ROOT')
+ 
+         args = parse_args(cwd)
+         setup_logging(args.verbose)
+@@ -1024,15 +1071,15 @@ def main():
+                 # path_asm_test is a directory
+                 if os.path.isdir(full_path):
+                     run_assembly_from_dir(full_path, args.iss_yaml, args.isa,
+-                                          args.mabi,
++                                          args.mabi, args.priv,
+                                           args.gcc_opts, args.iss, output_dir,
+-                                          args.core_setting_dir, args.debug)
++                                          args.core_setting_dir, args.iss_timeout, args.debug)
+                 # path_asm_test is an assembly file
+                 elif os.path.isfile(full_path) or args.debug:
+                     run_assembly(full_path, args.iss_yaml, args.isa, args.mabi,
+-                                 args.gcc_opts,
++                                 args.priv, args.gcc_opts,
+                                  args.iss, output_dir, args.core_setting_dir,
+-                                 args.debug)
++                                 args.iss_timeout, args.debug)
+                 else:
+                     logging.error('{} does not exist'.format(full_path))
+                     sys.exit(RET_FAIL)
+@@ -1108,17 +1155,18 @@ def main():
+                         # path_asm_test is a directory
+                         if os.path.isdir(path_asm_test):
+                             run_assembly_from_dir(path_asm_test, args.iss_yaml,
+-                                                  args.isa, args.mabi,
++                                                  args.isa, args.mabi, args.priv,
+                                                   gcc_opts, args.iss,
+                                                   output_dir,
+                                                   args.core_setting_dir,
++                                                  args.iss_timeout,
+                                                   args.debug)
+                         # path_asm_test is an assembly file
+                         elif os.path.isfile(path_asm_test):
+                             run_assembly(path_asm_test, args.iss_yaml, args.isa,
+-                                         args.mabi, gcc_opts,
++                                         args.mabi, args.priv, gcc_opts,
+                                          args.iss, output_dir,
+-                                         args.core_setting_dir, args.debug)
++                                         args.core_setting_dir, args.iss_timeout, args.debug)
+                         else:
+                             if not args.debug:
+                                 logging.error(
+diff --git a/scripts/spike_log_to_trace_csv.py b/scripts/spike_log_to_trace_csv.py
+index b6970bc..bd5d416 100644
+--- a/scripts/spike_log_to_trace_csv.py
++++ b/scripts/spike_log_to_trace_csv.py
+@@ -27,14 +27,42 @@ sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+ from riscv_trace_csv import *
+ from lib import *
+ 
++# The regex RD_RE will match expressions like this:
++# core   0: 3 0x80000060 (0xdd880813) x16 0x132f6dd8
++# core   0: 3 0x800002d2 (0x34049b73) x22 0x00000000 c832_mscratch 0xffffffff
++# core   0: 3 0x80000064 (0xf0080053) c768_mstatus 0x80006080 f0  0x132f6dd8
++# core 0: pri 0x addr    (   bin    ) reg 0x val     csr           0x csr_val
++# csr and csr_val are optional
+ RD_RE = re.compile(
+-    r"(core\s+\d+:\s+)?(?P<pri>\d)\s+0x(?P<addr>[a-f0-9]+?)\s+" \
+-    r"\((?P<bin>.*?)\)\s+(?P<reg>[xf]\s*\d*?)\s+0x(?P<val>[a-f0-9]+)" \
+-    r"(\s+(?P<csr>\S+)\s+0x(?P<csr_val>[a-f0-9]+))?")
++    r"(core\s+\d+:\s+)?" \
++    r"(?P<pri>\d)\s+" \
++    r"0x(?P<addr>[a-f0-9]+?)\s+" \
++    r"\((?P<bin>.*?)\)\s+" \
++    r"((?P<csr1>\S+)\s+" \
++    r"0x(?P<csr1_val>[a-f0-9]+)\s+)?" \
++    r"(?P<reg>[xf]\s*\d*?)\s+" \
++    r"0x(?P<val>[a-f0-9]+)" \
++    r"(\s+(?P<csr>\S+)\s+" \
++    r"0x(?P<csr_val>[a-f0-9]+))?"
++    )
++
++# The regex CORE_RE will match expressions like this:
++# core   0: 0x800002d2 (0x34049b73) csrrw   s6, mscratch, s1
++# core   0: 0x addr    (   bin    ) instr
+ CORE_RE = re.compile(
+-    r"core\s+\d+:\s+0x(?P<addr>[a-f0-9]+?)\s+\(0x(?P<bin>.*?)\)\s+(?P<instr>.*?)$")
++    r"core\s+\d+:\s+" \
++    r"0x(?P<addr>[a-f0-9]+?)\s+" \
++    r"\(0x(?P<bin>.*?)\)\s+" \
++    r"(?P<instr>.*?)$")
++
++# The regex ADDR_RE will match expressions like this:
++# x10,100(x1)
++# rd,imm(rs1)
+ ADDR_RE = re.compile(
+-    r"(?P<rd>[a-z0-9]+?),(?P<imm>[\-0-9]+?)\((?P<rs1>[a-z0-9]+)\)")
++    r"(?P<rd>[a-z0-9]+?)," \
++    r"(?P<imm>[\-0-9]+?)" \
++    r"\((?P<rs1>[a-z0-9]+)\)")
++
+ ILLE_RE = re.compile(r"trap_illegal_instruction")
+ 
+ LOGGER = logging.getLogger()
+@@ -128,6 +156,7 @@ def read_spike_trace(path, full_trace):
+ 
+     in_trampoline = True
+     instr = None
++    # myaux = 0
+ 
+     with open(path, 'r') as handle:
+         for line in handle:
+@@ -158,6 +187,11 @@ def read_spike_trace(path, full_trace):
+             # we need to stop immediately.
+             instr_match = CORE_RE.match(line)
+             if instr_match:
++                # if "fmv.w.x" in instr_match.group('instr'):
++                #     logging.info(instr_match.group('addr'))
++                #     myaux = 1
++                # else:
++                #     myaux = 0
+                 yield instr, False
+                 instr = read_spike_instr(instr_match, full_trace)
+                 if instr.instr_str == 'ecall':
+@@ -175,6 +209,8 @@ def read_spike_trace(path, full_trace):
+             # the --log-commits Spike option)?
+             commit_match = RD_RE.match(line)
+             if commit_match:
++                # if myaux:
++                #     logging.info('in commit')
+                 groups = commit_match.groupdict()
+                 instr.gpr.append(gpr_to_abi(groups["reg"].replace(' ', '')) +
+                                  ":" + groups["val"])

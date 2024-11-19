@@ -1,3 +1,32 @@
+// Copyright 2024 UFCG
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+////////////////////////////////////////////////////////////////////////////////
+// Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
+//                                                                            //
+// Additional contributions by:                                               //
+//                                                                            //
+//                                                                            //
+// Design Name:    Core's main package                                        //
+// Project Name:   RISC-X                                                     //
+// Language:       SystemVerilog                                              //
+//                                                                            //
+// Description:    Defines verious types and constants used in RISC-X modules //
+//                 and verification files.                                    //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 package core_pkg;
 
 // ALU-related types
@@ -30,10 +59,28 @@ typedef enum logic [1:0] {
 } alu_source_1_t;
 
 typedef enum logic [1:0] { 
+    ALU_SCR2_RS1,
     ALU_SCR2_RS2,
     ALU_SCR2_IMM,
     ALU_SCR2_4_OR_2 // Used to calculate PC + 4 or PC + 2
 } alu_source_2_t;
+
+typedef enum logic { 
+    ALU_SCR3_RS2,
+    ALU_SCR3_RS3
+} alu_source_3_t;
+
+typedef enum logic [1:0] { 
+    BASIC_ALU_RESULT,
+    FPU_RESULT,
+    MULT_RESULT,
+    DIV_RESULT
+} alu_result_mux_t;
+
+typedef enum logic { 
+    X_REG,
+    F_REG
+} reg_bank_mux_t;
 
 
 
@@ -108,6 +155,8 @@ typedef enum logic [1:0] {
     CSR_CLEAR
 } csr_operation_t;
 
+
+
 // OpCodes
 
 localparam logic [6:0] OPCODE_OP     = 7'b011_0011; // 7'h33
@@ -121,11 +170,13 @@ localparam logic [6:0] OPCODE_LUI    = 7'b011_0111; // 7'h37
 localparam logic [6:0] OPCODE_AUIPC  = 7'b001_0111; // 7'h17
 localparam logic [6:0] OPCODE_SYSTEM = 7'b111_0011; // 7'h73
 
-// Type RVC opcode:
-
-// localparam logic [6:0] OPCODE_RVC_0 = 7'bxxx_xx00; // First Quadrant
-// localparam logic [6:0] OPCODE_RVC_1 = 7'bxxx_xx01; // Second
-// localparam logic [6:0] OPCODE_RVC_2 = 7'bxxx_xx10; // Third
+localparam logic [6:0] OPCODE_OP_FP     = 7'b1010011; // 7'h53
+localparam logic [6:0] OPCODE_FMADD_FP  = 7'b1000011; // 7'h43
+localparam logic [6:0] OPCODE_FMSUB_FP  = 7'b1000111; // 7'h47
+localparam logic [6:0] OPCODE_FNMSUB_FP = 7'b1001011; // 7'h4B
+localparam logic [6:0] OPCODE_FNMADD_FP = 7'b1001111; // 7'h4F
+localparam logic [6:0] OPCODE_STORE_FP  = 7'b0100111; // 7'h27
+localparam logic [6:0] OPCODE_LOAD_FP   = 7'b0000111; // 7'h07
 
 localparam logic [1:0] OPCODE_RVC_0 = 2'b00; // First Quadrant
 localparam logic [1:0] OPCODE_RVC_1 = 2'b01; // Second Quadrant
@@ -416,6 +467,8 @@ typedef struct packed {
     logic sbe;  // Supervisor mode endianess control
     logic mbe;  // Machine mode endianess control
 } mstatush_t;
+
+
 
 // Define possible causes for CSR mcause
 localparam EXC_CAUSE_INSTR_ADDR_MISAL = 5'h00;

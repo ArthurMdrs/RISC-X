@@ -1,8 +1,15 @@
-export RTL_HOME := $(abspath $(shell pwd)/../../rtl)
-export RVFI_HOME := $(abspath $(shell pwd)/../../fv)
-export RVVI_HOME := $(abspath $(shell pwd)/../rvvi)
+export RISC_X_ROOT := $(abspath $(shell pwd)/../..)
+export RTL_HOME := $(abspath $(RISC_X_ROOT)/rtl)
+export RVFI_HOME := $(abspath $(RISC_X_ROOT)/fv)
 export TB_HOME := $(abspath $(shell pwd))
 export RISC_X_PATH := $(abspath $(shell pwd))
+export RVVI_HOME := $(abspath $(RISC_X_ROOT)/tb/rvvi)
+
+TOOLS_HOME := $(abspath $(RISC_X_ROOT)/tools)
+export RISCV_DV_ROOT := $(abspath $(TOOLS_HOME)/riscv-dv)
+export RISCV_DV_ADDS := $(abspath $(TOOLS_HOME)/additions/riscv-dv)
+
+ISA := rv32ifc_zicsr_zifencei
 
 DV_OUT_DIR := $(TB_HOME)/mytest
 DV_FILE_LIST := $(RISCV_DV_ROOT)/files.f
@@ -10,11 +17,14 @@ DV_GEN_TEST := riscv_instr_base_test
 DV_NUM_TESTS := 1
 DV_RISCX_TARGET := $(TB_HOME)/riscx_target
 DV_ISS_YAML := $(TB_HOME)/iss.yaml
+# DV_ISS_YAML := $(RISCV_DV_ADDS)/iss.yaml
 DV_ALL_SIM_TESTS := $(shell tr '\n' ',' < full_test_list.txt | sed 's/,$$//')
 DV_SIM_TEST := $(DV_ALL_SIM_TESTS)
-DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) \
+DV_RUN_COMMON_FLAGS := --test=$(DV_SIM_TEST) --output $(DV_OUT_DIR) --iss_timeout 600 \
 					   --simulator xlm --noclean --csr_yaml $(TB_HOME)/csr_description.yaml \
-					   --custom_target $(DV_RISCX_TARGET) --isa rv32ic_zicsr_zifencei --mabi ilp32 
+					   --custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi ilp32 
+# DV_RUN_CMD := cd $(RISCV_DV_ROOT) && python3 run.py
+# DV_COV_CMD := cd $(RISCV_DV_ROOT) && python3 cov.py
 DV_RUN_CMD := python3 run_mod.py
 DV_COV_CMD := python3 cov_mod.py
 
@@ -37,7 +47,7 @@ ifeq ($(strip $(VERBOSE)), 1)
 endif
 
 SEED = 1
-# SVA = +define+SVA_ON=1
+SVA = +define+SVA_ON=1
 INPUT = -input restore.tcl
 
 ELF=$(DV_OUT_DIR)/asm_test/$(DV_SIM_TEST)_0.o
@@ -67,8 +77,9 @@ gui: $(DEPS)
 $(RVFI_HOME)/rvfi_macros.vh: 
 	@curl -L -o $(RVFI_HOME)/rvfi_macros.vh https://raw.githubusercontent.com/ArthurMdrs/riscv-formal/cv32e40p_v1.8.2/checks/original_checks/rvfi_macros.vh
 
+RVVI_COMMIT := 20240403.0
 $(RVVI_HOME)/rvviTrace.sv:
-	@curl -L -o $(RVVI_HOME)/rvviTrace.sv https://raw.githubusercontent.com/riscv-verification/RVVI/main/source/host/rvvi/rvviTrace.sv
+	@curl -L -o $(RVVI_HOME)/rvviTrace.sv https://raw.githubusercontent.com/riscv-verification/RVVI/$(RVVI_COMMIT)/source/host/rvvi/rvviTrace.sv
 
 rars:
 	python3 run_rars.py $(PROGS_PATH) $(PROG)
@@ -83,7 +94,7 @@ sim-elf: $(DEPS)
 		 +progs_path=$(PROGS_PATH) +prog=out +text_start=8000_0000 \
 		 +bin=$(BIN) +section=$(SECTION_FILE) \
 		 +check_regs=0 +check_mem=0 +print_trace=1 +verbose=$(VERBOSE) \
-		 -timescale 1ns/1ps -access +rwc -svseed $(SEED)
+		 -timescale 1ns/1ps -access +rwc -svseed $(SEED) 
 
 sim-elf-gui: $(DEPS)
 	python3 elf2hex.py $(ELF) $(PROGS_PATH)/out_prog.txt
@@ -122,7 +133,6 @@ compare:
 
 dv-full: compile-instr-generator gen-and-compile-asm sim-dv compare
 
-# gen-sim-cmp: gen-and-compile-asm sim-dv compare
 gen-sim-cmp:
 	@$(DV_RUN_CMD) $(DV_RUN_COMMON_FLAGS) --so $(GENERATOR_SIM_OPTS) \
 		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike
@@ -138,6 +148,19 @@ spike-sim:
 csr-test:
 	@python3 $(RISCV_DV_ROOT)/scripts/gen_csr_test.py --xlen 32 --iterations 1 --out $(DV_OUT_DIR)/asm_test --end_signature_addr 0 --csr_file $(TB_HOME)/csr_description.yaml
 
+# c-test does NOT work yet (run_c is not compiling correctly??)
+c-test:
+	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm --noclean \
+		--custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi ilp32 \
+		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike --gcc_opts="-I$(PROGS_PATH)/include" \
+		--c_test $(PROGS_PATH) --debug debug.log
+
+# asm-test IS WORKING!
+asm-test:
+	@$(DV_RUN_CMD) --output $(DV_OUT_DIR) --simulator xlm --noclean \
+		--custom_target $(DV_RISCX_TARGET) --isa $(ISA) --mabi ilp32 \
+		--iss_yaml $(DV_ISS_YAML) --iss=risc-x,spike --gcc_opts="-I$(PROGS_PATH)/include" \
+		--asm_test $(PROGS_PATH)
 
 ##########################################################################################################################
 
@@ -145,9 +168,7 @@ DV_COV_DIR := $(DV_OUT_DIR)/cov
 COV_TESTS_DIR := $(DV_COV_DIR)/default
 # export COV_TEST_RUN := $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*' | head -n 1)
 # export COV_RUNS = $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
-ifneq ("$(wildcard $(COV_TESTS_DIR))","")
-	export COV_RUNS = $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
-endif
+export COV_RUNS = $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
 export COV_MERGED_DIR = $(DV_COV_DIR)/merged
 export COV_REPORT_DIR := $(TB_HOME)/cov_report
 RISCX_LOG = $(wildcard $(DV_OUT_DIR)/risc-x_sim/*.log)
@@ -174,6 +195,9 @@ cov-report: $(COV_MERGED_DIR)
 
 cov-full: log2csv cov-collect cov-merge cov-report
 
+cov-view: $(COV_MERGED_DIR)
+	imc -load $(COV_MERGED_DIR)
+
 ##########################################################################################################################
 
 clean-sim:
@@ -191,12 +215,7 @@ clean-generator:
 clean: clean-sim clean-asm clean-cov clean-generator
 
 ##########################################################################################################################
-
-# export aux := $(shell find $(COV_TESTS_DIR) -type d -name '*_test_*')
-# test:
-# 	@for x in $(aux); do \
-# 		echo $$x ; \
-# 	done
+# From this point everything is just for testing, do not use these 
 
 SPIKE_LOG := $(wildcard $(DV_OUT_DIR)/spike_sim/*.log)
 spike_full_csv:

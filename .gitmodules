@@ -1,0 +1,7 @@
+[submodule "rtl/cvfpu"]
+	path = rtl/cvfpu
+	url = https://github.com/openhwgroup/cvfpu.git
+
+[submodule "tools/riscv-dv"]
+	path = tools/riscv-dv
+	url = https://github.com/chipsalliance/riscv-dv

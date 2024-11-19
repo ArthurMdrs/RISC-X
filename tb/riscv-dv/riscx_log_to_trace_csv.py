@@ -17,11 +17,6 @@ sys.path.insert(0, riscv_dv_scripts)
 from riscv_trace_csv import *
 # from lib import *
 
-# RD_RE = re.compile(
-#     r"(core\s+\d+:\s+)?(?P<pri>\d)\s+0x(?P<addr>[a-f0-9]+?)\s+" \
-#     r"\((?P<bin>.*?)\)\s+(?P<reg>[xf]\s*\d*?)\s+0x(?P<val>[a-f0-9]+)" \
-#     r"(\s+(?P<csr>\S+)\s+0x(?P<csr_val>[a-f0-9]+))?")
-
 CORE_RE = re.compile( \
                     #  r"^\s*(?P<time>\d+ns)\s*\|" \
                      r"\s*(?P<cycles>\d+)\s*\|" \
@@ -33,12 +28,8 @@ CORE_RE = re.compile( \
                      r"\s*(?P<trap>[01])\s*$" \
                     )
 
-
-# CORE_RE = re.compile(
-#     r"core\s+\d+:\s+0x(?P<addr>[a-f0-9]+?)\s+\(0x(?P<bin>.*?)\)\s+(?P<instr>.*?)$")
 ADDR_RE = re.compile(
     r"(?P<rd>[a-z0-9]+?),(?P<imm>[\-0-9]+?)\((?P<rs1>[a-z0-9]+)\)")
-# ILLE_RE = re.compile(r"trap_illegal_instruction")
 
 LOGGER = logging.getLogger()
 

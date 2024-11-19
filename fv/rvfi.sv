@@ -1,4 +1,35 @@
-module rvfi import core_pkg::*; (
+// Copyright 2024 UFCG
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+////////////////////////////////////////////////////////////////////////////////
+// Author:         Pedro Medeiros - pedromedeiros.egnr@gmail.com              //
+//                                                                            //
+// Additional contributions by:                                               //
+//                                                                            //
+//                                                                            //
+// Design Name:    RVFI Driver                                                //
+// Project Name:   RISC-X                                                     //
+// Language:       SystemVerilog                                              //
+//                                                                            //
+// Description:    Drives RVFI signals.                                       //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+module rvfi import core_pkg::*; #(
+    parameter  int FLEN = 32,
+    localparam int NRET = `RISCV_FORMAL_NRET
+) (
     input  logic clk_i,
     input  logic rst_n_i,
     
@@ -17,10 +48,19 @@ module rvfi import core_pkg::*; (
     input  logic          illegal_instr_id,
     input  alu_source_1_t alu_source_1_id,
     input  alu_source_2_t alu_source_2_id,
+    input  alu_source_3_t alu_source_3_id,
     input  logic [ 4:0]   rs1_addr_id,
     input  logic [ 4:0]   rs2_addr_id,
+    input  logic [ 4:0]   rs3_addr_id,
+    input  reg_bank_mux_t rs1_src_bank_id,
+    input  reg_bank_mux_t rs2_src_bank_id,
+    input  reg_bank_mux_t rs3_src_bank_id,
+    input  logic          rs1_is_used_id,
+    input  logic          rs2_is_used_id,
+    input  logic          rs3_is_used_id,
     input  logic [31:0]   rs1_or_fwd_id,
     input  logic [31:0]   rs2_or_fwd_id,
+    input  logic [31:0]   rs3_or_fwd_id,
     input  logic [31:0]   pc_id,
     input  pc_source_t    pc_source_id,
     input  logic [31:0]   jump_target_id,
@@ -47,22 +87,81 @@ module rvfi import core_pkg::*; (
     input  logic [ 3:0] dmem_ben_o,
     
     // Input from WB stage
-    input  logic        flush_wb,
-    input  logic [ 4:0] rd_addr_wb,
-    input  logic        reg_wen_wb,
-    input  logic [31:0] reg_wdata_wb,
-    input  logic [31:0] mem_rdata_wb,
+    input  logic          flush_wb,
+    input  logic [ 4:0]   rd_addr_wb,
+    input  reg_bank_mux_t rd_dst_bank_wb,
+    input  logic          reg_wen_wb,
+    input  logic [31:0]   reg_wdata_wb,
+    input  logic [31:0]   mem_rdata_wb,
     
     input  logic [31:0] misa,
     
-    `RVFI_OUTPUTS
+    `RVFI_OUTPUTS,
+    
+    output [NRET *    5 - 1 : 0] rvfi_frs1_addr,
+    output [NRET *    5 - 1 : 0] rvfi_frs2_addr,
+    output [NRET *    5 - 1 : 0] rvfi_frs3_addr,
+    output [NRET *    5 - 1 : 0] rvfi_frd_addr,
+    // output [NRET        - 1 : 0] rvfi_frs1_rvalid,
+    // output [NRET        - 1 : 0] rvfi_frs2_rvalid,
+    // output [NRET        - 1 : 0] rvfi_frs3_rvalid,
+    output [NRET        - 1 : 0] rvfi_frd_wvalid,
+    output [NRET * FLEN - 1 : 0] rvfi_frs1_rdata,
+    output [NRET * FLEN - 1 : 0] rvfi_frs2_rdata,
+    output [NRET * FLEN - 1 : 0] rvfi_frs3_rdata,
+    output [NRET * FLEN - 1 : 0] rvfi_frd_wdata
 );
+
+logic        intr_if;
+
+// logic        rvfi_valid_id;
+logic        intr_id;
+
+// logic        rvfi_valid_ex;
+logic [31:0] instr_ex;
+logic        rvfi_trap_ex;
+logic        intr_ex;
+logic [ 4:0] rs1_addr_ex , rs2_addr_ex;
+logic [31:0] rs1_rdata_ex, rs2_rdata_ex;
+logic [ 4:0] frs1_addr_ex , frs2_addr_ex , frs3_addr_ex;
+logic [31:0] frs1_rdata_ex, frs2_rdata_ex, frs3_rdata_ex;
+logic [31:0] pc_ex, pc_n_ex;
+
+// logic        rvfi_valid_mem;
+logic [31:0] instr_mem;
+logic        trap_mem;
+logic        intr_mem;
+logic [ 4:0] rs1_addr_mem , rs2_addr_mem;
+logic [31:0] rs1_rdata_mem, rs2_rdata_mem;
+logic [ 4:0] frs1_addr_mem , frs2_addr_mem , frs3_addr_mem;
+logic [31:0] frs1_rdata_mem, frs2_rdata_mem, frs3_rdata_mem;
+logic [31:0] pc_mem, pc_n_mem;
+logic [31:0] csr_wdata_mem, csr_rdata_mem;
+logic        csr_wen_mem;
+
+logic        rvfi_valid_wb;
+logic [63:0] order_wb;
+logic [31:0] instr_wb;
+logic        trap_wb;
+logic        intr_wb;
+logic [ 4:0] rs1_addr_wb, rs2_addr_wb;
+logic [31:0] rs1_rdata_wb, rs2_rdata_wb;
+logic [ 4:0] frs1_addr_wb , frs2_addr_wb , frs3_addr_wb;
+logic [31:0] frs1_rdata_wb, frs2_rdata_wb, frs3_rdata_wb;
+logic [31:0] pc_wb, pc_n_wb;
+logic [31:0] mem_addr_wb;
+logic [ 3:0] mem_wmask_wb, mem_rmask_wb;
+logic [31:0] mem_wdata_wb;//, mem_rdata_wb;
+logic [31:0] csr_wdata_wb, csr_rdata_wb;
+logic        csr_wen_wb;
+
+`ifdef JASPER
+`default_nettype none
+`endif
 
 ///////////////////////////////////////////////////////////////////////////////
 //////////////////////        INSTRUCTION FETCH         ///////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
-logic        intr_if;
 
 // Pipeline registers ->IF
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -78,9 +177,6 @@ end
 ///////////////////////////////////////////////////////////////////////////////
 //////////////////////        INSTRUCTION DECODE        ///////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
-// logic        rvfi_valid_id;
-logic        intr_id;
 
 // Pipeline registers IF->ID
 always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -106,14 +202,6 @@ end
 /////////////////////////           EXECUTE           /////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// logic        rvfi_valid_ex;
-logic [31:0] instr_ex;
-logic        rvfi_trap_ex;
-logic        intr_ex;
-logic [ 4:0] rs1_addr_ex, rs2_addr_ex;
-logic [31:0] rs1_rdata_ex, rs2_rdata_ex;
-logic [31:0] pc_ex, pc_n_ex;
-
 // Pipeline registers ID->EX
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
@@ -125,6 +213,12 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         rs2_addr_ex   <= '0;
         rs1_rdata_ex  <= '0;
         rs2_rdata_ex  <= '0;
+        frs1_addr_ex  <= '0;
+        frs2_addr_ex  <= '0;
+        frs3_addr_ex  <= '0;
+        frs1_rdata_ex <= '0;
+        frs2_rdata_ex <= '0;
+        frs3_rdata_ex <= '0;
         pc_ex         <= '0;
         pc_n_ex       <= '0;
     end else begin
@@ -133,19 +227,42 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
             instr_ex     <= (instr_id[1:0] == 2'b11) ? (instr_id) : ({16'b0, instr_id[15:0]});
             rvfi_trap_ex <= trap_id && !stall_id && !branch_decision_ex;
             intr_ex      <= intr_id;
-            if ((alu_source_1_id == ALU_SCR1_RS1) || (pc_source_id == PC_JALR)) begin
+            // TODO: use signal rs1_is_used from decoder (when it's implemented)
+            if ((rs1_src_bank_id == X_REG) && ((alu_source_1_id == ALU_SCR1_RS1) || (pc_source_id == PC_JALR))) begin
                 rs1_addr_ex  <= rs1_addr_id;
                 rs1_rdata_ex <= rs1_or_fwd_id;
             end else begin
                 rs1_addr_ex  <= '0;
                 rs1_rdata_ex <= '0;
             end
-            if ((alu_source_2_id == ALU_SCR2_RS2) || mem_wen_id) begin
+            if ((rs2_src_bank_id == X_REG) && ((alu_source_2_id == ALU_SCR2_RS2) || mem_wen_id)) begin
                 rs2_addr_ex  <= rs2_addr_id;
                 rs2_rdata_ex <= rs2_or_fwd_id;
             end else begin
                 rs2_addr_ex  <= '0;
                 rs2_rdata_ex <= '0;
+            end
+            // FP registers
+            if ((rs1_src_bank_id == F_REG) && ((alu_source_1_id == ALU_SCR1_RS1) || (pc_source_id == PC_JALR))) begin
+                frs1_addr_ex  <= rs1_addr_id;
+                frs1_rdata_ex <= rs1_or_fwd_id;
+            end else begin
+                frs1_addr_ex  <= '0;
+                frs1_rdata_ex <= '0;
+            end
+            if ((rs2_src_bank_id == F_REG) && ((alu_source_2_id == ALU_SCR2_RS2) || mem_wen_id)) begin
+                frs2_addr_ex  <= rs2_addr_id;
+                frs2_rdata_ex <= rs2_or_fwd_id;
+            end else begin
+                frs2_addr_ex  <= '0;
+                frs2_rdata_ex <= '0;
+            end
+            if ((rs3_src_bank_id == F_REG) && rs3_is_used_id) begin
+                frs3_addr_ex  <= rs3_addr_id;
+                frs3_rdata_ex <= rs3_or_fwd_id;
+            end else begin
+                frs3_addr_ex  <= '0;
+                frs3_rdata_ex <= '0;
             end
             pc_ex        <= pc_id;
             // pc_n_ex <= (pc_source_id inside {PC_JAL, PC_JALR}) ? (jump_target_id) : (pc_if);
@@ -164,16 +281,6 @@ end
 ///////////////////////          MEMORY ACCESS          ///////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// logic        rvfi_valid_mem;
-logic [31:0] instr_mem;
-logic        trap_mem;
-logic        intr_mem;
-logic [ 4:0] rs1_addr_mem, rs2_addr_mem;
-logic [31:0] rs1_rdata_mem, rs2_rdata_mem;
-logic [31:0] pc_mem, pc_n_mem;
-logic [31:0] csr_wdata_mem, csr_rdata_mem;
-logic        csr_wen_mem;
-
 // Pipeline registers EX->MEM
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
@@ -185,6 +292,12 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         rs2_addr_mem   <= '0;
         rs1_rdata_mem  <= '0;
         rs2_rdata_mem  <= '0;
+        frs1_addr_mem  <= '0;
+        frs2_addr_mem  <= '0;
+        frs3_addr_mem  <= '0;
+        frs1_rdata_mem <= '0;
+        frs2_rdata_mem <= '0;
+        frs3_rdata_mem <= '0;
         pc_mem         <= '0;
         pc_n_mem       <= '0;
         csr_wdata_mem  <= '0;
@@ -199,6 +312,12 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
             rs2_addr_mem   <= rs2_addr_ex;
             rs1_rdata_mem  <= rs1_rdata_ex;
             rs2_rdata_mem  <= rs2_rdata_ex;
+            frs1_addr_mem  <= frs1_addr_ex;
+            frs2_addr_mem  <= frs2_addr_ex;
+            frs3_addr_mem  <= frs3_addr_ex;
+            frs1_rdata_mem <= frs1_rdata_ex;
+            frs2_rdata_mem <= frs2_rdata_ex;
+            frs3_rdata_mem <= frs3_rdata_ex;
             pc_mem   <= pc_ex;
             // pc_n_mem <= (branch_decision_ex) ? (branch_target_ex) : (pc_n_ex);
             // Insert bubble if flushing is needed
@@ -222,20 +341,6 @@ end
 ////////////////////////          WRITE BACK          /////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-logic        rvfi_valid_wb;
-logic [63:0] order_wb;
-logic [31:0] instr_wb;
-logic        trap_wb;
-logic        intr_wb;
-logic [ 4:0] rs1_addr_wb, rs2_addr_wb;
-logic [31:0] rs1_rdata_wb, rs2_rdata_wb;
-logic [31:0] pc_wb, pc_n_wb;
-logic [31:0] mem_addr_wb;
-logic [ 3:0] mem_wmask_wb, mem_rmask_wb;
-logic [31:0] mem_wdata_wb;//, mem_rdata_wb;
-logic [31:0] csr_wdata_wb, csr_rdata_wb;
-logic        csr_wen_wb;
-
 // Pipeline registers EX->MEM
 always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
@@ -248,6 +353,12 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         rs2_addr_wb   <= '0;
         rs1_rdata_wb  <= '0;
         rs2_rdata_wb  <= '0;
+        frs1_addr_wb  <= '0;
+        frs2_addr_wb  <= '0;
+        frs3_addr_wb  <= '0;
+        frs1_rdata_wb <= '0;
+        frs2_rdata_wb <= '0;
+        frs3_rdata_wb <= '0;
         pc_wb         <= '0;
         pc_n_wb       <= '0;
         mem_addr_wb   <= '0;
@@ -266,6 +377,12 @@ always_ff @(posedge clk_i, negedge rst_n_i) begin
         rs2_addr_wb   <= rs2_addr_mem;
         rs1_rdata_wb  <= rs1_rdata_mem;
         rs2_rdata_wb  <= rs2_rdata_mem;
+        frs1_addr_wb  <= frs1_addr_mem;
+        frs2_addr_wb  <= frs2_addr_mem;
+        frs3_addr_wb  <= frs3_addr_mem;
+        frs1_rdata_wb <= frs1_rdata_mem;
+        frs2_rdata_wb <= frs2_rdata_mem;
+        frs3_rdata_wb <= frs3_rdata_mem;
         pc_wb    <= pc_mem;
         // pc_n_wb  <= pc_n_mem;
         // Insert bubble if flushing is needed
@@ -314,8 +431,19 @@ assign rvfi_rs1_addr  = rs1_addr_wb;
 assign rvfi_rs1_rdata = rs1_rdata_wb;
 assign rvfi_rs2_addr  = rs2_addr_wb;
 assign rvfi_rs2_rdata = rs2_rdata_wb;
-assign rvfi_rd_addr  = (reg_wen_wb) ? (rd_addr_wb) : ('0);
-assign rvfi_rd_wdata = (!rvfi_rd_addr) ? ('0) : (reg_wdata_wb);
+assign rvfi_rd_addr   = ((rd_dst_bank_wb == X_REG) && reg_wen_wb) ? (rd_addr_wb) : ('0);
+assign rvfi_rd_wdata  = (!rvfi_rd_addr) ? ('0) : (reg_wdata_wb);
+
+// Floating-point Register Read/Write
+assign rvfi_frs1_addr  = frs1_addr_wb;
+assign rvfi_frs1_rdata = frs1_rdata_wb;
+assign rvfi_frs2_addr  = frs2_addr_wb;
+assign rvfi_frs2_rdata = frs2_rdata_wb;
+assign rvfi_frs3_addr  = frs3_addr_wb;
+assign rvfi_frs3_rdata = frs3_rdata_wb;
+assign rvfi_frd_addr   = ((rd_dst_bank_wb == F_REG) && reg_wen_wb) ? (rd_addr_wb) : ('0);
+assign rvfi_frd_wdata  = reg_wdata_wb;
+assign rvfi_frd_wvalid = (rd_dst_bank_wb == F_REG);
 
 // Program Counter
 assign rvfi_pc_rdata = pc_wb;
@@ -355,5 +483,14 @@ assign rvfi_csr_``name``_wdata = csr_wdata_wb;
 `assign_rvfi_csr(mepc)
 `assign_rvfi_csr(mcause)
 `assign_rvfi_csr(mscratch)
+
+`assign_rvfi_csr(fcsr)
+`assign_rvfi_csr(fflags)
+`assign_rvfi_csr(frm)
+
+
+`ifdef JASPER
+`default_nettype wire
+`endif
 
 endmodule
