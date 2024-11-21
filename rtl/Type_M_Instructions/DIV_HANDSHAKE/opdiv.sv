@@ -25,7 +25,9 @@ module opdiv(
                 .A      (signal_division_intern ? {1'b0,a_reg[30:0]} : a_reg),
                 .nBits  (qbits)
     );
+
     enum {IDLE,INITIALISE_AND_COUNTER_BITS,SET_AK_MINUEND,LOOP,UPDATE_MINUEND_RIGHT,UPDATE_MINUEND_LEFT,INCREASE_K,DONE} states;
+
     always_ff@(posedge clock, negedge nreset)begin
         if(!nreset)begin
             a_reg       <= 0;
@@ -40,9 +42,7 @@ module opdiv(
             out_valid_o <= 0;
             k           <= 0;
             in_ready_o  <= 0;
-            signal_division_intern <= signal_division;
         end else begin
-            signal_division_intern <= (in_valid_i && in_ready_o)? signal_division: signal_division_intern;
             case(next)
                 INITIALISE_AND_COUNTER_BITS:
                 begin
@@ -155,6 +155,8 @@ module opdiv(
             state <= next;
             in_ready_o  <= next_in_ready_o;
             out_valid_o <= next_out_valid_o;
+            if(k==0)    signal_division_intern <=  signal_division;
+            else        signal_division_intern <= in_valid_i && in_ready_o ? signal_division : signal_division_intern;
         end
     end
 
