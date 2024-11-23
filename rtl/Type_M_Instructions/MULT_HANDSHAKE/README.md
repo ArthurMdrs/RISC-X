@@ -1,16 +1,21 @@
-# Especificação Multiplier Handshake
+# Especificação Multiplicador Handshake
 
 ## Index
-- [Descrição](#Descrição)
+- [Descrição Funcional](#Descrição_Funcional)
 - [Recursos](#Recursos)
 - [Simulação](#Simulação)
 - [Versão](#Versão)
 
 ## Descrição Funcional
 
-- Multiplicador de 32x32bits
+Resumo:
+- Multiplicador 32x32bits
 - Sincronização Handshake
-- Suporte para as 4 operações RISC-V: MUL, MULH, MULHSU e MULHU
+- Suporte para as 4 operações RISC-V: 
+  - MUL 
+  - MULH
+  - MULHSU
+  - MULHU
 
 Operações de produto 32x32 RISC-V:
 ```
@@ -46,16 +51,20 @@ Configuração de dados de entrada:
 ```
 [31:0] a: 1º Operando de 32 bits
   Armazena no bit [i] os dados de entrada a[i]
+
 [31:0] b: 2º Operando de 32 bits
   Armazena no bit [i] os dados de entrada b[i]
+
 in_valid_i: Habilita a multiplicação
   Sinal de início para começar a multiplicação
     - 1: Inicia a multiplicação
     - 0: Não inicia a multiplicação
+
 out_ready_i: Habilita escrita
   Sinal que indica que o receptor está pronto para receber novos dados
     - 1: Está pronto
     - 0: Não está pronto
+    
 op_sel: Tipo de operação RISC-V
   Seleciona a operação RISC-V
     - 00: MUL
