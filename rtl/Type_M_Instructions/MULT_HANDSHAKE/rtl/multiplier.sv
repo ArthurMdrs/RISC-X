@@ -11,16 +11,16 @@
 // ------------------------------------------------------------------------------------------------
 
 module multiplier_32x32 (
-    input  logic        clk,               // Sinal de clock
-    input  logic        rst_n,             // Sinal de reset ativo baixo
-    input  logic [31:0] a,                 // 1º Operando de 32 bits
-    input  logic [31:0] b,                 // 2º Operando de 32 bits
-    input  logic        in_valid_i,        // Sinal de início para começar a multiplicação
-    output logic        in_ready_o,        // Sinal que indica que o multiplicador está pronto para iniciar
-    output logic [63:0] resultado,         // Resultado da multiplicação, 64 bits
-    output logic        out_valid_o,       // Sinal que indica que o resultado é válido
-    input  logic        out_ready_i,       // Sinal que indica que o receptor está pronto para receber novos dados
-    input  logic [1:0]  op_sel             // Tipo de operação: 00=MUL, 01=MULH, 10=MULHSU, 11=MULHU
+    input  logic        clk,               
+    input  logic        rst_n,             
+    input  logic [31:0] a,                 
+    input  logic [31:0] b,                 
+    input  logic        in_valid_i,        
+    input  logic        out_ready_i,       
+    input  logic [1:0]  op_sel,            
+    output logic        in_ready_o,        
+    output logic        out_valid_o,       
+    output logic [63:0] resultado          
 );
     // Registradores internos
     logic signed   [63:0] full_result;
@@ -38,10 +38,11 @@ module multiplier_32x32 (
             if (in_ready_o && in_valid_i) begin
                 in_ready_o <= 1'b0;
                 case (op_sel)
-                    2'b00: full_result <= ($signed(a) * $signed(b));     // MUL: Produto normal com sinal
-                    2'b01: full_result <= ($signed(a) * $signed(b)) >>> 32;     // MULH: Bits superiores Produto completo com sinal
-                    2'b10: full_result <= ($signed(a) * $unsigned(b)) >>> 32;   // MULHSU: Bits superiores Produto com sinal e sem sinal
-                    2'b11: full_result <= ($unsigned(a) * $unsigned(b)) >>> 32; // MULHU: Bits superiores Produto sem sinal
+                    // 4 Operações RISC-V
+                    2'b00: full_result <= ($signed(a) * $signed(b));            
+                    2'b01: full_result <= ($signed(a) * $signed(b)) >>> 32;     
+                    2'b10: full_result <= ($signed(a) * $unsigned(b)) >>> 32;   
+                    2'b11: full_result <= ($unsigned(a) * $unsigned(b)) >>> 32; 
                 endcase
                 valid_reg <= 1'b1;
             end

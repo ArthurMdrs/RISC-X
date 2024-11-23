@@ -1,46 +1,67 @@
-# Multiplier Handshake
+# Especificação Multiplier Handshake
 
 ## Index
 - [Descrição](#Descrição)
-- [Especificação](#Especificação)
-- [Status](#Status)
 - [Recursos](#Recursos)
 - [Simulação](#Simulação)
 - [Versão](#Versão)
 
-## Descrição
+## Descrição Funcional
 
-Multiplicador de 32x32bits utilizando Valid e Ready e a lógica do [algoritmo de multiplicação de Booth](https://en.wikipedia.org/wiki/Booth%27s_multiplication_algorithm).
+- Multiplicador de 32x32bits
+- Sincronização Handshake
+- Suporte para as 4 operações RISC-V: MUL, MULH, MULHSU e MULHU
 
-# Especificação
-
-O módulo RTL do multiplicador possui os seguintes sinais:
+Operações de produto 32x32 RISC-V:
 ```
-|-------------------------------------------------------------------------------------------------------|
-|  Nome      |  Direção  |  Tamanho  |                        Descrição                                 |
-|-------------------------------------------------------------------------------------------------------|
-|  clk       |  Entrada  |  1bit     |  Sinal de clock                                                  |
-|  reset_n   |  Entrada  |  1bit     |  Sinal de reset ativo baixo                                      |
-|  a         |  Entrada  |  32bits   |  1º Operando de 32 bits                                          |
-|  b         |  Entrada  |  32bits   |  2º Operando de 32 bits                                          |
-|  valid_in  |  Entrada  |  1bit     |  Sinal de início para começar a multiplicação                    |
-|  ready     |  Entrada  |  1bit     |  Sinal que indica que o multiplicador está pronto para iniciar   |
-|  nclocks   |  Entrada  |  32bits   |  Número de ciclos de clock para a multiplicação (Sempre 32bits)  |
-|  c         |  Saída    |  32bits   |  Resultado da multiplicação, 64 bits                             |
-|  valid_out |  Saída    |  1bit     |  Sinal que indica que o resultado é válido                       |
-|-------------------------------------------------------------------------------------------------------|
+|---------------------------------------------------------------------------------------------------------------|
+| Instrução |     Operandos                |  Retorno       |                Descrição                          |
+|---------------------------------------------------------------------------------------------------------------|
+|  MUL      |  Signed(a)   x Signed(b)     |  Res. completo |  Produto normal com sinal                         |
+|  MULH     |  Signed(a)   x Signed(b)     |  Bits altos    |  Bits superiores do Produto com sinal             |
+|  MULHSU   |  Signed(a)   x Unsigned(b)   |  Bits altos    |  Bits superiores do Produto com sinal e sem sinal |
+|  MULHU    |  Unsigned(a) x Unsigned(b)   |  Bits altos    |  Bits superiores do Produto sem sinal             |
+|---------------------------------------------------------------------------------------------------------------|
 ```
 
-## Status
-
-O testbench valida os seguintes testes de multiplicação 32x32bits:
+Pinos de Entrada/Saída:
 ```
-- Valor fixo
-- Valores aleatórios
-- Valores limite
-- Valores mínimos
-- Valor pequeno e grande
-- Valores negativos.
+|---------------------------------------------------------------------------------------------------------------|
+|  Nome         |  Direção  |  Tamanho  |                        Descrição                                      |
+|---------------------------------------------------------------------------------------------------------------|
+|  clk          |  Entrada  |  1bit     |  Sinal de clock                                                       |
+|  rst_n        |  Entrada  |  1bit     |  Sinal de reset ativo baixo                                           |
+|  a            |  Entrada  |  32bits   |  1º Operando de 32 bits                                               |
+|  b            |  Entrada  |  32bits   |  2º Operando de 32 bits                                               |
+|  in_valid_i   |  Entrada  |  1bit     |  Habilita a multiplicação                                             |
+|  out_ready_i  |  Entrada  |  1bit     |  Habilita escrita                                                     |
+|  op_sel       |  Entrada  |  2bits    |  Tipo de operação RISC-V                                              |
+|  in_ready_o   |  Saída    |  1bit     |  Sinal que indica que o multiplicador está pronto para iniciar        |
+|  out_valid_o  |  Saída    |  1bit     |  Sinal que indica que o resultado é válido                            |
+|  resultado    |  Saída    |  32bits   |  Resultado da multiplicação, 64 bits                                  |
+|---------------------------------------------------------------------------------------------------------------|
+```
+
+Configuração de dados de entrada:
+```
+[31:0] a: 1º Operando de 32 bits
+  Armazena no bit [i] os dados de entrada a[i]
+[31:0] b: 2º Operando de 32 bits
+  Armazena no bit [i] os dados de entrada b[i]
+in_valid_i: Habilita a multiplicação
+  Sinal de início para começar a multiplicação
+    - 1: Inicia a multiplicação
+    - 0: Não inicia a multiplicação
+out_ready_i: Habilita escrita
+  Sinal que indica que o receptor está pronto para receber novos dados
+    - 1: Está pronto
+    - 0: Não está pronto
+op_sel: Tipo de operação RISC-V
+  Seleciona a operação RISC-V
+    - 00: MUL
+    - 01: MULH
+    - 10: MULHSU
+    - 11: MULHU
 ```
 
 ## Recursos

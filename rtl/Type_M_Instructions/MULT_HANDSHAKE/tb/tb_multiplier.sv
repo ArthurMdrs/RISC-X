@@ -27,11 +27,11 @@ module tb_multiplier_32x32;
         .a(a),
         .b(b),
         .in_valid_i(in_valid_i),
-        .in_ready_o(in_ready_o),
-        .resultado(resultado),
-        .out_valid_o(out_valid_o),
         .out_ready_i(out_ready_i),
-        .op_sel(op_sel)
+        .op_sel(op_sel),
+        .in_ready_o(in_ready_o),
+        .out_valid_o(out_valid_o),
+        .resultado(resultado)
     );
 
     // Geração do clock
