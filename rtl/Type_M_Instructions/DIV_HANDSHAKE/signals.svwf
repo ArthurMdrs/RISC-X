@@ -9,161 +9,94 @@ mmap new  -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor or
 {%x=2C -bgcolor red -label ERROR -linecolor white -shape EVENT}
 {%x=* -label %x -linecolor gray -shape bus}}
 
-#
-# Conditions
-#
-set expression {tb.temp[31:0]}
-if {[catch {condition new -name  {} -expr $expression}] != ""} {
-    condition set -using {} -expr $expression
-}
-
 array unset createdGroup
 array set createdGroup {}
-#
-# Groups
-#
-if {[catch {group get -using [list {__assert_6 contributors}]}]} {
-set createdGroup([list {__assert_6 contributors}]) 1
-catch {group new -name {__assert_6 contributors} -overlay 0}
-}
-if {[catch {group get -using [list {__assert_5 contributors}]}]} {
-set createdGroup([list {__assert_5 contributors}]) 1
-catch {group new -name {__assert_5 contributors} -overlay 0}
-}
-if {[catch {group get -using [list {__assert_4 contributors}]}]} {
-set createdGroup([list {__assert_4 contributors}]) 1
-catch {group new -name {__assert_4 contributors} -overlay 0}
-}
-if {[catch {group get -using [list {__assert_3 contributors}]}]} {
-set createdGroup([list {__assert_3 contributors}]) 1
-catch {group new -name {__assert_3 contributors} -overlay 0}
-}
-if {[catch {group get -using [list {__assert_2 contributors}]}]} {
-set createdGroup([list {__assert_2 contributors}]) 1
-catch {group new -name {__assert_2 contributors} -overlay 0}
-}
-if {[catch {group get -using [list {__assert_1 contributors}]}]} {
-set createdGroup([list {__assert_1 contributors}]) 1
-catch {group new -name {__assert_1 contributors} -overlay 0}
-}
-if {[info exists createdGroup([list {__assert_6 contributors}])]} {
-group using {__assert_6 contributors}
-group set -overlay 0
-group set -comment {simulator::tb.__assert_6 contributors}
-group clear 0 end
-group insert \
-    [subst  {[format {tb.clock}]} ] \
-    [subst  {[format {tb.out_valid_o}]} ] \
-    [subst  {[format {tb.outstanding_tr}]} ] \
-    [subst  {[format {tb.nreset}]} ]
-}
-
-if {[info exists createdGroup([list {__assert_5 contributors}])]} {
-group using {__assert_5 contributors}
-group set -overlay 0
-group set -comment {simulator::tb.__assert_5 contributors}
-group clear 0 end
-group insert \
-    [subst  {[format {tb.clock}]} ] \
-    [subst  {[format {tb.out_valid_o}]} ] \
-    [subst  {[format {tb.out_ready_i}]} ] \
-    [subst  {[format {tb.c[31:0]}]} ] \
-    [subst  {[format {tb.nreset}]} ]
-}
-
-if {[info exists createdGroup([list {__assert_4 contributors}])]} {
-group using {__assert_4 contributors}
-group set -overlay 0
-group set -comment {simulator::tb.__assert_4 contributors}
-group clear 0 end
-group insert \
-    [subst  {[format {tb.clock}]} ] \
-    [subst  {[format {tb.out_valid_o}]} ] \
-    [subst  {[format {tb.out_ready_i}]} ] \
-    [subst  {[format {tb.nreset}]} ]
-}
-
-if {[info exists createdGroup([list {__assert_3 contributors}])]} {
-group using {__assert_3 contributors}
-group set -overlay 0
-group set -comment {simulator::tb.__assert_3 contributors}
-group clear 0 end
-group insert \
-    [subst  {[format {tb.clock}]} ] \
-    [subst  {[format {tb.in_valid_i}]} ] \
-    [subst  {[format {tb.in_ready_o}]} ] \
-    [subst  {[format {tb.b[31:0]}]} ] \
-    [subst  {[format {tb.nreset}]} ]
-}
-
-if {[info exists createdGroup([list {__assert_2 contributors}])]} {
-group using {__assert_2 contributors}
-group set -overlay 0
-group set -comment {simulator::tb.__assert_2 contributors}
-group clear 0 end
-group insert \
-    [subst  {[format {tb.clock}]} ] \
-    [subst  {[format {tb.in_valid_i}]} ] \
-    [subst  {[format {tb.in_ready_o}]} ] \
-    [subst  {[format {tb.a[31:0]}]} ] \
-    [subst  {[format {tb.nreset}]} ]
-}
-
-if {[info exists createdGroup([list {__assert_1 contributors}])]} {
-group using {__assert_1 contributors}
-group set -overlay 0
-group set -comment {simulator::tb.__assert_1 contributors}
-group clear 0 end
-group insert \
-    [subst  {[format {tb.clock}]} ] \
-    [subst  {[format {tb.in_valid_i}]} ] \
-    [subst  {[format {tb.in_ready_o}]} ]
-}
-
 set id [waveform add -signals [subst  {
-	{[format {tb.nreset}]}
+	{[format {tb.inst0opdiv.clock}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {tb.clock}]}
+	{[format {tb.inst0opdiv.nreset}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {tb.cnt_clks}]}
+	{[format {tb.inst0opdiv.a[31:0]}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {tb.cnt_dn}]}
+	{[format {tb.inst0opdiv.b[31:0]}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {tb.cnt_up}]}
+	{[format {tb.inst0opdiv.a_reg[31:0]}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {tb.outstanding_tr}]}
-	} ]]
-set id [waveform add -cdivider divider]
-set id [waveform add -signals [subst  {
-	{[format {tb.in_ready_o}]}
+	{[format {tb.inst0opdiv.b_reg[31:0]}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {tb.in_valid_i}]}
+	{[format {tb.inst0opdiv.Quatient[31:0]}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {tb.a[31:0]}]}
+	{[format {tb.inst0opdiv.minuend[31:0]}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {tb.b[31:0]}]}
-	} ]]
-set id [waveform add -cdivider divider]
-set id [waveform add -signals [subst  {
-	{[format {tb.c[31:0]}]}
+	{[format {tb.inst0opdiv.a_signal}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {tb.out_ready_i}]}
+	{[format {tb.inst0opdiv.b_signal}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {tb.out_valid_o}]}
+	{[format {tb.inst0opdiv.c[31:0]}]}
 	} ]]
-set id [waveform add -cdivider divider]
 set id [waveform add -signals [subst  {
-	{[format {tb.temp2}]}
+	{[format {tb.inst0opdiv.r[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.c_signal}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.compair}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.ena}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.in_ready_o}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.in_valid_i}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.k[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.left_updade[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.next[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.next_in_ready_o}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.next_k[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.next_out_valid_o}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.out_ready_i}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.out_valid_o}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.qbits[5:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.right_updade[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.signal_division}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.state[31:0]}]}
 	} ]]
 
-waveform xview limits 542ns 894ns
+waveform xview limits 0 252ns

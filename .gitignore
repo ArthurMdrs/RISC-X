@@ -4,6 +4,7 @@ xrun*
 waves*
 *.log
 *.diag
+*.svcf
 jgproject
 .symbol*
 ignore.txt
@@ -14,3 +15,6 @@ restore.tcl
 restore.tcl.svcf
 rvfi_macros.vh
 rvviTrace.sv
+*cov_work/
+*.err
+!simvision.svcf

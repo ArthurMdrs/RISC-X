@@ -11,8 +11,6 @@
 //                                  Pedro Henrique
 //                                  
 // ----------------------------------------------------------------------------------------------------
-
-
 module top;
    import uvm_pkg::*;
    import test_pkg::*;
@@ -32,57 +30,27 @@ module top;
      reset = 0;
    end
 
-  //Reset generator 1 (test)
-  //  initial begin
-  //    reset = 1;
-  //    #32 reset = 0; //i
-  //    #10 reset = 1; //m 
-  //    repeat(2) @(negedge clock);
-  //    reset = 0;
-  //  end
-
-  //Reset generator 2
-
-  // initial begin
-  //   // Início com reset ativo
-  // reset = 1;
-  
-  // // Espera 2 pulsos de clock antes de liberar o reset
-  // repeat(2) @(negedge clock);
-  // reset = 0;
-  
-  // // Loop infinito para alternar o reset conforme o ciclo desejado
-  // forever begin
-  //   // Espera 50 pulsos de clock com reset em 0
-  //   repeat(50) @(negedge clock);
-  //   reset = 1;  // Ativa o reset
-    
-  //   // Espera 2 pulsos de clock com reset em 1
-  //   repeat(2) @(negedge clock);
-  //   reset = 0;  // Desativa o reset
-  // end
-  // end
-   
    // APB clock and reset are the same
    logic PCLK, PRESETn;
    assign PCLK = clock;
    assign PRESETn = ~reset;
 
    // Input and output interface instance for DUT
-   apb_if in(.*);
-   a_if out(.*);
+   in_mult_if in_vi(.*);
+   out_mult_if out_vi(.*);
 
   //Instance DUT
    booth_multiplier_32x32 testediv( 
     .clk(clock)                   ,
     .rst_n(~reset)                ,
-    .a(in.dividendo)              ,
-    .b(in.divisor)                ,
-    .in_valid_i(in.in_valid_i)    ,
-    .in_ready_o(in.in_ready_o)    ,         
-    .resultado(out.c)             ,
-    .out_valid_o(out.out_valid_o) ,
-    .out_ready_i(out.out_ready_i)   
+    .a(in_vi.b)              ,
+    .b(in_vi.a)                ,
+    .in_valid_i(in_vi.in_valid_i)    ,
+    .in_ready_o(in_vi.in_ready_o)    ,         
+    .resultado(out_vi.c)             ,
+    .out_valid_o(out_vi.out_valid_o) ,
+    .out_ready_i(out_vi.out_ready_i) ,
+    .op_sel (in_vi.op_sel)       
   );
 
    initial begin
@@ -99,8 +67,8 @@ module top;
       `endif
 
       // register the input and output interface instance in the database
-      uvm_config_db #(virtual apb_if)::set(null, "uvm_test_top.env_h.agent_in_h.*", "apb_vi", in);
-      uvm_config_db #(virtual a_if)::set(null, "uvm_test_top.env_h.agent_out_h.*", "a_vi", out);
+      uvm_config_db #(virtual in_mult_if)::set(null, "uvm_test_top.env_h.agent_in_h.*", "in_vi", in_vi);
+      uvm_config_db #(virtual out_mult_if)::set(null, "uvm_test_top.env_h.agent_out_h.*", "out_vi", out_vi);
 
       run_test("test");
    end

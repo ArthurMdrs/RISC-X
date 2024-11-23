@@ -10,32 +10,31 @@
 //                                  
 // ----------------------------------------------------------------------------------------------------
 
-class a_sequence extends uvm_sequence #(a_tr);
-    `uvm_object_utils(a_sequence)
+class out_sequence extends uvm_sequence #(tr_out);
+    `uvm_object_utils(out_sequence)
     
-    function new (string name = "a_sequence");
+    function new (string name = "out_sequence");
       super.new(name);
     endfunction: new
 
     task body;
-      a_tr tr;
-
+      tr_out tr;
       forever begin
         `uvm_do(tr)
       end
     endtask
    
-endclass
+endclass : out_sequence
 
-class apb_sequence extends uvm_sequence #(apb_tr);
-    `uvm_object_utils(apb_sequence)
+class in_sequence extends uvm_sequence #(tr_in);
+    `uvm_object_utils(in_sequence)
     //Constructor
-    function new (string name = "apb_sequence");
+    function new (string name = "in_sequence");
       super.new(name);
     endfunction: new
     
     task body;
-      apb_tr tr;
+      tr_in tr;
       item m_item;
       item2 m_item_2;
       item3 m_item_3;
@@ -107,4 +106,4 @@ class apb_sequence extends uvm_sequence #(apb_tr);
         `uvm_info("SEQ", $sformatf("Done generation of items"), UVM_LOW)
     endtask
    
-endclass
+endclass : in_sequence

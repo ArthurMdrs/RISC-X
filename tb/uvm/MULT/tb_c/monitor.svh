@@ -10,14 +10,13 @@
 //                                  Pedro Henrique
 //                                  
 // ----------------------------------------------------------------------------------------------------
-//Monitor in
-class monitor extends uvm_monitor;  
-   `uvm_component_utils(monitor)
+//Monitor out
+class monitor_out extends uvm_monitor;  
+   `uvm_component_utils(monitor_out)
 
-   uvm_analysis_port #(a_tr) out;
+   uvm_analysis_port #(tr_out) out;
     
-   virtual a_if a_vi; 
-  
+   virtual out_mult_if out_vi; 
 
    function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -26,38 +25,35 @@ class monitor extends uvm_monitor;
     
    function void build_phase(uvm_phase phase);
       super.build_phase(phase);
-      assert( uvm_config_db #(virtual a_if)::get(this, "", "a_vi", a_vi) );
-      
+      assert( uvm_config_db #(virtual out_mult_if)::get(this, "", "out_vi", out_vi) );
    endfunction
    
    task run_phase(uvm_phase phase);
-      a_tr tr;
+      tr_out tr;
       forever begin
-         wait (a_vi.reset === 0);
-         tr = a_tr::type_id::create("tr");
+         wait (out_vi.reset === 0);
+         tr = tr_out::type_id::create("tr");
 
          `bvm_begin_tr(tr)          // start transaction recording
-         while (!(a_vi.out_valid_o === 1 && a_vi.out_ready_i === 1))
-
-            @(posedge a_vi.clock);
-            tr.c = a_vi.c;
-            @(posedge a_vi.clock);
-
+         while (!(out_vi.out_valid_o === 1 && out_vi.out_ready_i === 1))
+            @(posedge out_vi.clock);
+            tr.c = out_vi.c;
+            @(posedge out_vi.clock);
          `bvm_end_tr(tr)           // end transaction recording
          out.write(tr);
          
       end
    endtask
 
-endclass
+endclass : monitor_out
 
-//Monitor out
-class apb_monitor extends uvm_monitor;  
-   `uvm_component_utils(apb_monitor)
+//Monitor in
+class monitor_in extends uvm_monitor;  
+   `uvm_component_utils(monitor_in)
 
-   uvm_analysis_port #(apb_tr) out;
+   uvm_analysis_port #(tr_in) out;
     
-   virtual apb_if apb_vi; 
+   virtual in_mult_if in_vi; 
 
    function new(string name, uvm_component parent);
       super.new(name, parent);
@@ -66,26 +62,26 @@ class apb_monitor extends uvm_monitor;
     
    function void build_phase(uvm_phase phase);
       super.build_phase(phase);
-      assert( uvm_config_db #(virtual apb_if)::get(this, "", "apb_vi", apb_vi) );
+      assert( uvm_config_db #(virtual in_mult_if)::get(this, "", "in_vi", in_vi) );
    endfunction
    
    task run_phase(uvm_phase phase);
-      apb_tr tr;
+      tr_in tr;
       forever begin
-         wait (apb_vi.PRESETn === 1);
-         tr = apb_tr::type_id::create("tr");
+         wait (in_vi.PRESETn === 1);
+         tr = tr_in::type_id::create("tr");
          `bvm_begin_tr(tr)          // start transaction recording
-         while (!(apb_vi.in_ready_o === 1 && apb_vi.in_valid_i === 1))
-
-            @(posedge apb_vi.PCLK);
-            tr.divisor = apb_vi.divisor;
-            tr.dividendo = apb_vi.dividendo;
-            @(posedge apb_vi.PCLK);
-
+         while (!(in_vi.in_ready_o === 1 && in_vi.in_valid_i === 1))
+            @(posedge in_vi.PCLK);
+            tr.a = in_vi.a;
+            tr.b = in_vi.b;
+            tr.op_sel = in_vi.op_sel;
+           `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_MEDIUM)
+            @(posedge in_vi.PCLK);
          `bvm_end_tr(tr)          // end transaction recording
          out.write(tr);
       end
    endtask
 
-endclass
+endclass : monitor_in
 

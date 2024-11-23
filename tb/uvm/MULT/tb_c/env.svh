@@ -13,13 +13,13 @@
 class env extends uvm_env;
    `uvm_component_utils(env)
     
-   apb_agent agent_in_h;
-   agent agent_out_h;
-   apb_coverage_in coverage_in_h;
+   agent_in agent_in_h;
+   agent_out agent_out_h;
+   coverage_in coverage_in_h;
    coverage_out coverage_out_h;
-   uvm_tlm_analysis_fifo #(apb_tr) agent_refmod;
+   uvm_tlm_analysis_fifo #(tr_in) agent_refmod;
    refmod refmod_h;
-   bvm_comparator #(a_tr) comparator_h;
+   bvm_comparator #(tr_out) comparator_h;
 
    function new(string name, uvm_component parent);
      super.new(name, parent);
@@ -28,14 +28,14 @@ class env extends uvm_env;
    function void build_phase(uvm_phase phase);
      super.build_phase(phase);
      set_config_int("agent_in_h", "is_active", UVM_ACTIVE);
-     agent_in_h = apb_agent::type_id::create("agent_in_h", this);
+     agent_in_h = agent_in::type_id::create("agent_in_h", this);
      set_config_int("agent_out_h", "is_active", UVM_ACTIVE);
-     agent_out_h = agent::type_id::create("agent_out_h", this);
-     coverage_in_h = apb_coverage_in::type_id::create("cover_in_h", this);
+     agent_out_h = agent_out::type_id::create("agent_out_h", this);
+     coverage_in_h = coverage_in::type_id::create("cover_in_h", this);
      coverage_out_h = coverage_out::type_id::create("cover_out_h", this);
      agent_refmod = new("agent_refmod",this);
      refmod_h = refmod::type_id::create("refmod_h", this);
-     comparator_h = bvm_comparator#(a_tr)::type_id::create("comparator_h", this);
+     comparator_h = bvm_comparator#(tr_out)::type_id::create("comparator_h", this);
      
    endfunction
 

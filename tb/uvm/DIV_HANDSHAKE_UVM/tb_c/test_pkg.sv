@@ -8,8 +8,10 @@ package test_pkg;
 
   `include "trans.svh"
   `include "sequence.svh"
+  //typedef uvm_sequencer #(a_tr) sequencer;
+  //typedef uvm_sequencer #(apb_tr) apb_sequencer;
   typedef uvm_sequencer #(tr_out) out_sequencer;
-  typedef uvm_sequencer #(tr_in) in_sequencer;
+  typedef uvm_sequencer #(tr_in)  in_sequencer;
   `include "driver.svh"
   `include "monitor.svh"
   `include "agent.svh"
@@ -18,7 +20,6 @@ package test_pkg;
   `include "refmod.svh"
   `include "env.svh"
   `include "test.svh"
-
 
 endpackage
   

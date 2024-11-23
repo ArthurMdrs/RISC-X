@@ -7,17 +7,16 @@ class test extends uvm_test;
      super.new(name, parent);
    endfunction
 
-//set_type_override_by_type (original_type::get_type(), override_type::get_type());
    function void build_phase(uvm_phase phase);
      super.build_phase(phase);
      env_h = env::type_id::create("env_h", this);
    endfunction
 
    task run_phase(uvm_phase phase);
-     apb_sequence seq;
-     seq = apb_sequence::type_id::create("seq");
+     in_sequence seq;
+     seq = in_sequence::type_id::create("seq");
      seq.start( env_h.agent_in_h.sequencer_h );
    endtask
 
-endclass
+endclass : test
 
