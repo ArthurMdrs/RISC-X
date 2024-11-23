@@ -41,8 +41,8 @@ Pinos de Entrada/Saída:
 |  in_valid_i   |  Entrada  |  1bit     |  Habilita a multiplicação                                             |
 |  out_ready_i  |  Entrada  |  1bit     |  Habilita escrita                                                     |
 |  op_sel       |  Entrada  |  2bits    |  Tipo de operação RISC-V                                              |
-|  in_ready_o   |  Saída    |  1bit     |  Sinal que indica que o multiplicador está pronto para iniciar        |
-|  out_valid_o  |  Saída    |  1bit     |  Sinal que indica que o resultado é válido                            |
+|  in_ready_o   |  Saída    |  1bit     |  Indica que o multiplicador está pronto para iniciar                  |
+|  out_valid_o  |  Saída    |  1bit     |  Indica que o resultado é válido                                      |
 |  resultado    |  Saída    |  32bits   |  Resultado da multiplicação, 64 bits                                  |
 |---------------------------------------------------------------------------------------------------------------|
 ```
@@ -64,13 +64,27 @@ out_ready_i: Habilita escrita
   Sinal que indica que o receptor está pronto para receber novos dados
     - 1: Está pronto
     - 0: Não está pronto
-    
+
 op_sel: Tipo de operação RISC-V
   Seleciona a operação RISC-V
     - 00: MUL
     - 01: MULH
     - 10: MULHSU
     - 11: MULHU
+```
+
+Configuração de dados de saída:
+```
+in_ready_o: Indica que o multiplicador está pronto para iniciar
+  - 1: Está Pronto
+  - 0: Não está pronto
+
+out_valid_o: Indica que o resultado é válido
+  - 1: Resultado válido
+  - 0: Resultado não válido
+
+[64:0] resultado: Resultado da multiplicação, 64bits
+  Retorna nos bits [i] os os dados resultado[i] referente a operação RISC-V
 ```
 
 ## Recursos
