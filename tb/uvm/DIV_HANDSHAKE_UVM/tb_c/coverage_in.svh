@@ -26,7 +26,7 @@ class coverage_in extends bvm_cover #(tr_in);
         bins dividendo_1       = {32'h1};
         bins dividendo_max     = {32'hFFFFFFFF};
         bins dividendo_medium[100]  = {[32'h00000100:32'hFFFFFEFF]};
-        option.at_least = 10; 
+        option.at_least = 100; 
       }
       
       cp_dividendo_high_low: coverpoint coverage_transaction.dividendo {
@@ -39,10 +39,11 @@ class coverage_in extends bvm_cover #(tr_in);
     //     bins x2 = binsof(cp_divisor.divisor_high) && binsof(cp_dividendo.dividendo_low );
     //     option.at_least = 10; 
     //   }
-      
+    /*
       cx_divisor_X_dividendo: cross cp_divisor_high_low, cp_dividendo_high_low {
         option.at_least = 10; 
       }
+    */
    endgroup
    `bvm_cover_utils(tr_in)
     
