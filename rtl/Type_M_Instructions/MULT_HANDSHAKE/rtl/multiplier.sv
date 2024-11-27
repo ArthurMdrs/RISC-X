@@ -7,7 +7,7 @@
 // ----------------------------------------------------------------------------------------------------
 // RELEASE HISTORY  :
 // DATA                 VERSÃO      AUTOR     				DESCRIÇÃO
-// 2024-11-22           0.12        André Medeiros     	    Versão inicial.
+// 2024-11-27           0.13        André Medeiros     	    Versão inicial.
 // ------------------------------------------------------------------------------------------------
 
 module multiplier_32x32 (
@@ -20,18 +20,18 @@ module multiplier_32x32 (
     input  logic [1:0]  op_sel,            
     output logic        in_ready_o,        
     output logic        out_valid_o,       
-    output logic [63:0] resultado          
+    output logic [31:0] resultado          
 );
     // Registradores internos
-    logic signed   [63:0] full_result;
+    logic signed   [31:0] full_result;
     logic          valid_reg;
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             in_ready_o  <= 1'b1;
             out_valid_o <= 1'b0;
-            resultado   <= 64'b0;
-            full_result <= 64'b0;
+            resultado   <= 32'b0;
+            full_result <= 32'b0;
             valid_reg   <= 1'b0;
         end else begin
             // Handshake para entrada
