@@ -32,28 +32,24 @@ class tr_in extends uvm_sequence_item;
     super.new(name);
   endfunction
 
-  `uvm_object_utils_begin(tr_in) // needed for transaction recording
+  `uvm_object_utils_begin(tr_in)
      `uvm_field_int(dividendo, UVM_ALL_ON | UVM_DEC)
      `uvm_field_int(divisor, UVM_ALL_ON | UVM_DEC)
      `uvm_field_int(signal_division, UVM_ALL_ON | UVM_DEC)
   `uvm_object_utils_end
-  
-  //constraint signal_division_positive { signal_division == 0;}
-  constraint signal_division_negative { soft signal_division == 1; }
-  
 
-function string convert2string();
+virtual function string convert2string();
     string my_str;
     if (signal_division)
         my_str = {
-                    $sformatf("dividendo = 32'h%h\ndivisor = 32'h%h\n", dividendo, divisor), 
-                    $sformatf("dividendo = %0d\ndivisor = %0d\n", $signed(dividendo), $signed(divisor)),
+                    $sformatf("dividendo = 32'h%h\ndivisor   = 32'h%h\n", dividendo, divisor), 
+                    $sformatf("dividendo = %d\ndivisor   = %d\n", $signed(dividendo), $signed(divisor)),
                     $sformatf("signed division")
                 };
     else
         my_str = {
-                    $sformatf("dividendo = 32'h%h\ndivisor = 32'h%h\n", dividendo, divisor), 
-                    $sformatf("dividendo = %0d\ndivisor = %0d\n", $unsigned(dividendo), $unsigned(divisor)),
+                    $sformatf("dividendo = 32'h%h\ndivisor   = 32'h%h\n", dividendo, divisor), 
+                    $sformatf("dividendo = %0d\ndivisor   = %0d\n", $unsigned(dividendo), $unsigned(divisor)),
                     $sformatf("UNsigned division")
                 };
     return my_str;
@@ -61,139 +57,180 @@ endfunction
 
 endclass : tr_in
 
-// Distribution 1: dividendo > divisor << shamt, 90% of the time
-class div_dist1_tr extends tr_in;
+// Case: módulo do dividendo maior que do divisor, mesmo sinal
+class div_samesig_tr extends tr_in;
     
-    rand bit dividendo_gt_divisor;
+    rand bit sign;
     rand int unsigned shamt;
     
-    `uvm_object_utils_begin(div_dist1_tr)
-        `uvm_field_int(dividendo_gt_divisor, UVM_ALL_ON | UVM_DEC)
+    `uvm_object_utils_begin(div_samesig_tr)
         `uvm_field_int(shamt, UVM_ALL_ON | UVM_DEC)
     `uvm_object_utils_end
 
-    function new(string name = "div_dist1_tr");
+    function new(string name = "div_samesig_tr");
         super.new(name);
     endfunction
 
-    constraint gt_dist { 
-        dividendo_gt_divisor dist {1:=9, 0:=1};
+    constraint is_signed_division { 
+        signal_division == 1;
     }
-    constraint shamt_dist { 
-        shamt dist {[0:5]:=1, [6:11]:=1, [12:17]:=1, [18:23]:=3, [24:29]:=3, [30:31]:=2};
+    constraint same_signal { 
+        dividendo[31] == sign;
+        divisor  [31] == sign;
+    }
+
+    constraint shamt_range { 
+        shamt < 31;
+        shamt > 1;
     }
     constraint greater_than { 
-        solve dividendo_gt_divisor,shamt before dividendo, divisor;
-        if (dividendo_gt_divisor) {
+        solve sign, shamt before dividendo, divisor;
+        if (sign == 1'b0) { // Operandos positivos
             (dividendo >> shamt) > divisor;
         } 
-        else {
-            dividendo <= divisor;
+        else {              // Operandos negativos
+            ((-dividendo) >> shamt) > (-divisor);
         }
     }
 
     function string convert2string();
         string my_str;
-        if (signal_division)
-            my_str = {$sformatf("divisor = 32'h%h\ndividendo = 32'h%h\n", divisor, dividendo), 
-                    $sformatf("divisor = %0d\ndividendo = %0d\n", $signed(divisor), $signed(dividendo)),
-                    $sformatf("signed division, dividendo_gt_divisor = %b, shamt = %0d", dividendo_gt_divisor, shamt)};
-        else
-            my_str = {$sformatf("divisor = 32'h%h\ndividendo = 32'h%h\n", divisor, dividendo), 
-                    $sformatf("divisor = %0d\ndividendo = %0d\n", $unsigned(divisor), $unsigned(dividendo)),
-                    $sformatf("UNsigned division, dividendo_gt_divisor = %b, shamt = %0d", dividendo_gt_divisor, shamt)};
+        my_str = {
+            $sformatf("Signed division - same signal operands transaction\n"), 
+            $sformatf("dividendo = 32'h%h\ndivisor = 32'h%h\n", dividendo, divisor), 
+            $sformatf("dividendo = %0d\ndivisor = %0d\n", $signed(dividendo), $signed(divisor)),
+            $sformatf("shamt = %0d", shamt)
+            };
         return my_str;
     endfunction
 
-endclass : div_dist1_tr
+endclass : div_samesig_tr
 
-//Case underflow = Dividendo baixo e divisor baixo;
+// Case: módulo do dividendo maior que do divisor, sinais diferentes
+class div_diffsig_tr extends tr_in;
+    
+    rand bit sign;
+    rand int unsigned shamt;
+    
+    `uvm_object_utils_begin(div_diffsig_tr)
+        `uvm_field_int(shamt, UVM_ALL_ON | UVM_DEC)
+    `uvm_object_utils_end
+
+    function new(string name = "div_diffsig_tr");
+        super.new(name);
+    endfunction
+
+    constraint is_signed_division { 
+        signal_division == 1;
+    }
+    constraint different_signal { 
+        dividendo[31] ==  sign;
+        divisor  [31] == !sign;
+    }
+
+    constraint shamt_range { 
+        shamt < 31;
+        shamt > 1;
+    }
+    constraint greater_than { 
+        solve sign, shamt before dividendo, divisor;
+        if (sign == 1'b0) { // dividendo positivo, divisor negativo
+            (dividendo >> shamt) > (-divisor);
+        } 
+        else {              // dividendo negativo, divisor positivo
+            ((-dividendo) >> shamt) > divisor;
+        }
+    }
+
+    function string convert2string();
+        string my_str;
+        my_str = {
+            $sformatf("Signed division - different signal operands transaction\n"), 
+            $sformatf("dividendo = 32'h%h\ndivisor = 32'h%h\n", dividendo, divisor), 
+            $sformatf("dividendo = %0d\ndivisor = %0d\n", $signed(dividendo), $signed(divisor)),
+            $sformatf("shamt = %0d", shamt)
+            };
+        return my_str;
+    endfunction
+
+endclass : div_diffsig_tr
+
+//Case Dividendo baixo e divisor baixo
 
 class item extends tr_in;
 
-///Utility and Field macros,
-  `uvm_object_utils_begin(item)
-  `uvm_object_utils_end
+    ///Utility and Field macros,
+    `uvm_object_utils(item)
 
-  //Constructor
-  function new(string name = "item");
-    super.new(name);
-  endfunction
+    //Constructor
+    function new(string name = "item");
+        super.new(name);
+    endfunction
 
-  //Constraint, to generate any divisor and dividendo
-	constraint c1 { soft divisor inside   {[32'h00000000:32'h0000000F]};}
-  constraint c2 { soft dividendo inside {[32'h00000000:32'h0000000F]};}
+    //Constraint, to generate any divisor and dividendo
+    constraint c1 { divisor   inside {[32'h00000000:32'h000000FF]};}
+    constraint c2 { dividendo inside {[32'h00000000:32'h000000FF]};}
 
 endclass : item
 
-//Case Overflow = Dividendo baixo e divisor baixo;
+//Case Dividendo alto e divisor alto
 
 class item2 extends tr_in;
 
-///Utility and Field macros,
-  `uvm_object_utils_begin(item2)
+    ///Utility and Field macros,
+    `uvm_object_utils(item2)
 
-  `uvm_object_utils_end
+    //Constructor
+    function new(string name = "item2");
+        super.new(name);
+    endfunction
 
-  //Constructor
-  function new(string name = "item2");
-    super.new(name);
-  endfunction
+    //Constraint, to generate any divisor and dividendo
 
-  //Constraint, to generate any divisor and dividendo
-
-	 constraint c3 { soft divisor inside   {[32'hFFFFFF00:32'hFFFFFFFF]};}
-   constraint c4 { soft dividendo inside {[32'hFFFFFF00:32'hFFFFFFFF]};}
+    constraint c3 { divisor   inside {[32'hFFFFFF00:32'hFFFFFFFF]};}
+    constraint c4 { dividendo inside {[32'hFFFFFF00:32'hFFFFFFFF]};}
 
 endclass : item2
 
-//Case dividendo = 0; 
+//Case dividendo = 0
 
 class item3 extends tr_in;
 
-///Utility and Field macros,
-  `uvm_object_utils_begin(item3)
+    ///Utility and Field macros,
+    `uvm_object_utils(item3)
 
-  `uvm_object_utils_end
+    //Constructor
+    function new(string name = "item3");
+        super.new(name);
+    endfunction
 
-  //Constructor
-  function new(string name = "item3");
-    super.new(name);
-  endfunction
-
-  //Constraint, to generate any divisor and dividendo
-	constraint c5 { soft dividendo inside   {0};}
-  constraint c6 { soft divisor inside   {[32'h00000000:32'hFFFFFFFF]};}
+    //Constraint, to generate any divisor and dividendo
+    constraint c5 { dividendo == '0;}
 
 endclass : item3
 
-//Case divisor = 0;
+//Case divisor = 0
 
 class item4 extends tr_in;
 
-///Utility and Field macros,
-  `uvm_object_utils_begin(item4)
+    ///Utility and Field macros,
+    `uvm_object_utils(item4)
 
-  `uvm_object_utils_end
+    //Constructor
+    function new(string name = "item4");
+        super.new(name);
+    endfunction
 
-  //Constructor
-  function new(string name = "item4");
-    super.new(name);
-  endfunction
-
-  //Constraint, to generate any divisor and dividendo
-	constraint c7 { soft dividendo inside {[32'h00000000:32'hFFFFFFFF]};}
-  constraint c8 { soft divisor inside   {0};}
+    //Constraint, to generate any divisor and dividendo
+    constraint c8 { divisor == '0;}
 endclass : item4
 
-//Case dividendo = 1;
+//Case dividendo = 1
 
 class item5 extends tr_in;
 
 ///Utility and Field macros,
-  `uvm_object_utils_begin(item5)
-
-  `uvm_object_utils_end
+  `uvm_object_utils(item5)
 
   //Constructor
   function new(string name = "item5");
@@ -201,19 +238,16 @@ class item5 extends tr_in;
   endfunction
 
   //Constraint, to generate any divisor and dividendo
-  constraint c2 { soft dividendo inside   {1};}
-  constraint c1 { soft divisor inside   {[32'h00000000:32'hFFFFFFFF]};}
+  constraint c2 { dividendo == 1;}
 
 endclass : item5
 
-//Case divisor = 1;
+//Case divisor = 1
 
 class item6 extends tr_in;
 
 ///Utility and Field macros,
-  `uvm_object_utils_begin(item6)
-
-  `uvm_object_utils_end
+  `uvm_object_utils(item6)
 
   //Constructor
   function new(string name = "item6");
@@ -221,17 +255,16 @@ class item6 extends tr_in;
   endfunction
 
   //Constraint, to generate any divisor and dividendo
-  constraint c2 {soft dividendo inside   {[32'h00000000:32'hFFFFFFFF]};}
-  constraint c1 { soft divisor inside   {1};}
+  constraint c1 { divisor == 1;}
 
 endclass : item6
+
+//Case dividendo = 0 e divisor = 0
 
 class item7 extends tr_in;
 
 ///Utility and Field macros,
-  `uvm_object_utils_begin(item7)
-
-  `uvm_object_utils_end
+  `uvm_object_utils(item7)
 
   //Constructor
   function new(string name = "item7");
@@ -240,27 +273,45 @@ class item7 extends tr_in;
 
   //Constraint, to generate any divisor and dividendo
 
-  constraint c3 { soft divisor inside   {32'h0};}
-  constraint c4 { soft dividendo inside {32'h0};}
+  constraint c3 { divisor   == '0;}
+  constraint c4 { dividendo == '0;}
 
 endclass : item7
 
-/*class item8 extends tr_in;
+//Case Dividendo alto e divisor baixo
 
-///Utility and Field macros,
-  `uvm_object_utils_begin(item7)
+class item8 extends tr_in;
 
-  `uvm_object_utils_end
+    ///Utility and Field macros,
+    `uvm_object_utils(item8)
 
-  //Constructor
-  function new(string name = "item7");
-    super.new(name);
-  endfunction
+    //Constructor
+    function new(string name = "item8");
+        super.new(name);
+    endfunction
 
-  //Constraint, to generate any divisor and dividendo
-                                        
-  constraint c9 { soft divisor inside   {32'hFFFFFFFF};}
-  constraint c10{ soft dividendo inside {32'h80000000};}
+    //Constraint, to generate any divisor and dividendo
+
+    constraint c3 { divisor   inside {[32'h00000000:32'h000000FF]};}
+    constraint c4 { dividendo inside {[32'hFFFFFF00:32'hFFFFFFFF]};}
 
 endclass : item8
-*/
+
+//Case Dividendo baixo e divisor alto
+
+class item9 extends tr_in;
+
+    ///Utility and Field macros,
+    `uvm_object_utils(item9)
+
+    //Constructor
+    function new(string name = "item9");
+        super.new(name);
+    endfunction
+
+    //Constraint, to generate any divisor and dividendo
+
+    constraint c3 { divisor   inside {[32'hFFFFFF00:32'hFFFFFFFF]};}
+    constraint c4 { dividendo inside {[32'h00000000:32'h000000FF]};}
+
+endclass : item9

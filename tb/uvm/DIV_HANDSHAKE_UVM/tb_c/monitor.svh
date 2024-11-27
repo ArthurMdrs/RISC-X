@@ -17,19 +17,19 @@ class monitor_div_out extends uvm_monitor;
    task run_phase(uvm_phase phase);
       tr_out tr;
       forever begin
-         wait (out_vi.reset === 0);
-         tr = tr_out::type_id::create("tr");
-         `bvm_begin_tr(tr)          // start transaction recording
+        wait (out_vi.reset === 0);
+        tr = tr_out::type_id::create("tr");
+        `bvm_begin_tr(tr)          // start transaction recording
 
-         while (!(out_vi.out_valid_o === 1 && out_vi.out_ready_i === 1)) begin
-            @(posedge out_vi.clock);
-         end
+        while (!(out_vi.out_valid_o === 1 && out_vi.out_ready_i === 1)) begin
+          @(posedge out_vi.clock);
+        end
         tr.c = out_vi.c;
         tr.r = out_vi.r;
         @(posedge out_vi.clock);
         `uvm_info("OUT MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_MEDIUM)
-         out.write(tr);
-         `bvm_end_tr(tr)           // end transaction recording
+        out.write(tr);
+        `bvm_end_tr(tr)           // end transaction recording
       end
    endtask
 
@@ -54,18 +54,18 @@ class monitor_div_in extends uvm_monitor;
    task run_phase(uvm_phase phase);
       tr_in tr;
       forever begin
-         wait (in_vi.PRESETn === 1);
-         tr = tr_in::type_id::create("tr");
-         `bvm_begin_tr(tr) // start transaction recording
-         while (!(in_vi.in_ready_o === 1 && in_vi.in_valid_i === 1))
-            @(posedge in_vi.PCLK);
-            tr.divisor = in_vi.divisor;
-            tr.dividendo = in_vi.dividendo;   
-            tr.signal_division = in_vi.signal_division;      
+        wait (in_vi.PRESETn === 1);
+        tr = tr_in::type_id::create("tr");
+        `bvm_begin_tr(tr) // start transaction recording
+        while (!(in_vi.in_ready_o === 1 && in_vi.in_valid_i === 1))
+          @(posedge in_vi.PCLK);
+          tr.divisor = in_vi.divisor;
+          tr.dividendo = in_vi.dividendo;   
+          tr.signal_division = in_vi.signal_division;      
         `uvm_info("IN MON", $sformatf("\n*************************\nCollected tr:\n%s\n*************************", tr.convert2string()), UVM_MEDIUM)
-         @(posedge in_vi.PCLK);
-         out.write(tr);
-         `bvm_end_tr(tr) // end transaction recording
+        @(posedge in_vi.PCLK);
+        out.write(tr);
+        `bvm_end_tr(tr) // end transaction recording
       end
    endtask
 

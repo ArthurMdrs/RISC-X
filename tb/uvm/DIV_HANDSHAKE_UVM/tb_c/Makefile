@@ -1,10 +1,7 @@
-SV_SEED := 1465005197
+# SV_SEED := 1465005197
+SV_SEED := random
 
-ifeq ($(SV_SEED), "random")
-	COV_TEST_NAME := test
-else
-	COV_TEST_NAME := test_sv$(SV_SEED)
-endif
+COV_DIR := $(wildcard cov_work/scope/test_sv*)
 
 TEST := all
 ifeq ($(TEST), all)
@@ -20,7 +17,7 @@ endif
 sim:
 	xrun -access +r -uvm +uvm_set_config_int="*",recording_detail,1 -coverage all -covoverwrite \
 		-top top +UVM_VERBOSITY=UVM_MEDIUM -svseed $(SV_SEED) +UVM_TESTNAME=$(UVM_TESTNAME) \
-		-DSYSTEM_CLOCK_UNITS_PER_SECOND=100 ../bvm/system_clock.c +incdir+../bvm \
+		-DSYSTEM_CLOCK_UNITS_PER_SECOND=100 ../bvm/system_clock.c +incdir+../bvm +UVM_NO_RELNOTES \
 		../bvm/*.sv *.sv \
 		../../../../rtl/Type_M_Instructions/DIV_HANDSHAKE/opdiv.sv \
 		../../../../rtl/Type_M_Instructions/DIV_HANDSHAKE/counter_bit.sv 
@@ -29,7 +26,7 @@ wave:
 	simvision -NOCOPYRIGHT -input simvision.svcf
 
 cover:
-	imc -load cov_work/scope/$(COV_TEST_NAME)
+	imc -load $(COV_DIR)
 
 clean:
 	rm -rf cov_work waves.shm xcelium.d xrun.* *.log .simvision .bpad *.err

@@ -22,7 +22,7 @@ module opdiv(
     counter_bit inst0Count(
 
                 .ena    (ena),
-                .A      (signal_division_intern ? {1'b0,a_reg[30:0]} : a_reg),
+                .A      (a_reg),//(signal_division_intern ? {1'b0,a_reg[30:0]} : a_reg),
                 .nBits  (qbits)
     );
 
@@ -50,8 +50,8 @@ module opdiv(
                         if(signal_division_intern)begin
                             a_reg[30:0] <= a[31]  ? {1'b0,~a[30:0]+1}: a[30:0];
                             b_reg[30:0] <= b[31]  ? {1'b0,~b[30:0]+1}: b[30:0];
-                            a_reg[32:31]   <= 0;
-                            b_reg[32:31]   <= 0;   
+                            a_reg[32:31]   <= a[31] && a[30:0] ==0?1:0;
+                            b_reg[32:31]   <= b[31] && b[30:0] ==0?1:0;   
                         end else begin
                             a_reg <= {1'b0,a};
                             b_reg <= {1'b0,b};
@@ -179,6 +179,7 @@ module opdiv(
                                      end
         default                     : {next,next_in_ready_o,next_out_valid_o} = {IDLE,2'b10} ;
     endcase
+    assign r_temp =  compair ? minuend - b_reg: minuend ;
     always_comb 
         if(out_valid_o && out_ready_i)begin
             if(signal_division_intern)
@@ -186,11 +187,11 @@ module opdiv(
                     c = {32{1'b1}};
                     r = a_signal ? ~a_reg[30:0]+1:a_reg[30:0];
                 end
-                else if(a_reg[30:0] < b_reg[30:0])begin
+                else if(a_reg[30:0] != 0 && a_reg[30:0] < b_reg[30:0])begin
                     c = {32{1'b0}};
                     r = a_signal ? ~a_reg[30:0]+1:a_reg[30:0];
                 end else  begin
-                        r_temp =  compair ? minuend - b_reg: minuend ;
+                        
                         case({a_signal,b_signal})
                             2'b00:begin 
                                     c = {1'b0,Quatient[30:0]};
@@ -208,6 +209,7 @@ module opdiv(
                                     c = {1'b1,~Quatient[30:0]+1};
                                     r = r_temp;
                             end
+                            default: r = 15;
                         endcase
                 end else begin  
                      if(b_reg[31:0] == 0)begin

@@ -10,13 +10,13 @@ class coverage_in extends bvm_cover #(tr_in);
         bins divisor_0            = {32'h0};
         bins divisor_1            = {32'h1};
         bins divisor_max          = {32'hFFFFFFFF};
-        bins divisor_medium[100]  = {[32'h00000010:32'hFFFFFFEF]};
+        bins divisor_medium[100]  = {[32'h00000100:32'hFFFFFEFF]};
         option.at_least = 10; 
       }
       
       cp_divisor_high_low: coverpoint coverage_transaction.divisor {
-        bins divisor_low          = {[32'h00000000:32'h0000000F]};
-        bins divisor_high         = {[32'hFFFFFFF0:32'hFFFFFFFF]};
+        bins divisor_low          = {[32'h00000000:32'h000000FF]};
+        bins divisor_high         = {[32'hFFFFFF00:32'hFFFFFFFF]};
       }
 
       cp_dividendo: coverpoint coverage_transaction.dividendo { // coverage_transaction is predefined name of transaction instance
@@ -25,13 +25,13 @@ class coverage_in extends bvm_cover #(tr_in);
         bins dividendo_0       = {32'h0};
         bins dividendo_1       = {32'h1};
         bins dividendo_max     = {32'hFFFFFFFF};
-        bins dividendo_medium[100]  = {[32'h00000010:32'hFFFFFFEF]};
+        bins dividendo_medium[100]  = {[32'h00000100:32'hFFFFFEFF]};
         option.at_least = 10; 
       }
       
       cp_dividendo_high_low: coverpoint coverage_transaction.dividendo {
-        bins dividendo_low          = {[32'h00000000:32'h0000000F]};
-        bins dividendo_high         = {[32'hFFFFFFF0:32'hFFFFFFFF]};
+        bins dividendo_low          = {[32'h00000000:32'h000000FF]};
+        bins dividendo_high         = {[32'hFFFFFF00:32'hFFFFFFFF]};
       }
       
     //   cx_divisor_X_dividendo: cross cp_divisor, cp_dividendo {
