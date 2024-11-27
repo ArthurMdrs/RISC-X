@@ -187,7 +187,7 @@ module opdiv(
                     c = {32{1'b1}};
                     r = a_signal ? ~a_reg[30:0]+1:a_reg[30:0];
                 end
-                else if(a_reg[31:0] < b_reg[30:0])begin
+                else if(a_reg[30:0] != 0 && a_reg[30:0] < b_reg[30:0])begin
                     c = {32{1'b0}};
                     r = a_signal ? ~a_reg[30:0]+1:a_reg[30:0];
                 end else  begin
