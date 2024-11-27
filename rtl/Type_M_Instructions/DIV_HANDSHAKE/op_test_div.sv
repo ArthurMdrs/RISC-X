@@ -47,16 +47,16 @@ module tb();
         //$display("%d %d %d %d %d %d %s",inst0opdiv.a_reg,inst0opdiv.b_reg,inst0opdiv.ena,inst0opdiv.Quatient,inst0opdiv.minuend,inst0opdiv.k ,str[inst0opdiv.state]);
         //if(temp=="START")begin 
         if(!nreset)begin
-            a    <=-754080665;
-            b    <= 853926325;
+            a    <= 2147483648;
+            b    <= 9565;
             pass <= 0 ;
             signal_division <= 1;
         end else if(inst0opdiv.out_valid_o)begin 
                 
               if($abs(a)/$abs(b) == inst0opdiv.c && $abs(a%b) == inst0opdiv.r || inst0opdiv.r == 32'hffff_ffff || inst0opdiv.c == 32'hffff_ffff ||inst0opdiv.r == 0 |inst0opdiv.c ==0)begin
                 pass  <= pass +1;
-						    a 			<=	$urandom_range($pow(2,12),-$pow(2,12));
-						    b 			<=	$urandom_range($pow(2,6),-$pow(2,6));	
+            a    <= -2147483648;
+            b    <= -9565;
                 signal_division <= 1;
                 $display("%d/%d =  %d,%d,%d",inst0opdiv.a,inst0opdiv.b,inst0opdiv.c,inst0opdiv.r,a%b,"pass");
               end
