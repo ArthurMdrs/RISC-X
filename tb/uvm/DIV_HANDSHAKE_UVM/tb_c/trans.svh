@@ -5,7 +5,6 @@ class tr_out extends uvm_sequence_item;
   rand logic [31:0] r;
   int aux;
 
- 
   `uvm_object_utils_begin(tr_out)  // needed for transaction recording
     //  `uvm_field_int(c, UVM_ALL_ON | UVM_DEC)
     //  `uvm_field_int(r, UVM_ALL_ON | UVM_DEC)
@@ -16,7 +15,7 @@ class tr_out extends uvm_sequence_item;
 
 function string convert2string();
     return {$sformatf("Quociente = 32'h%h\n", c),
-            $sformatf("Resto     = 32'h%h", r)};
+            $sformatf("Resto     = 32'h%h",  r)};
 endfunction
 
 
