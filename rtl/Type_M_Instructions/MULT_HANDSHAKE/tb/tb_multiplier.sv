@@ -5,7 +5,7 @@
 // ----------------------------------------------------------------------------------------------------
 // RELEASE HISTORY  :
 // DATA                 VERSÃO      AUTOR  				    DESCRÇÃO
-// 2024-11-22           0.12        André Medeiros     	    Versão inicial.
+// 2024-11-27           0.13        André Medeiros     	    Versão inicial.
 // ------------------------------------------------------------------------------------------------
 
 module tb_multiplier_32x32;
@@ -18,7 +18,7 @@ module tb_multiplier_32x32;
     logic [1:0] op_sel;
     logic in_ready_o;
     logic out_valid_o;
-    logic [63:0] resultado;
+    logic [31:0] resultado;
 
     // Instância do DUT
     multiplier_32x32 uut (
