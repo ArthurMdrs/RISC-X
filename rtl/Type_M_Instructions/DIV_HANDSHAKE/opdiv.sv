@@ -50,8 +50,8 @@ module opdiv(
                         if(signal_division_intern)begin
                             a_reg[30:0] <= a[31]  ? {1'b0,~a[30:0]+1}: a[30:0];
                             b_reg[30:0] <= b[31]  ? {1'b0,~b[30:0]+1}: b[30:0];
-                            a_reg[32:31]   <= a[31] && a[30:0] ==0?1:0;
-                            b_reg[32:31]   <= b[31] && b[30:0] ==0?1:0;   
+                            a_reg[32:31]   <= (a[31] && a[30:0] == 0) ? 1 : 0;
+                            b_reg[32:31]   <= (b[31] && b[30:0] == 0) ? 1 : 0;   
                         end else begin
                             a_reg <= {1'b0,a};
                             b_reg <= {1'b0,b};
@@ -179,30 +179,33 @@ module opdiv(
                                      end
         default                     : {next,next_in_ready_o,next_out_valid_o} = {IDLE,2'b10} ;
     endcase
-    assign r_temp =  compair ? minuend - b_reg: minuend ;
+    assign r_temp =  compair ? minuend - b_reg: minuend ;//erro--------------------
     always_comb 
         if(out_valid_o && out_ready_i)begin
             if(signal_division_intern)
-                if(b_reg[30:0] == 0)begin
+                if(b_reg == '0)begin//mudou &&
                     c = {32{1'b1}};
                     r = a_signal ? ~a_reg[30:0]+1:a_reg[30:0];
                 end
                 else if(a_reg[30:0] != 0 && a_reg[30:0] < b_reg[30:0])begin
                     c = {32{1'b0}};
                     r = a_signal ? ~a_reg[30:0]+1:a_reg[30:0];
-                end else  begin
+                end else if(a_reg != 33'h080000000 && a_reg[30:0]==0)begin
+                    c = 0;
+                    r = 0;
+                end  else  begin
                         
                         case({a_signal,b_signal})
                             2'b00:begin 
                                     c = {1'b0,Quatient[30:0]};
-                                    r = r_temp;
+                                    r = r_temp;//erro--------------------------
                             end
                             2'b11:begin
-                                    c = {1'b0,Quatient[30:0]};
+                                    c = a_reg[31:0] == 32'h80000000 ? Quatient[31:0] : {1'b0,Quatient[30:0]};
                                     r = ~r_temp+1;
                             end
                             2'b10:begin
-                                    c = {1'b1,~Quatient[30:0]+1};
+                                    c = a_reg[31:0] == 32'h80000000 ? Quatient[31:0] : {1'b1,~Quatient[30:0]+1};
                                     r = ~r_temp+1;
                             end
                             2'b01:begin 
@@ -221,7 +224,7 @@ module opdiv(
                         r = a_reg[31:0];
                     end else  begin
                         c = Quatient;
-                        r = compair ? minuend - b_reg: minuend ; 
+                        r = r_temp ; 
                     end
                 end
         end
