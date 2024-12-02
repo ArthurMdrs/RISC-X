@@ -28,7 +28,7 @@ class refmod extends uvm_component;
 
    int m_matches, m_mismatches; 
    int register_file;
-   int result;
+   logic result;
    // int = 32b; logic = 64;
    task run_phase (uvm_phase phase);
 
@@ -49,23 +49,23 @@ class refmod extends uvm_component;
 
           if (tr_input.op_sel == 0) begin //  MUL = 
             result = (tr_input.b * tr_input.a);
-            tr_output.c = result;
-           // tr_output.aux = 0;
+            tr_output.c = result[31:0];
+            tr_output.aux = 0;
           end
           else if (tr_input.op_sel == 1) begin  // MULH
-            result = ($signed(tr_input.b) * $signed(tr_input.a));
-            tr_output.c = result;
-           // tr_output.aux = 1;
+            result = ($signed(tr_input.b) * $signed(tr_input.a)) << 4;
+            tr_output.c = result[63:32];
+            tr_output.aux = 1;
           end
           else if (tr_input.op_sel == 2) begin  // MULHSU
             result = $signed(tr_input.a) * $unsigned(tr_input.b);
-            tr_output.c = result;
-           // tr_output.aux = 2;
+            tr_output.c = result[63:32];
+            tr_output.aux = 2;
           end
           else begin                           //  MULHU
             result =  $unsigned(tr_input.a) * $unsigned(tr_input.b);
-            tr_output.c = result;
-           // tr_output.aux = 3;
+            tr_output.c = result[63:32];
+            tr_output.aux = 3;
           end
 
           out.put(tr_output);

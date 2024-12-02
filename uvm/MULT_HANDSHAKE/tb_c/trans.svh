@@ -2,11 +2,11 @@
 class tr_out extends uvm_sequence_item;
 
   rand int c;
-  //int aux;
+  int aux;
 
   `uvm_object_utils_begin(tr_out)  // needed for transaction recording
      `uvm_field_int(c, UVM_ALL_ON | UVM_DEC)
-   //  `uvm_field_int(aux, UVM_ALL_ON | UVM_NONE)
+     `uvm_field_int(aux, UVM_ALL_ON | UVM_DEC)
   `uvm_object_utils_end
 
   function string convert2string();

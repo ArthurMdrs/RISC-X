@@ -1,0 +1,35 @@
+Opera��es
+
+2'b00:MUL: Multiplicação normal (32 bits menos significativos).
+2'b01:MULH: Multiplicação com resultado na parte alta (32 bits mais significativos).
+2'b10:MULHSU: Multiplicação com um operando com sinal e um sem sinal, resultado na parte alta.
+2'b11:MULHU: Multiplicação com dois operandos sem sinal, resultado na parte alta.
+
+Nós separamos as operações de multiplicação e divisão de inteiros do conjunto base para simplificar implementações de baixo custo ou para aplicações em que as operações de multiplicação e divisão de inteiros são pouco frequentes ou são mais adequadamente tratadas por aceleradores acoplados.
+
+MUL realiza uma multiplicação de XLEN
+XLEN-bits por XLEN
+XLEN-bits e coloca os 
+𝑋
+𝐿
+𝐸
+𝑁
+XLEN bits inferiores no registrador de destino.
+MULH, MULHU e MULHSU realizam a mesma multiplicação, mas retornam os 
+𝑋
+𝐿
+𝐸
+𝑁
+XLEN bits superiores do produto completo de 
+2
+×
+𝑋
+𝐿
+𝐸
+𝑁
+2×XLEN-bits, respectivamente, para multiplicação assinada×assinada, não assinada×não assinada e assinada×não assinada.
+Se os bits alto e baixo do mesmo produto forem necessários, a sequência de código recomendada é:
+MULH[[S]U] rdh, rs1, rs2; MUL rdl, rs1, rs2
+(os especificadores dos registradores de origem devem estar na mesma ordem, e rdh não pode ser o mesmo que rs1 ou rs2). Microarquiteturas podem, então, fundir essas instruções em uma única operação de multiplicação em vez de realizar duas multiplicações separadas.
+
+MULW é válido apenas para RV64, e multiplica os 32 bits inferiores dos registradores de origem, colocando a extensão de sinal dos 32 bits inferiores do resultado no registrador de destino. MUL pode ser usado para obter os 32 bits superiores do produto de 64 bits, mas os argumentos assinados devem ser valores assinados próprios de 32 bits, enquanto os argumentos não assinados devem ter seus 32 bits superiores zerados.

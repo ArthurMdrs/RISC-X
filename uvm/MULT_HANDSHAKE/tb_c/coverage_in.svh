@@ -21,7 +21,7 @@ class coverage_in extends bvm_cover #(tr_in);
         bins a_1            = {32'h1};
         bins a_max          = {32'hFFFFFFFF};
         bins a_medium[100]  = {[32'h00000010:32'hFFFFFFEF]}; 
-        option.at_least = 1;   
+        option.at_least = 10;   
       }
 
       cp_a_high_low: coverpoint coverage_transaction.a {
