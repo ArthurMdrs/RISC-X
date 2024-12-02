@@ -39,7 +39,7 @@ class refmod extends uvm_component;
         in.get(tr_input);
          tr_output = tr_out::type_id::create("tr_output", this);	
           `bvm_begin_tr(tr_output)
-       // Tipo de operação: 00=MUL, 01=MULH, 10=MULHSU, 11=MULHU
+       // Tipo de operação: 00_ls=MUL, 01=MULH, 10=MULHSU, 11=MULHU
        //2'b00:MUL: Multiplicação normal (32 bits menos significativos). 
        //2'b01:MULH: Multiplicação com resultado na parte alta (32 bits mais significativos).
        //2'b10:MULHSU: Multiplicação com um operando com sinal e um sem sinal, resultado na parte alta. (32 bits mais significativos).
