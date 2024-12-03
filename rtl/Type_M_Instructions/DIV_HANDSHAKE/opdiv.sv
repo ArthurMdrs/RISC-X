@@ -205,7 +205,7 @@ module opdiv(
                                     r = ~r_temp+1;
                             end
                             2'b10:begin
-                                    c = a_reg[31:0] == 32'h80000000 ? Quatient[31:0] : {1'b1,~Quatient[30:0]+1};
+                                    c = a_reg[31:0] == 32'h80000000 ? ~Quatient[31:0] +1: {1'b1,~Quatient[30:0]+1};
                                     r = ~r_temp+1;
                             end
                             2'b01:begin 
