@@ -1,4 +1,4 @@
-# SimVision Command Script (Tue Sep 10 13:56:35 -03 2024)
+# SimVision Command Script (Wed Dec 04 16:45:59 -03 2024)
 #
 # Version 24.03.s005
 #
@@ -12,11 +12,11 @@
 #
 # Preferences
 #
-preferences set expand-attributes begin_time
 preferences set plugin-enable-svdatabrowser-new 1
 preferences set plugin-enable-groupscope 0
 preferences set plugin-enable-interleaveandcompare 0
 preferences set plugin-enable-waveformfrequencyplot 0
+preferences set expand-attributes begin_time
 
 #
 # Databases
@@ -24,7 +24,7 @@ preferences set plugin-enable-waveformfrequencyplot 0
 array set dbNames ""
 set dbNames(realName1) [ database require waves -hints {
 	file ./waves.shm/waves.trn
-	file /home/xmen/Desktop/RISC-X/tb/uvm/MULT/tb_c/waves.shm/waves.trn
+	file /home/xmen/Desktop/VIRTUS/RISC-X/tb/uvm/MULT/tb_c/waves.shm/waves.trn
 }]
 if {$dbNames(realName1) == ""} {
     set dbNames(realName1) waves
@@ -43,8 +43,8 @@ mmap new  -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor or
 #
 # Waveform windows
 #
-if {[catch {window new WaveWindow -name "Waveform 1" -geometry 2560x1367+-10+59}] != ""} {
-    window geometry "Waveform 1" 2560x1367+-10+59
+if {[catch {window new WaveWindow -name "Waveform 1" -geometry 2560x1362+-10+59}] != ""} {
+    window geometry "Waveform 1" 2560x1362+-10+59
 }
 window target "Waveform 1" on
 waveform using {Waveform 1}
@@ -62,6 +62,18 @@ set id [waveform add -signals [subst  {
 	} ]]
 waveform format $id -color #ff0000
 set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {top.testediv.rst_n}]}
+	} ]]
+set id [waveform add -cdivider divider]
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {$uvm:{uvm_test_top.env_h.agent_in_h.monitor_h}.tr}]}
+	} ]]
+waveform format $id -height 90
+set id [waveform add -signals [subst  {
+	{$dbNames(realName1)::[format {$uvm:{uvm_test_top.env_h.agent_out_h.monitor_h}.tr}]}
+	} ]]
+set id [waveform add -cdivider divider]
+set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.a[31:0]}]}
 	} ]]
 waveform format $id -color #9900ff -bgcolor #000000
@@ -70,47 +82,35 @@ set id [waveform add -signals [subst  {
 	} ]]
 waveform format $id -color #9900ff -bgcolor #000000
 set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.rst_n}]}
+	{$dbNames(realName1)::[format {top.testediv.in_ready_o}]}
 	} ]]
 set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.in_valid_i}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.in_ready_o}]}
+	{$dbNames(realName1)::[format {top.in_vi.op_sel[1:0]}]}
 	} ]]
+set id [waveform add -cdivider divider]
 set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.out_valid_o}]}
 	} ]]
 set id [waveform add -signals [subst  {
 	{$dbNames(realName1)::[format {top.testediv.out_ready_i}]}
 	} ]]
+set id [waveform add -cdivider divider]
 set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {top.testediv.resultado[63:0]}]}
+	{$dbNames(realName1)::[format {top.out_vi.c[31:0]}]}
 	} ]]
-waveform format $id -color #ff9900 -namecolor #ff9900
+set id [waveform add -cdivider divider]
 set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {Transactions.tr_out}]}
-	} ]]
-set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {Transactions.tr}]}
-	} ]]
-waveform format $id -height 100
-set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {$uvm:{uvm_test_top.env_h.refmod_h}.tr_out}]}
-	} ]]
-waveform format $id -height 132
-set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {$uvm:{uvm_test_top.env_h.agent_in_h.monitor_h}.tr}]}
-	} ]]
-waveform format $id -height 90
-set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {$uvm:{uvm_test_top.env_h.agent_out_h.monitor_h}.tr}]}
+	{$dbNames(realName1)::[format {top.testediv.full_result_unsigned[63:0]}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{$dbNames(realName1)::[format {$uvm:{uvm_test_top.env_h.refmod_h}.tr_out}]}
+	{$dbNames(realName1)::[format {top.testediv.full_result_signed[63:0]}]}
 	} ]]
+waveform format $id -radix %x
 
-waveform xview limits 0 500ns
+waveform xview limits 398.31893ns 648.31893ns
 
 #
 # Waveform Window Links

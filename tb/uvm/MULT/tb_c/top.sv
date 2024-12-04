@@ -55,7 +55,7 @@ module top;
 
    initial begin
       // vendor dependent waveform recording
-      `ifdef INCA
+      `ifdef XCELIUM
         $shm_open("waves.shm");
         $shm_probe("AS");
       `endif

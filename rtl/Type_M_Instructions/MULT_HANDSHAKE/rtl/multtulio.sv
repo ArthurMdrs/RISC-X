@@ -34,16 +34,14 @@ module multiplier_32x32 (
     logic unsigned [63:0] full_result_unsigned;
     logic          valid_reg;
 
-    logic [31:0] next_resultado;
-
 
     always_comb begin
-        next_resultado = resultado;
         
         case (state)
             IDLE: begin
                 out_valid_o = 1'b0;
                 in_ready_o = 1'b1;
+                resultado = 'x;
                 if (in_valid_i) begin
                     next_state = MULT;
                 end else begin
@@ -55,20 +53,19 @@ module multiplier_32x32 (
                     // 4 Operações RISC-V
                     2'b00: begin
                         full_result_signed = ($signed(register_a) * $signed(register_b));
-                        next_resultado = full_result_signed[31:0];
+                        resultado = full_result_signed[31:0];
                     end
                     2'b01: begin 
                         full_result_signed = ($signed(register_a) * $signed(register_b));
-                        next_resultado = full_result_signed[63:32];
+                        resultado = full_result_signed[63:32];
                     end
                     2'b10: begin 
                         full_result_signed = ($signed(register_a) * $unsigned(register_b));
-                        // next_resultado = full_result_signed[31:0];
-                        next_resultado = full_result_signed[63:32];
+                        resultado = full_result_signed[31:0];
                     end
                     2'b11: begin
                         full_result_unsigned = ($unsigned(register_a) * $unsigned(register_b));
-                        next_resultado = full_result_unsigned[63:32];
+                        resultado = full_result_unsigned[63:32];
                     end
                 endcase
                 in_ready_o = 1'b0;
@@ -91,7 +88,6 @@ module multiplier_32x32 (
         if (!rst_n) begin
             state <= IDLE;
         end else begin
-            resultado <= next_resultado;
             case (state)
                 IDLE: begin
                     register_a <= a;

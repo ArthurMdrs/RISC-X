@@ -1,3 +1,5 @@
+COV_DIR := $(wildcard cov_work/scope/test_sv*)
+
 sim:
 	xrun -access +r -uvm +uvm_set_config_int="*",recording_detail,1 -coverage all -covoverwrite \
 		-top top +UVM_VERBOSITY=UVM_HIGH -svseed random \
@@ -9,7 +11,7 @@ wave:
 	simvision -NOCOPYRIGHT -input simvision.svcf
 
 cover:
-	imc -load cov_work/scope/test
+	imc -load $(COV_DIR)
 
 clean:
 	rm -rf cov_work waves.shm xcelium.d xrun.* *.log .simvision

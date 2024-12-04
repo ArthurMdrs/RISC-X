@@ -21,12 +21,13 @@ class coverage_in extends bvm_cover #(tr_in);
         bins a_1            = {32'h1};
         bins a_max          = {32'hFFFFFFFF};
         bins a_medium[100]  = {[32'h00000010:32'hFFFFFFEF]}; 
-        option.at_least = 1;   
+        option.at_least = 10;   
       }
 
       cp_a_high_low: coverpoint coverage_transaction.a {
-        bins a_low          = {[32'h00000000:32'h0000000F]};       
-        bins a_high         = {[32'hFFFFFFF0:32'hFFFFFFFF]}; 
+        bins a_low          = {[32'h00000000:32'h0000000F]};
+        bins a_high         = {[32'hFFFFFFF0:32'hFFFFFFFF]};
+        option.at_least = 10;  
       }
 
       cp_b: coverpoint coverage_transaction.b {
@@ -38,30 +39,18 @@ class coverage_in extends bvm_cover #(tr_in);
       }
 
       cp_b_high_low:coverpoint coverage_transaction.b {
-        bins b_low     = {[32'h00000000:32'h0000000F]}; 
-        bins b_high    = {[32'hFFFFFFF0:32'hFFFFFFFF]}; 
+        bins b_low    = {[32'h00000000:32'h0000000F]};
+        bins b_high   = {[32'hFFFFFFF0:32'hFFFFFFFF]};
       }
 
-      // coverpoint coverage_transaction.a { // coverage_transaction is predefined name of transaction instance
-      //   bins a_low          = {[32'h00000000:32'h0000000F]};       
-      //   bins a_high         = {[32'hFFFFFFF0:32'hFFFFFFFF]}; 
-      //   bins a_0            = {32'h0};
-      //   bins a_1            = {32'h1};
-      //   bins a_max          = {32'hFFFFFFFF};
-      //   bins a_medium[100]  = {[32'h00000010:32'hFFFFFFEF]};        
-      //   option.at_least = 10; 
-      // }
+      cp_op_sel: coverpoint coverage_transaction.op_sel {
+        bins bin0[] = {[0:3]};
+      }
 
-      // coverpoint coverage_transaction.b { // coverage_transaction is predefined name of transaction instance
-      //   bins b_low     = {[32'h00000000:32'h0000000F]}; 
-      //   bins b_high    = {[32'hFFFFFFF0:32'hFFFFFFFF]}; 
-      //   bins b_0       = {32'h0};
-      //   bins b_1       = {32'h1};
-      //   bins b_max     = {32'hFFFFFFFF};
-      //   bins b_medium[100]  = {[32'h00000010:32'hFFFFFFEF]};
-      //   option.at_least = 10; 
-      // }
-      
+      mult_cross1: cross cp_b_high_low, cp_op_sel {
+        option.at_least = 10;
+      }
+ 
    endgroup
    `bvm_cover_utils(tr_in)
     

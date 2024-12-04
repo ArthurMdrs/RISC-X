@@ -3,7 +3,7 @@ interface out_mult_if (input logic clock, reset);
 
   logic                    out_ready_i;
   logic                    out_valid_o; 
-  logic [63:0]             c;
+  logic [31:0]             c;
   
 endinterface
 

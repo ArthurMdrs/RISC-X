@@ -5,8 +5,9 @@ class tr_out extends uvm_sequence_item;
   //int aux;
 
   `uvm_object_utils_begin(tr_out)  // needed for transaction recording
-     `uvm_field_int(c, UVM_ALL_ON | UVM_DEC)
-   //  `uvm_field_int(aux, UVM_ALL_ON | UVM_NONE)
+    //  `uvm_field_int(c, UVM_ALL_ON | UVM_DEC)
+     `uvm_field_int(c, UVM_ALL_ON | UVM_HEX)
+    // `uvm_field_int(aux, UVM_ALL_ON | UVM_HEX)
   `uvm_object_utils_end
 
   function string convert2string();
@@ -19,7 +20,7 @@ endclass : tr_out
 class tr_in extends uvm_sequence_item;
 
   rand int a, b;
-  int op_sel;
+  rand int op_sel;
 
   function new(string name = "tr_in");
     super.new(name);
@@ -33,7 +34,7 @@ class tr_in extends uvm_sequence_item;
 
 
 // Tipo de operação: 00=MUL, 01=MULH, 10=MULHSU, 11=MULHU
-  constraint op_sel_MUL { op_sel == 0; }
+ constraint op_sel_MUL { op_sel inside {[0:3]}; }
 //  constraint op_sel_MULH   {op_sel == 1;}
 //  constraint op_sel_MULHSU {op_sel == 2;}
 //  constraint op_sel_MULHU  {op_sel == 3;}
@@ -46,15 +47,15 @@ function string convert2string();
     end else if (op_sel == 1) begin 
         my_str = {$sformatf("A = 32'h%h\nB = 32'h%h\n", a, b), 
                   $sformatf("Fator = %0d\nFator2 = %0d\n", $signed(a), $signed(b)),
-                  $sformatf("OP_SEL == 2 | MUL")};
+                  $sformatf("OP_SEL == 1 | MUL")};
     end else if (op_sel == 2) begin 
         my_str = {$sformatf("A = 32'h%h\nB = 32'h%h\n", a, b), 
                   $sformatf("Fator = %0d\nFator2 = %0d\n", $signed(a), $signed(b)),
-                  $sformatf("OP_SEL == 3 | MULHSU")};
+                  $sformatf("OP_SEL == 2 | MULHSU")};
     end else begin
         my_str = {$sformatf("A = 32'h%h\nB = 32'h%h\n", a, b), 
                   $sformatf("Fator = %0d\nFator2 = %0d\n", $signed(a), $signed(b)),
-                  $sformatf("OP_SEL == 4 | MULHU")};
+                  $sformatf("OP_SEL == 3 | MULHU")};
     end
     return my_str;
 endfunction

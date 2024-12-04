@@ -113,7 +113,7 @@ class driver_in extends uvm_driver #(tr_in);
         wait (in_vi.PRESETn === 1);
         seq_item_port.get_next_item(tr_sequencer); // get transaction
         in_vi.in_valid_i <= 1;
-        in_vi.op_sel <= 1;
+        in_vi.op_sel <= tr_sequencer.op_sel;
          #10 in_vi.in_valid_i <= 0;
         in_vi.b  <= tr_sequencer.b; 
         in_vi.a    <= tr_sequencer.a;
