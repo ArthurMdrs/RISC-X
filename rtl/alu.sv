@@ -4,7 +4,8 @@ module alu import core_pkg::*; #(
 	output logic [DWIDTH-1:0] res_o,
 	input  logic [DWIDTH-1:0] op1_i,
 	input  logic [DWIDTH-1:0] op2_i,
-    input  alu_operation_t    operation_i
+    input  alu_operation_t    operation_i,
+    
 );
 
 logic signed [DWIDTH-1:0] op1_s, op2_s;
@@ -32,5 +33,9 @@ always_comb
         ALU_SNE : res_o = (op1_i != op2_i);
         default: res_o = 'x;
     endcase
+
+    //MULT
+
+    //DIV
 
 endmodule
