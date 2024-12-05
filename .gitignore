@@ -6,6 +6,7 @@ cov_work*
 waves*
 *.log
 *.diag
+*.svcf
 jgproject
 .symbol*
 simvision/

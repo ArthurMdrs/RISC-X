@@ -1,0 +1,102 @@
+
+#
+# Mnemonic Maps
+#
+mmap new  -reuse -name {Boolean as Logic} -radix %b -contents {{%c=FALSE -edgepriority 1 -shape low}
+{%c=TRUE -edgepriority 1 -shape high}}
+mmap new  -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor orange -label REG:%x -linecolor yellow -shape bus}
+{%x=1F -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=2C -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=* -label %x -linecolor gray -shape bus}}
+
+array unset createdGroup
+array set createdGroup {}
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.clock}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.nreset}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.a[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.b[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.a_reg[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.b_reg[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.Quatient[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.minuend[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.a_signal}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.b_signal}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.c[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.r[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.c_signal}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.compair}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.ena}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.in_ready_o}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.in_valid_i}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.k[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.left_updade[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.next[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.next_in_ready_o}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.next_k[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.next_out_valid_o}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.out_ready_i}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.out_valid_o}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.qbits[5:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.right_updade[31:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.signal_division}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {tb.inst0opdiv.state[31:0]}]}
+	} ]]
+
+waveform xview limits 0 252ns

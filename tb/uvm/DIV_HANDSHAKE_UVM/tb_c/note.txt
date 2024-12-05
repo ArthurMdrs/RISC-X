@@ -1,0 +1,40 @@
+*com sinal
+    progresso
+    - todos os resultados de divisão estão corretos
+      23715 matches,        2492 mismatches
+
+    problemas
+    - problema sempre quando o resultado é overflow ( ) | OP = 2;
+      - há divergencia no valor do resto, entre refmod e
+      
+    - probelma com operadores muito grande e com sinais opostos (dut)
+    divisor = 329855373
+    dividendo = -142849220
+    ame          Type             Size  Value      
+    ------------------------------------------------
+    tr            tr_out           -     @5851      
+    c           integral         32    'd0        
+    r           integral         32    'd142849220
+    aux         integral         32    'd0        
+    begin_time  time             64    42795      
+    end_time    time             64    43655      
+    initiator   monitor_div_out  -1    @5566      
+    ------------------------------------------------
+    differs from expected
+    ------------------------------------------------
+    Name          Type      Size  Value     
+    ------------------------------------------------
+    tr_output     tr_out    -     @5948     
+    c           integral  32    'd0       
+    r           integral  32    4152118076
+    aux         integral  32    'd4       
+    begin_time  time      64    42805     
+    initiator   refmod    -1    @334    
+    
+    tb
+    Divisão com sinal: 4152118076 /  329855373 =          0 (resto=4152118076)
+
+*sem sinal 
+    progresso   
+    - todos os resultados de divisão estão corretos
+    - todos os resultados do resto de divisão estão corretos
