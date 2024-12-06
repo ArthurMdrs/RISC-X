@@ -10,7 +10,7 @@
 // 2024-12-03           0.14        André Medeiros     	    Versão inicial.
 // ------------------------------------------------------------------------------------------------
 
-module multiplier_32x32 (
+module multiplier (
     input  logic        clk,               
     input  logic        rst_n,             
     input  logic [31:0] a,                 
