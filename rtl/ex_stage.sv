@@ -338,6 +338,44 @@ generate
     end
 endgenerate
 
+
+generate
+
+    if(ISA_M) begin
+
+        // a/b = c ou a%b = r
+        opdiv divisor(
+            .clock(clk_i)           ,
+            .nreset(rst_n_i)          ,
+            .a(alu_operand_1_ex)               ,
+            .b(alu_operand_2_ex)               ,
+            .c()               ,
+            .r()               ,
+            .in_valid_i()      ,
+            .in_ready_o()      ,
+            .out_valid_o()     ,
+            .signal_division() ,
+            .out_ready_i()    
+        );
+
+        // a*b = c
+        multiplier multiplicador(
+            .clk(clk_i),       
+            .rst_n(rst_n_i),
+            .a(alu_operand_1_ex),
+            .b(alu_operand_2_ex),
+            .in_valid_i(),
+            .in_ready_o(),
+            .op_sel(),
+            .out_ready_i(),
+            .out_valid_o(),
+            .resultado()
+        );
+    
+    end
+
+endgenerate
+
 // Pass CSR rdata through ALU result in case of CSR reads
 assign alu_result_ex_o = (csr_access_ex_o) ? (csr_rdata_ex_i) : (alu_result_ex);
 
