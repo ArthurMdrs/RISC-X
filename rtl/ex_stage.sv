@@ -336,6 +336,9 @@ generate
         assign fpu_rvalid = '0;
         assign fpu_busy_ex_o = '0;
     end
+    if(ISA_M) begin
+        
+    end
 endgenerate
 
 
