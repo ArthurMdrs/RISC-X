@@ -61,6 +61,12 @@ module controller import core_pkg::*; (
     input  logic fpu_req_id_i,
     input  logic fpu_gnt_id_i,
     input  logic fpu_busy_ex_i,
+    input  logic div_req_id_i,
+    input  logic div_gnt_id_i,
+    input  logic div_busy_ex_i, 
+    input  logic mul_req_id_i,
+    input  logic mul_gnt_id_i,
+    input  logic mul_busy_ex_i, 
     
     // Control Hazards (flushing)
     output logic flush_id_o,
@@ -101,6 +107,12 @@ logic rd_wb_is_rs3_id ;
 logic fpu_gnt_stall;
 logic fpu_rvalid_stall;
 
+logic div_gnt_stall;
+logic div_rvalid_stall;
+
+logic mul_gnt_stall;
+logic mul_rvalid_stall;
+
 `ifdef JASPER
 `default_nettype none
 `endif
@@ -123,6 +135,12 @@ assign rd_wb_is_rs3_id  = (rd_addr_wb_i  == rs3_addr_id_i) && (rd_wb_valid ) && 
 
 assign fpu_gnt_stall    = fpu_req_id_i && !fpu_gnt_id_i;
 assign fpu_rvalid_stall = fpu_busy_ex_i;
+
+assign div_gnt_stall    = div_req_id_i && !div_gnt_id_i;
+assign div_rvalid_stall = div_busy_ex_i;
+
+assign mul_gnt_stall    = mul_req_id_i && !mul_gnt_id_i;
+assign mul_rvalid_stall = mul_busy_ex_i;
 
 // Resolve forwarding for rs1
 always_comb begin
@@ -189,7 +207,7 @@ always_comb begin
     stall_ex_o = fpu_rvalid_stall;
     
     stall_id_o = stall_ex_o;
-    if (fpu_gnt_stall)
+    if (fpu_gnt_stall || div_gnt_stall || mul_gnt_stall)
         stall_id_o = 1'b1;
     if (reg_mem_wen_ex_i) // Load operation in EX
         if(rd_ex_is_rs1_id || rd_ex_is_rs2_id || rd_ex_is_rs3_id)

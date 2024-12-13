@@ -1,9 +1,0 @@
-    fork
-
-      forever begin
-      // Random delay before each toggle
-      #(5 + $urandom_range(0, 10)); // Random delay between 5 and 15 time units
-      apb_vi.in_valid_i <= $urandom_range(0, 1);
-      end
-
-    join_none*/

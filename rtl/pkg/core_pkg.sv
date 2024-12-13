@@ -49,7 +49,22 @@ typedef enum logic [3:0] {
     ALU_SGEU,   // 1011
     ALU_SEQ,    // 1100
     ALU_SNE     // 1101
+
 } alu_operation_t;
+
+typedef enum logic [2:0] { 
+    
+    M_MUL,      // 000
+    M_MULH,     // 001 
+    M_MULHSU,   // 010
+    M_MULHU,    // 011
+    M_DIV,      // 100
+    M_DIVU,     // 101
+    M_REM,      // 110
+    M_REMU      // 111
+
+ } alu_m_operation;
+
 
 typedef enum logic [1:0] { 
     ALU_SCR1_RS1,
@@ -70,11 +85,12 @@ typedef enum logic {
     ALU_SCR3_RS3
 } alu_source_3_t;
 
-typedef enum logic [1:0] { 
-    BASIC_ALU_RESULT,
-    FPU_RESULT,
-    MULT_RESULT,
-    DIV_RESULT
+typedef enum logic [2:0] { 
+    BASIC_ALU_RESULT,   // 000
+    FPU_RESULT,         // 001
+    MULT_RESULT,        // 010
+    DIV_RESULT,         // 011
+    REM_RESULT          // 100
 } alu_result_mux_t;
 
 typedef enum logic { 

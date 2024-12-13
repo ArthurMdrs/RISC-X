@@ -92,7 +92,19 @@ module ex_stage import core_pkg::*; #(
     // Control inputs
     input  logic stall_ex_i,
     input  logic flush_ex_i,
+
+    // Type M signals
     
+    input  alu_m_operation  m_operation_id_i,
+
+    input  logic div_req_id_i,
+    output logic div_gnt_id_o,
+    output logic div_busy_ex_o,
+    
+    input  logic mul_req_id_i,
+    output logic mul_gnt_id_o,
+    output logic mul_busy_ex_o,
+
     // FPU signals
     input  logic [2:0]    fpu_rnd_mode_id_i,
     input  logic [3:0]    fpu_op_id_i,
@@ -199,6 +211,9 @@ always_comb begin
     case (alu_result_mux_ex)
         BASIC_ALU_RESULT: alu_result_ex = basic_alu_result;
         FPU_RESULT      : alu_result_ex = fpu_result;
+        MULT_RESULT     : alu_result_ex = mul_result;
+        DIV_RESULT      : alu_result_ex = div_result;
+        REM_RESULT      : alu_result_ex = rest_result;
         default: alu_result_ex = basic_alu_result;
     endcase
 end
@@ -336,30 +351,44 @@ generate
         assign fpu_rvalid = '0;
         assign fpu_busy_ex_o = '0;
     end
-    if(ISA_M) begin
-        
-    end
 endgenerate
 
 
 generate
-
     if(ISA_M) begin
 
         // a/b = c ou a%b = r
         opdiv divisor(
-            .clock(clk_i)           ,
-            .nreset(rst_n_i)          ,
-            .a(alu_operand_1_ex)               ,
-            .b(alu_operand_2_ex)               ,
-            .c()               ,
-            .r()               ,
-            .in_valid_i()      ,
-            .in_ready_o()      ,
-            .out_valid_o()     ,
-            .signal_division() ,
-            .out_ready_i()    
+            .clock(clk_i),
+            .nreset(rst_n_i),
+            .a(alu_operand_1_ex),
+            .b(alu_operand_2_ex),
+            .c(div_result),
+            .r(rest_result),
+            .in_valid_i(div_req_id_i),
+            .in_ready_o(div_gnt_id_o),
+            .out_valid_o(div_rvalid),
+            .signal_division(m_operation_id_i[0]),
+            .out_ready_i(1'b1)
         );
+
+        wire div_tr_cnt_up = div_req_id_i && div_gnt_id_o;
+        wire div_tr_cnt_dn = div_rvalid;
+
+        always_ff @(posedge clk_i, negedge rst_n_i) begin
+            if (!rst_n_i) begin
+                div_busy_int <= 1'b0;
+            end else begin
+                unique case ({div_tr_cnt_up, div_tr_cnt_dn})
+                    2'b00: div_busy_int <= div_busy_int; // No  new input tr, no output done
+                    2'b01: div_busy_int <= 1'b0;         // No  new input tr,    output done
+                    2'b10: div_busy_int <= 1'b1;         // Got new input tr, no output done
+                    2'b11: div_busy_int <= 1'b1;         // Got new input tr,    output done
+                    default: div_busy_int <= 1'b0;
+                endcase
+            end
+        end
+        assign div_busy_ex_o = div_busy_int && !div_rvalid;
 
         // a*b = c
         multiplier multiplicador(
@@ -367,14 +396,46 @@ generate
             .rst_n(rst_n_i),
             .a(alu_operand_1_ex),
             .b(alu_operand_2_ex),
-            .in_valid_i(),
-            .in_ready_o(),
-            .op_sel(),
-            .out_ready_i(),
-            .out_valid_o(),
-            .resultado()
+            .in_valid_i(mul_req_id_i),
+            .in_ready_o(mul_gnt_id_o),
+            .op_sel(m_operation_id_i[1:0]),
+            .out_ready_i(1'b1),
+            .out_valid_o(mul_rvalid),
+            .resultado(mul_result)
         );
-    
+
+        wire mul_tr_cnt_up = mul_req_id_i && mul_gnt_id_o;
+        wire mul_tr_cnt_dn = mul_rvalid;
+
+        always_ff @(posedge clk_i, negedge rst_n_i) begin
+            if (!rst_n_i) begin
+                mul_busy_int <= 1'b0;
+            end else begin
+                unique case ({mul_tr_cnt_up, mul_tr_cnt_dn})
+                    2'b00: mul_busy_int <= mul_busy_int; // No  new input tr, no output done
+                    2'b01: mul_busy_int <= 1'b0;         // No  new input tr,    output done
+                    2'b10: mul_busy_int <= 1'b1;         // Got new input tr, no output done
+                    2'b11: mul_busy_int <= 1'b1;         // Got new input tr,    output done
+                    default: mul_busy_int <= 1'b0;
+                endcase
+            end
+        end
+        assign mul_busy_ex_o = mul_busy_int && !mul_rvalid;
+    end
+    else begin
+        
+        assign div_gnt_id_o = '0;
+        assign div_result = '0;
+        //assign csr_div_flags_ex_o = '0;
+        assign div_rvalid = '0;
+        assign div_busy_ex_o = '0;
+
+        assign mul_gnt_id_o = '0;
+        assign mul_result = '0;
+        //assign csr_mul_flags_ex_o = '0;
+        assign mul_rvalid = '0;
+        assign mul_busy_ex_o = '0;
+        
     end
 
 endgenerate

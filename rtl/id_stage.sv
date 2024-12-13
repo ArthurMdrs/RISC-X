@@ -105,12 +105,21 @@ module id_stage import core_pkg::*; #(
     input  logic [31:0] mem_rdata_wb_i,
     input  logic [31:0] csr_rdata_ex_i,
     
+    // M signals
+    output alu_m_operation  m_operation_id_o,
+    
+    output logic            div_req_id_o,
+    input  logic            div_busy_ex_i,
+    
+    output logic            mul_req_id_o,
+    input  logic            mul_busy_ex_i,
+
     // FPU signals
     output logic [2:0] fpu_rnd_mode_id_o,
     output logic [3:0] fpu_op_id_o,
     output logic       fpu_op_mod_id_o,
     output logic       fpu_req_id_o,
-    
+
     input  logic fpu_busy_ex_i
     
 );
@@ -132,8 +141,11 @@ immediate_source_t immediate_type_id;
 logic [31:0]       immediate_id;
 
 logic fpu_req_id_int;
+logic div_req_id_int;
+logic mul_req_id_int;
 
 logic exception_id;
+
 
 `ifdef JASPER
 `default_nettype none
@@ -217,6 +229,11 @@ decoder #(
     .instr_i         ( instr_id ),
     .is_compressed_i ( is_compressed_id ),
     
+    // M signals
+    .div_req_o(div_req_id_int),
+    .mul_req_o(mul_req_id_int),
+    .m_operation_o(m_operation_id_o),
+
     // FPU signals
     .fpu_rnd_mode_o ( fpu_rnd_mode_id_o ),
     .fpu_op_o       ( fpu_op_id_o ),
@@ -334,7 +351,10 @@ end
 // Deassert FPU req if we don't have a valid instruction
 // assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !flush_ex_i; // && !stall_ex_i;
 // assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !stall_id_i;
-assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !fpu_busy_ex_i;
+assign fpu_req_id_o = fpu_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !fpu_busy_ex_i && !div_busy_ex_i && !mul_busy_ex_i;
+assign div_req_id_o = div_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !fpu_busy_ex_i && !div_busy_ex_i && !mul_busy_ex_i;
+assign mul_req_id_o = mul_req_id_int && valid_id_o && !illegal_instr_id_o && !branch_decision_ex_i && !fpu_busy_ex_i && !div_busy_ex_i && !mul_busy_ex_i;
+
 
 // Traps: illegal instruction decoded, jump target misaligned, mret
 assign exception_id = illegal_instr_id_o || instr_addr_misaligned_id_o || is_mret_id_o;

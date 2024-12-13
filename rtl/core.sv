@@ -125,6 +125,16 @@ logic [31:0]    mtvec, mepc;
 logic           save_pc_id, save_pc_ex;
 logic [ 4:0]    exception_cause;
 
+// Type M signals
+alu_m_operation  m_operation_id;  
+logic            div_req_id;
+logic            div_busy_ex;
+logic            div_gnt_id; 
+logic            mul_req_id;
+logic            mul_busy_ex;
+logic            mul_gnt_id;
+
+
 // FPU signals
 logic [2:0] fpu_rnd_mode_id;
 logic [3:0] fpu_op_id;
@@ -262,6 +272,13 @@ id_stage #(
     .mem_rdata_wb_i     ( mem_rdata_wb ),
     .csr_rdata_ex_i     ( csr_rdata_ex ),
     
+    // Type M signals
+    .m_operation_id_o   (m_operation_id),
+    .div_req_id_o       (div_req_id),
+    .div_busy_ex_i      (div_busy_ex),
+    .mul_req_id_o       (mul_req_id),
+    .mul_busy_ex_i      (mul_busy_ex),
+
     // FPU signals
     .fpu_rnd_mode_id_o ( fpu_rnd_mode_id ),
     .fpu_op_id_o       ( fpu_op_id ),
@@ -343,6 +360,16 @@ ex_stage #(
     .stall_ex_i ( stall_ex ),
     .flush_ex_i ( flush_ex ),
     
+    // Type M signals
+    .m_operation_id_i   ( m_operation_id ),
+    .div_req_id_i       ( div_req_id ),
+    .div_gnt_id_o       ( div_gnt_id ),
+    .div_busy_ex_o      ( div_busy_ex ),
+    .mul_req_id_i       ( mul_req_id ),
+    .mul_gnt_id_o       ( mul_gnt_id ),
+    .mul_busy_ex_o      ( mul_busy_ex ),
+
+
     // FPU signals
     .fpu_rnd_mode_id_i ( fpu_rnd_mode_id ),
     .fpu_op_id_i       ( fpu_op_id ),
@@ -514,6 +541,12 @@ controller controller_inst (
     .fpu_req_id_i  ( fpu_req_id ),
     .fpu_gnt_id_i  ( fpu_gnt_id ),
     .fpu_busy_ex_i ( fpu_busy_ex ),
+    .div_req_id_i  ( div_req_id ),
+    .div_gnt_id_i  ( div_gnt_id ),
+    .div_busy_ex_i ( div_busy_ex ),
+    .mul_req_id_i  ( mul_req_id ),
+    .mul_gnt_id_i  ( mul_gnt_id ),
+    .mul_busy_ex_i ( mul_busy_ex ),
     
     // Control Hazards (flushing)
     .flush_id_o  ( flush_id ),

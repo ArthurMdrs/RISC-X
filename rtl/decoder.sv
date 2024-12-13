@@ -84,7 +84,12 @@ module decoder import core_pkg::*; #(
     input  logic        is_compressed_i,
 
 
-    ////////FPU/////////////////
+    // Type M
+    output logic            div_req_o,
+    output logic            mul_req_o,
+    output alu_m_operation  m_operation_o,
+
+    // Type F
     output logic [2:0] fpu_rnd_mode_o,
     output logic [3:0] fpu_op_o,
     output logic       fpu_op_mod_o,
@@ -93,7 +98,7 @@ module decoder import core_pkg::*; #(
     // output logic [4:0] rs3_addr_F_o,
     // output logic [4:0] is_store_o
     //output logic is_immediate_F
-    output logic           csr_status_o // Adicionado
+    output logic       csr_status_o // Adicionado
 
     //input logic fs_off_i;
 
@@ -172,14 +177,19 @@ always_comb begin
     rs2_addr_C = instr_i[ 6:2];
     rd_addr_C  = instr_i[11:7];
 
-    //F
+    // F
+
     fpu_req_o = 1'b0;
     fpu_rnd_mode_o  = instr_i[14:12];
     fpu_op_o = fpnew_pkg::SGNJ;
     fpu_op_mod_o = 1'b0;
     csr_status_o = 1'b0;
 
+    // M
     
+    div_req_o = 1'b0;
+    mul_req_o = 1'b0;
+
     if (is_compressed_int) begin 
     unique case (opcode_C)
         OPCODE_RVC_0: begin
@@ -596,12 +606,67 @@ always_comb begin
         /////////////////////////////////////////////
         
         OPCODE_OP: begin
-            if (!(funct7 inside {7'h00, 7'h20}))
+            if (!(funct7 inside {7'h00,7'h01,7'h20}))
                 illegal_instr_o = 1'b1;
             
             reg_alu_wen_o = 1'b1;
             
-            if (funct7[5] == 1'b0) begin // funct7 == 7'h00
+            if (funct7 == 7'h01) begin
+                if (ISA_M) begin
+                    unique case (funct3)
+                        3'b000: begin       // MUL
+                            m_operation_o = M_MUL;
+                            alu_result_mux_o = MULT_RESULT;
+                            mul_req_o = 1'b1;
+                        end    
+                        3'b001: begin       // MULH
+                            m_operation_o = M_MULH;
+                            alu_result_mux_o = MULT_RESULT;
+                            mul_req_o = 1'b1;
+                        end 
+                        3'b010: begin       // MULHSU
+                            m_operation_o = M_MULHSU;
+                            alu_result_mux_o = MULT_RESULT;
+                            mul_req_o = 1'b1;
+                        end 
+                        3'b011: begin       // MULHU
+                            m_operation_o = M_MULHU;
+                            alu_result_mux_o = MULT_RESULT;
+                            mul_req_o = 1'b1;
+                        end 
+                        3'b100: begin       // DIV
+                            m_operation_o = M_DIV;
+                            alu_result_mux_o = DIV_RESULT;
+                            div_req_o = 1'b1;
+                        end     
+                        3'b101: begin       // DIVU
+                            m_operation_o = M_DIVU;
+                            alu_result_mux_o = DIV_RESULT;
+                            div_req_o = 1'b1;
+                        end    
+                        3'b110: begin       // REM
+                            m_operation_o = M_REM;
+                            alu_result_mux_o = REM_RESULT;
+                            div_req_o = 1'b1;
+                        end 
+                        3'b111: begin       // REMU
+                            m_operation_o = M_REMU;
+                            alu_result_mux_o = REM_RESULT;
+                            div_req_o = 1'b1;
+                        end    
+                        default: illegal_instr_o = 1'b1;
+                    endcase
+
+                    rs1_addr_C = instr_i[19:15];
+                    rs2_addr_C = instr_i[24:20];
+                    rd_addr_C  = instr_i[11: 7];
+
+                end else begin
+                    illegal_instr_o = 1'b1;
+                end
+
+            end
+            else if (funct7[5] == 1'b0) begin // funct7 == 7'h00
                 unique case(funct3)
                     3'b000: alu_operation_o = ALU_ADD;  // add
                     3'b100: alu_operation_o = ALU_XOR;  // xor
@@ -621,6 +686,7 @@ always_comb begin
                     default: illegal_instr_o = 1'b1;
                 endcase
             end
+
         end
         
         OPCODE_OP_IMM: begin
