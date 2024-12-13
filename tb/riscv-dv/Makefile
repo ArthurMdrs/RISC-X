@@ -9,7 +9,7 @@ TOOLS_HOME := $(abspath $(RISC_X_ROOT)/tools)
 export RISCV_DV_ROOT := $(abspath $(TOOLS_HOME)/riscv-dv)
 export RISCV_DV_ADDS := $(abspath $(TOOLS_HOME)/additions/riscv-dv)
 
-ISA := rv32ifc_zicsr_zifencei
+ISA := rv32imfc_zicsr_zifencei
 
 DV_OUT_DIR := $(TB_HOME)/mytest
 DV_FILE_LIST := $(RISCV_DV_ROOT)/files.f

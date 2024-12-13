@@ -32,6 +32,10 @@ ${RTL_HOME}/cvfpu/src/fpnew_opgroup_multifmt_slice.sv
 ${RTL_HOME}/cvfpu/src/fpnew_rounding.sv
 ${RTL_HOME}/cvfpu/src/fpnew_top.sv
 
+${RTL_HOME}/Type_M_Instructions/multiplier.sv
+${RTL_HOME}/Type_M_Instructions/counter_bit.sv
+${RTL_HOME}/Type_M_Instructions/opdiv.sv
+
 ${RTL_HOME}/alu.sv
 ${RTL_HOME}/controller.sv
 ${RTL_HOME}/decoder.sv

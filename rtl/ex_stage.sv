@@ -126,6 +126,15 @@ logic [31:0]    fpu_result;
 logic           fpu_rvalid;
 logic           fpu_busy_int;
 
+logic [31:0]    div_result;
+logic           div_rvalid;
+logic           div_busy_int;
+logic           rest_result;
+
+logic [31:0]    mul_result;
+logic           mul_rvalid;
+logic           mul_busy_int;
+
 alu_operation_t alu_operation_ex;
 logic [31:0]    alu_operand_1_ex, alu_operand_2_ex;
 logic [31:0]    alu_result_ex;
