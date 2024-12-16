@@ -27,9 +27,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module csr import core_pkg::*; #(
-    parameter bit ISA_M = 0,
-    parameter bit ISA_C = 0,
-    parameter bit ISA_F = 0
+    parameter bit ISA_M = 1,
+    parameter bit ISA_C = 1,
+    parameter bit ISA_F = 1
 ) (
     input  logic clk_i,
     input  logic rst_n_i,
