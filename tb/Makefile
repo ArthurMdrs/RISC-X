@@ -24,7 +24,7 @@ PROGS_PATH := $(abspath $(TB_HOME)/programs)
 ##########################                          RISCV-DV VARS                           ##########################
 ######################################################################################################################
 
-ISA := rv32ic_zicsr_zifencei
+ISA := rv32imc_zicsr_zifencei
 ABI := ilp32
 DV_OUT_DIR := $(TB_HOME)/mytest
 # DV_FILE_LIST := $(RISCV_DV_ROOT)/files.f

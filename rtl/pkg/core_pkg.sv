@@ -172,7 +172,6 @@ typedef enum logic [1:0] {
 } csr_operation_t;
 
 
-
 // OpCodes
 
 localparam logic [6:0] OPCODE_OP     = 7'b011_0011; // 7'h33

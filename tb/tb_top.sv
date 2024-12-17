@@ -33,7 +33,7 @@ import uvm_pkg::*;
 
 import riscx_pkg::*;
 
-localparam bit ISA_M = 0;
+localparam bit ISA_M = 1;
 localparam bit ISA_C = 1;
 localparam bit ISA_F = 0;
 
