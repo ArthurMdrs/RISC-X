@@ -204,7 +204,7 @@ end
 
 // Resolve stalls
 always_comb begin
-    stall_ex_o = fpu_rvalid_stall;
+    stall_ex_o = (fpu_rvalid_stall || div_rvalid_stall || mul_rvalid_stall);
     
     stall_id_o = stall_ex_o;
     if (fpu_gnt_stall || div_gnt_stall || mul_gnt_stall)

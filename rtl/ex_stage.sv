@@ -223,7 +223,7 @@ always_comb begin
         MULT_RESULT     : alu_result_ex = mul_result;
         DIV_RESULT      : alu_result_ex = div_result;
         REM_RESULT      : alu_result_ex = rest_result;
-        default: alu_result_ex = basic_alu_result;
+        default : alu_result_ex = basic_alu_result;
     endcase
 end
 

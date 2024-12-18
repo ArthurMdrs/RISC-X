@@ -218,20 +218,41 @@ class riscv_decoder;
     function string decode_op(logic [31:0] instruction);
         string rd, rs1, rs2;
         string func;
+        
         rd  = translate_register(instruction[11:7]);
         rs1 = translate_register(instruction[19:15]);
         rs2 = translate_register(instruction[24:20]);
-        case (instruction[14:12])
-            3'b000: func = (instruction[30] == 1'b0) ? "add" : "sub";
-            3'b001: func = "sll";
-            3'b010: func = "slt";
-            3'b011: func = "sltu";
-            3'b100: func = "xor";
-            3'b101: func = (instruction[30] == 1'b0) ? "srl" : "sra";
-            3'b110: func = "or";
-            3'b111: func = "and";
-            default: func = "UNKNOWN";
-        endcase
+        if (instruction[31:25] == 7'b0000001) begin
+            case (instruction[14:12])
+                3'b000: func = "mul";
+                3'b001: func = "mulh";
+                3'b010: func = "mulhsu";
+                3'b011: func = "mulhu";
+                3'b100: func = "div";
+                3'b101: func = "divu";
+                3'b110: func = "rem";
+                3'b111: func = "remu";
+                default: func = "UNKNOWN";
+            endcase
+        end else begin
+            case (instruction[14:12])
+                3'b000: func = (instruction[30] == 1'b0) ? "add" : "sub";
+                3'b001: func = "sll";
+                3'b010: func = "slt";
+                3'b011: func = "sltu";
+                3'b100: func = "xor";
+                3'b101: func = (instruction[30] == 1'b0) ? "srl" : "sra";
+                3'b110: func = "or";
+                3'b111: func = "and";
+                default: func = "UNKNOWN";
+            endcase
+        end
+        
+        
+        
+
+        
+
         return $sformatf("%s %s, %s, %s", func, rd, rs1, rs2);
         // return $sformatf("%s x%0d, x%0d, x%0d", func, instruction[11:7], instruction[19:15], instruction[24:20]);
     endfunction

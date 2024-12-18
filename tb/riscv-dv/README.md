@@ -92,3 +92,9 @@ All tests from the list above passed, except:
 ## Known issues
 
 - Coverage collection is not working properly for RISC-X.
+
+
+## PARA RODAR O SIMVISION PARA DEBUG RODE ISSO!
+```
+- make sim-elf-gui ELF=/home/xmen/Desktop/RISC-X/tb/riscv-dv/mytest/asm_test/riscv_arithmetic_basic_test_0.o BIN=/home/xmen/Desktop/RISC-X/tb/riscv-dv/mytest/asm_test/riscv_arithmetic_basic_test_0.bin 
+```
