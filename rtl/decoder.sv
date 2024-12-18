@@ -606,7 +606,7 @@ always_comb begin
         /////////////////////////////////////////////
         
         OPCODE_OP: begin
-            if (!(funct7 inside {7'h00,7'b000_0001,7'h20}))
+            if (!(funct7 inside {7'h00,7'h01,7'h20}))
                 illegal_instr_o = 1'b1;
             else begin
                 reg_alu_wen_o = 1'b1;
@@ -619,42 +619,42 @@ always_comb begin
                     rs2_addr_C = instr_i[24:20];
                     rd_addr_C  = instr_i[11: 7];
                     unique case (funct3)
-                        M_MUL: begin       // MUL
+                        3'b000: begin       // MUL
                             m_operation_o = M_MUL;
                             alu_result_mux_o = MULT_RESULT;
                             mul_req_o = 1'b1;
                         end
-                        M_MULH: begin       // MULH
+                        3'b001: begin       // MULH
                             m_operation_o = M_MULH;
                             alu_result_mux_o = MULT_RESULT;
                             mul_req_o = 1'b1;
                         end
-                        M_MULHSU: begin       // MULHSU
+                        3'b010: begin       // MULHSU
                             m_operation_o = M_MULHSU;
                             alu_result_mux_o = MULT_RESULT;
                             mul_req_o = 1'b1;
                         end 
-                        M_MULHU: begin       // MULHU
+                        3'b011: begin       // MULHU
                             m_operation_o = M_MULHU;
                             alu_result_mux_o = MULT_RESULT;
                             mul_req_o = 1'b1;
                         end 
-                        M_DIV: begin       // DIV
+                        3'b100: begin       // DIV
                             m_operation_o = M_DIV;
                             alu_result_mux_o = DIV_RESULT;
                             div_req_o = 1'b1;
                         end     
-                        M_DIVU: begin       // DIVU
+                        3'b101: begin       // DIVU
                             m_operation_o = M_DIVU;
                             alu_result_mux_o = DIV_RESULT;
                             div_req_o = 1'b1;
                         end    
-                        M_REM: begin       // REM
+                        3'b110: begin       // REM
                             m_operation_o = M_REM;
                             alu_result_mux_o = REM_RESULT;
                             div_req_o = 1'b1;
                         end 
-                        M_REMU: begin       // REMU
+                        3'b111: begin       // REMU
                             m_operation_o = M_REMU;
                             alu_result_mux_o = REM_RESULT;
                             div_req_o = 1'b1;

@@ -132,6 +132,7 @@ string prog_name = "LUI_AUIPC";
 string progs_path = "../programs";
 string bin_file = {"/mytest/asm_test/", prog_name, ".bin"};
 string sections_file = {"/mytest/asm_test/", prog_name, ".section"};
+//string sextions_file = {"/mytest/asm_test/riscv_arithmetic_basic_test_1.bin"}
 
 // Generate clock
 localparam int PERIOD = 2;
