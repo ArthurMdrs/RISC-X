@@ -137,8 +137,6 @@ assign rs1_addr_o = (is_compressed_int) ? (rs1_addr_C) : (instr_i[19:15]);
 assign rs2_addr_o = (is_compressed_int) ? (rs2_addr_C) : (instr_i[24:20]);
 assign rd_addr_o  = (is_compressed_int) ? (rd_addr_C ) : (instr_i[11: 7]);
 
-
-
 always_comb begin
     alu_operation_o  = ALU_ADD;
     alu_source_1_o   = ALU_SCR1_RS1;
@@ -606,18 +604,16 @@ always_comb begin
         /////////////////////////////////////////////
         
         OPCODE_OP: begin
-            if (!(funct7 inside {7'h00,7'b000_0001,7'h20}))
+            if (!(funct7 inside {7'b000_0000,7'b000_0001,7'b010_0000}))
                 illegal_instr_o = 1'b1;
             else begin
                 reg_alu_wen_o = 1'b1;
                 
                 if (funct7 == 7'b000_0001) begin
-                    //if (ISA_M) begin
+                    if (ISA_M) begin
                     div_req_o = 1'b0;
                     mul_req_o = 1'b0;
-                    rs1_addr_C = instr_i[19:15];
-                    rs2_addr_C = instr_i[24:20];
-                    rd_addr_C  = instr_i[11: 7];
+                    
                     unique case (funct3)
                         M_MUL: begin       // MUL
                             m_operation_o = M_MUL;
@@ -661,13 +657,13 @@ always_comb begin
                         end    
                         default: illegal_instr_o = 1'b1;
                     endcase
-                    //end 
-                    // else begin
-                    //     illegal_instr_o = 1'b1;
-                    // end
+                    end 
+                    else begin
+                        illegal_instr_o = 1'b1;
+                    end
 
                 end
-                else if (funct7 == 7'b0000000) begin // funct7 == 7'h00
+                else if (funct7 == 7'b000_0000) begin // funct7 == 7'h00
                     unique case(funct3)
                         3'b000: alu_operation_o = ALU_ADD;  // add
                         3'b100: alu_operation_o = ALU_XOR;  // xor
@@ -680,7 +676,7 @@ always_comb begin
                         default: illegal_instr_o = 1'b1;
                     endcase
                 end
-                else if (funct7 == 7'b0100000) begin  // funct7 == 7'h20
+                else if (funct7 == 7'b010_0000) begin  // funct7 == 7'h20
                     unique case(funct3)
                         3'b000: alu_operation_o = ALU_SUB; // sub
                         3'b101: alu_operation_o = ALU_SRA; // sra
